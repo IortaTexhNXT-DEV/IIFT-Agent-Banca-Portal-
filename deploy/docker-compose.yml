@@ -1,0 +1,70 @@
+# SalesVerse 2.0 – single-host deployment (DEV/SIT/UAT, or on-premise production behind
+# the IIFT load balancer). Secrets come from deploy/.env (see .env.example).
+#
+#   docker compose --env-file .env up -d
+#   docker compose --env-file .env run --rm migrate
+
+name: salesverse
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: iift
+      POSTGRES_USER: iift
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U iift -d iift']
+      interval: 10s
+      retries: 6
+
+  migrate:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+      target: migrate
+    environment:
+      DATABASE_URL: postgresql://iift:${POSTGRES_PASSWORD}@db:5432/iift
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles: ['tools']
+
+  api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+      target: runtime
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://iift:${POSTGRES_PASSWORD}@db:5432/iift
+      CLAMAV_HOST: clamav
+    volumes:
+      - documents:/data/documents
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    ports:
+      - '${WEB_PORT:-8080}:8080'
+    depends_on:
+      - api
+
+  clamav:
+    image: clamav/clamav:stable
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  documents:

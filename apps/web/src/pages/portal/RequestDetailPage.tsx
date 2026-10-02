@@ -1,0 +1,72 @@
+import { Button, Card, Flex, Popconfirm } from 'antd';
+import { useNavigate, useParams } from 'react-router';
+import { api } from '../../api/client';
+import { useApiMutation, useApiQuery } from '../../api/hooks';
+import type { ApprovalRequest } from '../../api/types';
+import { useAuth } from '../../auth/AuthContext';
+import { recordPath } from '../../components/admin/links';
+import { PayloadView } from '../../components/admin/PayloadView';
+import { RejectionAlert, RequestSummary } from '../../components/admin/RequestSummary';
+import { ApprovalHistory } from '../../components/ApprovalHistory';
+import { ErrorAlert } from '../../components/ErrorAlert';
+import { PageHeader } from '../../components/PageHeader';
+import { QueryState } from '../../components/QueryState';
+import { StatusTag } from '../../components/StatusTag';
+import { humanise } from '../../utils/format';
+
+/** AP-49..51: status, submitted details, decisions and remarks of one request. */
+export default function RequestDetailPage() {
+  const { id = '' } = useParams();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const request = useApiQuery<ApprovalRequest>(`/portal/requests/${id}`);
+  const withdraw = useApiMutation(() => api.post<ApprovalRequest>(`/portal/requests/${id}/withdraw`), {
+    success: 'Request withdrawn',
+    invalidate: ['/portal'],
+  });
+
+  return (
+    <QueryState query={request}>
+      {(data) => {
+        const record = recordPath('PORTAL', data.entityType, data.entityId);
+        return (
+          <>
+            <PageHeader
+              title={
+                <Flex gap={12} align="center" wrap>
+                  {data.requestNo}
+                  <StatusTag status={data.status} />
+                </Flex>
+              }
+              subtitle={humanise(data.type)}
+              breadcrumb={[{ title: 'My requests', to: '/portal/requests' }, { title: data.requestNo }]}
+              extra={
+                <>
+                  {record && <Button onClick={() => navigate(record)}>Open {data.entityType.toLowerCase()}</Button>}
+                  {data.status === 'PENDING' && data.makerId === user?.id && (
+                    <Popconfirm title="Withdraw this request?" description="It will no longer be reviewed by IIFT." okText="Withdraw" okButtonProps={{ danger: true }} onConfirm={() => withdraw.mutate(undefined)}>
+                      <Button danger loading={withdraw.isPending}>
+                        Withdraw
+                      </Button>
+                    </Popconfirm>
+                  )}
+                </>
+              }
+            />
+            <ErrorAlert error={withdraw.error} className="mb-16" />
+            <RejectionAlert request={data} resubmitHint={record ? 'Open the record to correct the details and submit a new request.' : undefined} />
+            <Card title="Request" className="content-card">
+              <RequestSummary request={data} />
+            </Card>
+            <Card title="Submitted details" className="content-card">
+              <PayloadView payload={data.payload} />
+            </Card>
+            <Card title="Approval history" className="content-card">
+              <ApprovalHistory approvals={[data]} />
+            </Card>
+          </>
+        );
+      }}
+    </QueryState>
+  );
+}

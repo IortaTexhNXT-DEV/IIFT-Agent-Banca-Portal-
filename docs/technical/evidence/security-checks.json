@@ -1,0 +1,392 @@
+{
+  "summary": {
+    "baseUrl": "http://localhost:3001",
+    "runAt": "2026-10-02T14:04:34.870Z",
+    "total": 29,
+    "passed": 29
+  },
+  "results": [
+    {
+      "id": "SEC-01",
+      "owasp": "A05",
+      "title": "Security headers on API responses",
+      "result": "PASS",
+      "evidence": {
+        "strict-transport-security": "max-age=31536000; includeSubDomains",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "SAMEORIGIN",
+        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "x-powered-by": null
+      }
+    },
+    {
+      "id": "SEC-02",
+      "owasp": "A05",
+      "title": "Unknown routes return a generic JSON error without framework details",
+      "result": "PASS",
+      "evidence": {
+        "status": 404,
+        "body": {
+          "statusCode": 404,
+          "code": "NOT_FOUND",
+          "message": "Cannot GET /api/v1/does-not-exist",
+          "correlationId": "31d626fd-1e22-4496-846b-1931553c749d"
+        }
+      }
+    },
+    {
+      "id": "SEC-03",
+      "owasp": "A05",
+      "title": "Malformed JSON is rejected without a stack trace",
+      "result": "PASS",
+      "evidence": {
+        "status": 400,
+        "body": {
+          "statusCode": 400,
+          "code": "BAD_REQUEST",
+          "message": "Unexpected end of JSON input",
+          "correlationId": ""
+        }
+      }
+    },
+    {
+      "id": "SEC-04",
+      "owasp": "A07",
+      "title": "Same response for unknown user and wrong password (no user enumeration)",
+      "result": "PASS",
+      "evidence": {
+        "unknownUser": "Invalid username or password",
+        "wrongPassword": "Invalid username or password"
+      }
+    },
+    {
+      "id": "SEC-18",
+      "owasp": "A03",
+      "title": "Injection in sign-in fields is rejected as invalid credentials",
+      "result": "PASS",
+      "evidence": {
+        "status": 401
+      }
+    },
+    {
+      "id": "SEC-19",
+      "owasp": "A03",
+      "title": "LDAP filter characters in usernames do not alter directory queries",
+      "result": "PASS",
+      "evidence": {
+        "status": 401
+      }
+    },
+    {
+      "id": "SEC-05",
+      "owasp": "A07",
+      "title": "Session cookie is HttpOnly and SameSite=Strict (Secure is enforced in production configuration)",
+      "result": "PASS",
+      "evidence": {
+        "setCookie": "iift.sid=<redacted>; Path=/; Expires=Fri, 02 Oct 2026 14:19:34 GMT; HttpOnly; SameSite=Strict"
+      }
+    },
+    {
+      "id": "SEC-06",
+      "owasp": "A07",
+      "title": "Session identifier changes at every sign-in (no session fixation)",
+      "result": "PASS",
+      "evidence": {
+        "changed": true
+      }
+    },
+    {
+      "id": "SEC-07",
+      "owasp": "A07",
+      "title": "A session cookie cannot be reused after logout (server-side revocation)",
+      "result": "PASS",
+      "evidence": {
+        "status": 401
+      }
+    },
+    {
+      "id": "SEC-09",
+      "owasp": "A01",
+      "title": "Protected endpoints require a session",
+      "result": "PASS",
+      "evidence": {
+        "status": 401
+      }
+    },
+    {
+      "id": "SEC-10",
+      "owasp": "A01",
+      "title": "Portal users cannot call back-office APIs",
+      "result": "PASS",
+      "evidence": {
+        "status": 403,
+        "code": "WRONG_AUDIENCE"
+      }
+    },
+    {
+      "id": "SEC-11",
+      "owasp": "A01",
+      "title": "Another agency's policy cannot be read by changing the identifier (IDOR)",
+      "result": "PASS",
+      "evidence": {
+        "status": 404
+      }
+    },
+    {
+      "id": "SEC-12",
+      "owasp": "A01",
+      "title": "Another agency's documents cannot be downloaded",
+      "result": "PASS",
+      "evidence": {
+        "status": 403
+      }
+    },
+    {
+      "id": "SEC-13",
+      "owasp": "A01",
+      "title": "Participant profiles are limited to agencies that hold business with them",
+      "result": "PASS",
+      "evidence": {
+        "status": 403
+      }
+    },
+    {
+      "id": "SEC-14",
+      "owasp": "A01",
+      "title": "Users cannot grant themselves permissions they do not hold",
+      "result": "PASS",
+      "evidence": {
+        "status": 403
+      }
+    },
+    {
+      "id": "SEC-15",
+      "owasp": "A01",
+      "title": "State-changing requests require the session’s own CSRF token",
+      "result": "PASS",
+      "evidence": {
+        "missing": 403,
+        "otherSessionsToken": 403
+      }
+    },
+    {
+      "id": "SEC-17",
+      "owasp": "A03",
+      "title": "SQL/NoSQL/template injection payloads in search are treated as text",
+      "result": "PASS",
+      "evidence": [
+        {
+          "payload": "' OR '1'='1",
+          "status": 200,
+          "items": 0,
+          "ms": 13,
+          "leaked": false
+        },
+        {
+          "payload": "'; DROP TABLE policy; --",
+          "status": 200,
+          "items": 0,
+          "ms": 12,
+          "leaked": false
+        },
+        {
+          "payload": "1 UNION SELECT password_hash FROM app_user",
+          "status": 200,
+          "items": 0,
+          "ms": 13,
+          "leaked": false
+        },
+        {
+          "payload": "\\' OR 1=1 --",
+          "status": 200,
+          "items": 0,
+          "ms": 14,
+          "leaked": false
+        },
+        {
+          "payload": "%27%20OR%201%3D1",
+          "status": 200,
+          "items": 0,
+          "ms": 12,
+          "leaked": false
+        },
+        {
+          "payload": "${7*7}",
+          "status": 200,
+          "items": 0,
+          "ms": 12,
+          "leaked": false
+        },
+        {
+          "payload": "<script>alert(1)</script>",
+          "status": 200,
+          "items": 0,
+          "ms": 12,
+          "leaked": false
+        },
+        {
+          "payload": "admin'--",
+          "status": 200,
+          "items": 0,
+          "ms": 10,
+          "leaked": false
+        },
+        {
+          "payload": "{\"$gt\": \"\"}",
+          "status": 200,
+          "items": 0,
+          "ms": 11,
+          "leaked": false
+        },
+        {
+          "payload": "SLEEP(5)",
+          "status": 200,
+          "items": 0,
+          "ms": 9,
+          "leaked": false
+        }
+      ]
+    },
+    {
+      "id": "SEC-20",
+      "owasp": "A04",
+      "title": "Negative, future-dated and excessive payments are refused",
+      "result": "PASS",
+      "evidence": {
+        "negative": 400,
+        "futureDate": 422,
+        "aboveOutstanding": 422
+      }
+    },
+    {
+      "id": "SEC-21",
+      "owasp": "A04",
+      "title": "Unexpected fields (mass assignment) are rejected",
+      "result": "PASS",
+      "evidence": {
+        "status": 400,
+        "details": [
+          "property amlStatus should not exist",
+          "property createdByAgencyId should not exist"
+        ]
+      }
+    },
+    {
+      "id": "SEC-22",
+      "owasp": "A08",
+      "title": "Uploads are checked by content: executables, HTML and SVG are refused",
+      "result": "PASS",
+      "evidence": {
+        "exe": 422,
+        "html": 422,
+        "svg": 422
+      }
+    },
+    {
+      "id": "SEC-23",
+      "owasp": "A08",
+      "title": "Uploads above the size limit are refused",
+      "result": "PASS",
+      "evidence": {
+        "status": 422,
+        "code": "FILE_TOO_LARGE"
+      }
+    },
+    {
+      "id": "SEC-24",
+      "owasp": "A08",
+      "title": "Path elements in file names are removed",
+      "result": "PASS",
+      "evidence": {
+        "status": 201,
+        "storedName": "passwd.pdf"
+      }
+    },
+    {
+      "id": "SEC-25",
+      "owasp": "A02",
+      "title": "Identification numbers are returned masked; ciphertext and hashes are never returned",
+      "result": "PASS",
+      "evidence": [
+        "*****4658",
+        "*****7398",
+        "*****2329",
+        "*****1644",
+        "*****4932"
+      ]
+    },
+    {
+      "id": "SEC-26",
+      "owasp": "A02",
+      "title": "Password hashes are never returned by the API",
+      "result": "PASS",
+      "evidence": {
+        "status": 200
+      }
+    },
+    {
+      "id": "SEC-27",
+      "owasp": "A09",
+      "title": "Failed sign-ins are recorded in the audit trail with IP address",
+      "result": "PASS",
+      "evidence": {
+        "total": 12,
+        "sample": {
+          "action": "LOGIN_FAILED",
+          "ip": "127.0.0.1",
+          "at": "2026-10-02T14:04:34.112Z"
+        }
+      }
+    },
+    {
+      "id": "SEC-28",
+      "owasp": "A09",
+      "title": "Every response carries a correlation id for tracing",
+      "result": "PASS",
+      "evidence": {
+        "x-request-id": "88581812-565b-434b-84ea-ed9132bc84c0"
+      }
+    },
+    {
+      "id": "SEC-29",
+      "owasp": "A01",
+      "title": "E-signature links cannot be guessed; invalid tokens reveal nothing",
+      "result": "PASS",
+      "evidence": {
+        "malformed": 404,
+        "wellFormedButUnknown": 422
+      }
+    },
+    {
+      "id": "SEC-30",
+      "owasp": "A07",
+      "title": "System-to-system APIs require an API key",
+      "result": "PASS",
+      "evidence": {
+        "status": 503
+      }
+    },
+    {
+      "id": "SEC-08",
+      "owasp": "A07",
+      "title": "Sign-in attempts are rate limited per client (HTTP 429)",
+      "result": "PASS",
+      "evidence": {
+        "statuses": [
+          429,
+          429,
+          429,
+          429,
+          429,
+          429,
+          429,
+          429,
+          429,
+          429,
+          429,
+          429
+        ]
+      }
+    }
+  ]
+}

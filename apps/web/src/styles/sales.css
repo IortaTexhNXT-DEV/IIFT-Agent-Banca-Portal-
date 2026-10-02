@@ -1,0 +1,257 @@
+/* Sales and policy screens (quotations, policies, participants, billing, claims). */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.mt-16 {
+  margin-top: 16px;
+}
+
+.plain-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.form-section-title.ant-typography {
+  margin: 8px 0 12px;
+}
+
+.tab-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+/* ---- Filters ------------------------------------------------------------ */
+
+.filter-search {
+  width: 240px;
+}
+
+.filter-select {
+  width: 160px;
+}
+
+.filter-select--wide {
+  width: 210px;
+}
+
+.filter-range {
+  width: 250px;
+}
+
+@media (max-width: 768px) {
+  .filter-search,
+  .filter-range,
+  .filter-select,
+  .filter-select--wide {
+    width: 100%;
+  }
+}
+
+/* ---- Choice cards (products, plans) -------------------------------------- */
+
+.product-chooser {
+  display: block;
+  width: 100%;
+}
+
+.product-chooser__group + .product-chooser__group {
+  margin-top: 8px;
+}
+
+.choice-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.choice-card.ant-radio-wrapper {
+  display: flex;
+  align-items: flex-start;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  height: 100%;
+}
+
+.choice-card.ant-radio-wrapper:hover {
+  border-color: var(--brand-magenta);
+}
+
+.choice-card.ant-radio-wrapper-checked {
+  border-color: var(--brand-magenta);
+  background: var(--brand-magenta-light);
+}
+
+.choice-card .ant-radio {
+  margin-top: 3px;
+}
+
+.choice-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.choice-card__title {
+  font-weight: 600;
+}
+
+.choice-card__meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---- Quotation wizard ---------------------------------------------------- */
+
+.wizard-steps {
+  margin-bottom: 24px;
+}
+
+.wizard-footer {
+  border-top: 1px solid var(--border);
+  margin-top: 16px;
+  padding-top: 16px;
+}
+
+.quote-panel {
+  position: sticky;
+  top: 84px;
+}
+
+.quote-preview__loading {
+  display: block;
+  margin: 24px auto;
+}
+
+.lookup-bar {
+  width: 100%;
+  max-width: 560px;
+}
+
+.lookup-bar__type {
+  width: 200px;
+}
+
+/* ---- Contribution breakdown ------------------------------------------- */
+
+.breakdown {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.breakdown th,
+.breakdown td {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.breakdown th {
+  text-align: left;
+  font-weight: 400;
+  padding-right: 16px;
+}
+
+.breakdown td {
+  text-align: right;
+}
+
+.breakdown__total th,
+.breakdown__total td {
+  font-weight: 600;
+  border-bottom: 2px solid var(--border);
+}
+
+.breakdown__split th,
+.breakdown__split td {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.breakdown tr:last-child th,
+.breakdown tr:last-child td {
+  border-bottom: none;
+}
+
+/* ---- Application checklist (draft quotations) --------------------------- */
+
+.checklist__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+
+.checklist__item {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.checklist__item--done {
+  background: var(--surface);
+}
+
+.checklist__icon {
+  font-size: 18px;
+  line-height: 22px;
+}
+
+.checklist__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.checklist__title {
+  font-weight: 600;
+}
+
+.checklist__detail {
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.checklist__actions {
+  margin-top: 8px;
+}
+
+/* ---- Forms in dialogs --------------------------------------------------- */
+
+.nominee-row {
+  border-bottom: 1px dashed var(--border);
+  margin-bottom: 12px;
+}
+
+.nominee-row__remove {
+  padding-top: 30px;
+}
+
+.nominee-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.question + .question {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}

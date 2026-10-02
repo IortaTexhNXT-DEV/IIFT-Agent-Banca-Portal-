@@ -1,0 +1,51 @@
+{
+ "api_source": {
+  "files": 142,
+  "code": 15008,
+  "comment": 518,
+  "blank": 1153
+ },
+ "api_e2e_tests": {
+  "files": 7,
+  "code": 867,
+  "comment": 13,
+  "blank": 85
+ },
+ "api_prisma_seed_and_reference": {
+  "files": 6,
+  "code": 1791,
+  "comment": 58,
+  "blank": 71
+ },
+ "database_schema_lines": 915,
+ "migration_sql_lines": 883,
+ "api_unit_test_files": 11,
+ "api_modules": [
+  "access",
+  "agency",
+  "aml",
+  "audit",
+  "auth",
+  "billing",
+  "claims",
+  "dashboard",
+  "documents",
+  "eod",
+  "esign",
+  "health",
+  "integration",
+  "integration-api",
+  "issues",
+  "notifications",
+  "participants",
+  "policies",
+  "products",
+  "reports",
+  "settings",
+  "workflow"
+ ],
+ "api_paths": 128,
+ "api_operations": 149,
+ "db_tables": 37,
+ "db_enums": 36
+}

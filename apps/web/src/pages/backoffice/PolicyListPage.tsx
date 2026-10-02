@@ -1,0 +1,32 @@
+import { Card } from 'antd';
+import { useState } from 'react';
+import { useSearchParams } from 'react-router';
+import { usePagedQuery } from '../../api/hooks';
+import type { PolicySummary } from '../../api/types';
+import { PageHeader } from '../../components/PageHeader';
+import { filtersFromUrl, type PolicyFilterValues, PolicyFilters, policyQuery } from '../../components/sales/PolicyFilters';
+import { PolicyTable } from '../../components/sales/PolicyTable';
+
+/** BO: every quotation and policy across agencies and banks (read-only). */
+export default function PolicyListPage() {
+  const [params] = useSearchParams();
+  const [filters, setFilters] = useState<PolicyFilterValues>(() => filtersFromUrl(params));
+  const policies = usePagedQuery<PolicySummary>('/backoffice/policies', policyQuery(filters));
+
+  return (
+    <>
+      <PageHeader title="Policies" subtitle="Quotations and policies from all agencies and banks" breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Policies' }]} />
+      <PolicyFilters
+        value={filters}
+        showAgency
+        onChange={(next) => {
+          setFilters(next);
+          policies.resetPage();
+        }}
+      />
+      <Card className="content-card" styles={{ body: { padding: 0 } }}>
+        <PolicyTable policies={policies.items} loading={policies.isFetching} pagination={policies.pagination} showAgent showAgency />
+      </Card>
+    </>
+  );
+}

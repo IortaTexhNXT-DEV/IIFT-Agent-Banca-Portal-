@@ -1,0 +1,115 @@
+import { DownloadOutlined, PlayCircleOutlined } from '@ant-design/icons';
+import { Button, Card, Col, Empty, Flex, Form, Menu, Row, Tabs, Typography } from 'antd';
+import { useState } from 'react';
+import { download } from '../../api/client';
+import { useApiQuery } from '../../api/hooks';
+import type { ExportFormat } from '../../api/admin-types';
+import type { ReportDefinition, ReportPreview } from '../../api/types';
+import { useAuth } from '../../auth/AuthContext';
+import { basePathFor } from '../../components/admin/links';
+import { type ReportFilterValues, ReportFilters, type ReportQuery, toReportQuery } from '../../components/admin/ReportFilters';
+import { ReportPreviewTable } from '../../components/admin/ReportPreviewTable';
+import { EXPORT_FORMATS, ReportSchedules } from '../../components/admin/ReportSchedules';
+import { ErrorAlert } from '../../components/ErrorAlert';
+import { PageHeader } from '../../components/PageHeader';
+import { QueryState } from '../../components/QueryState';
+import { P } from '../../utils/permissions';
+import '../../styles/admin.css';
+
+function ReportRunner({ report, apiBase }: { report: ReportDefinition; apiBase: string }) {
+  const [form] = Form.useForm<ReportFilterValues>();
+  const [applied, setApplied] = useState<ReportQuery>();
+  const [exporting, setExporting] = useState<ExportFormat>();
+  const [exportError, setExportError] = useState<unknown>();
+  const preview = useApiQuery<ReportPreview>(applied ? `${apiBase}/${report.code}` : null, applied);
+
+  const exportAs = async (format: ExportFormat) => {
+    setExporting(format);
+    setExportError(undefined);
+    try {
+      await download(`${apiBase}/${report.code}/export`, { ...toReportQuery(form.getFieldsValue()), format });
+    } catch (error) {
+      setExportError(error);
+    } finally {
+      setExporting(undefined);
+    }
+  };
+
+  return (
+    <Card title={report.name} className="content-card">
+      <Typography.Paragraph type="secondary">{report.description}</Typography.Paragraph>
+      <ReportFilters report={report} form={form} />
+      <Flex gap={8} wrap justify="space-between" className="mb-16">
+        <Button type="primary" icon={<PlayCircleOutlined />} loading={preview.isFetching} onClick={() => setApplied(toReportQuery(form.getFieldsValue()))}>
+          Run report
+        </Button>
+        <Flex gap={8} wrap>
+          {EXPORT_FORMATS.map(({ value, label }) => (
+            <Button key={value} icon={<DownloadOutlined />} loading={exporting === value} disabled={exporting !== undefined && exporting !== value} onClick={() => void exportAs(value)}>
+              {label}
+            </Button>
+          ))}
+        </Flex>
+      </Flex>
+      <ErrorAlert error={exportError} className="mb-16" />
+      {applied ? (
+        <QueryState query={preview}>{(data) => <ReportPreviewTable preview={data} />}</QueryState>
+      ) : (
+        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Choose the filters and run the report to preview it, or export it directly" />
+      )}
+    </Card>
+  );
+}
+
+function ReportCatalogue({ reports, apiBase }: { reports: ReportDefinition[]; apiBase: string }) {
+  const [selected, setSelected] = useState(reports[0]?.code);
+  const report = reports.find((item) => item.code === selected);
+  if (!report) return <Empty description="No reports are available for your role" />;
+
+  return (
+    <Row gutter={16}>
+      <Col xs={24} lg={7} xl={6}>
+        <Card title="Reports" className="content-card" styles={{ body: { padding: 8 } }}>
+          <Menu mode="inline" selectedKeys={[report.code]} items={reports.map((item) => ({ key: item.code, label: item.name }))} onClick={({ key }) => setSelected(key)} className="report-menu" />
+        </Card>
+      </Col>
+      <Col xs={24} lg={17} xl={18}>
+        <ReportRunner key={report.code} report={report} apiBase={apiBase} />
+      </Col>
+    </Row>
+  );
+}
+
+/** AP-58, BO-22..25, COM-08: standard reports with filters, preview, export and schedules. */
+export default function ReportsPage() {
+  const { user, can } = useAuth();
+  const audience = user?.audience ?? 'PORTAL';
+  const apiBase = `${basePathFor(audience)}/reports`;
+  const catalogue = useApiQuery<ReportDefinition[]>(apiBase);
+  const canSchedule = audience === 'BACKOFFICE' && can(P.boReportsSchedule);
+
+  return (
+    <>
+      <PageHeader
+        title="Reports"
+        subtitle={audience === 'BACKOFFICE' ? 'Production, finance, servicing and control reports' : 'Reports for your agency, team and business'}
+        breadcrumb={[{ title: 'Dashboard', to: basePathFor(audience) }, { title: 'Reports' }]}
+      />
+      <QueryState query={catalogue}>
+        {(reports) =>
+          canSchedule ? (
+            <Tabs
+              destroyOnHidden
+              items={[
+                { key: 'run', label: 'Run a report', children: <ReportCatalogue reports={reports} apiBase={apiBase} /> },
+                { key: 'schedules', label: 'Scheduled reports', children: <ReportSchedules reports={reports} /> },
+              ]}
+            />
+          ) : (
+            <ReportCatalogue reports={reports} apiBase={apiBase} />
+          )
+        }
+      </QueryState>
+    </>
+  );
+}
