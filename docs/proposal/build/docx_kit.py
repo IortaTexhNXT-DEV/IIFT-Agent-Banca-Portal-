@@ -293,14 +293,14 @@ class ProposalWriter:
         props.created = props.modified = datetime.now(timezone.utc).replace(microsecond=0, tzinfo=None)
         props.revision = 1
 
-    def header_footer(self, section=None):
+    def header_footer(self, section=None, header_text=brand.HEADER_TEXT):
         """Branded running header and 'Page X of Y' footer; blank on the cover."""
         section = section or self.doc.sections[0]
         section.different_first_page_header_footer = True
 
         header = section.header.paragraphs[0]
         header.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-        add_rich_text(header, brand.HEADER_TEXT, size=8, colour=brand.TEXT_MUTED)
+        add_rich_text(header, header_text, size=8, colour=brand.TEXT_MUTED)
         _paragraph_border(header, "bottom", brand.ORANGE, size=6)
 
         footer = section.footer.paragraphs[0]

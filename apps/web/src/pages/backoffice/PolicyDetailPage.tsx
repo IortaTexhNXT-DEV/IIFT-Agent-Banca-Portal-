@@ -7,6 +7,7 @@ import { QueryState } from '../../components/QueryState';
 import { EmailDocumentsModal, hasIssuedDocuments } from '../../components/sales/EmailDocumentsModal';
 import { PolicyPageHeader } from '../../components/sales/PolicyPageHeader';
 import { type PolicyTabKey, PolicyTabs } from '../../components/sales/PolicyTabs';
+import '../../styles/sales.css';
 
 function PolicyView({ policy }: { policy: PolicyDetail }) {
   const [tab, setTab] = useState<PolicyTabKey>('overview');

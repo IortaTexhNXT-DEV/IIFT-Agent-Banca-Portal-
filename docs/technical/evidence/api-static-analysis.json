@@ -1,0 +1,35 @@
+{
+  "runAt": "2026-10-02T14:12:57+00:00",
+  "results": [
+    {
+      "check": "Lint",
+      "tool": "oxlint",
+      "version": "1.86.0",
+      "command": "npx oxlint src test",
+      "exitCode": 0,
+      "errors": 0,
+      "warnings": 0,
+      "passed": true
+    },
+    {
+      "check": "Type check",
+      "tool": "TypeScript compiler",
+      "version": "6.0.3",
+      "command": "npx tsc --noEmit -p tsconfig.json",
+      "exitCode": 0,
+      "errors": 0,
+      "warnings": 0,
+      "passed": true
+    },
+    {
+      "check": "Formatting",
+      "tool": "Prettier",
+      "version": "3.9.9",
+      "command": "npx prettier --check apps/api/src/**/*.ts apps/api/test/**/*.ts apps/api/prisma/**/*.ts",
+      "exitCode": 0,
+      "errors": 0,
+      "warnings": 0,
+      "passed": true
+    }
+  ]
+}

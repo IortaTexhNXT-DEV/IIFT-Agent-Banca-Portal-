@@ -3,7 +3,6 @@ import { Button, Col, Form, Input, InputNumber, Row, Select, Typography } from '
 import type { NomineeInput } from '../../api/sales-types';
 import { NOMINEE_ROLE_OPTIONS } from './options';
 import { useCodes } from './useCodes';
-import '../../styles/sales.css';
 
 const MAX_NOMINEES = 10;
 

@@ -11,10 +11,11 @@ import { QueryState } from '../../components/QueryState';
 import { StatusTag } from '../../components/StatusTag';
 import { AmlOutcome } from '../../components/sales/AmlOutcome';
 import { type CoverageValues, CoverageForm, initialCoverage, toQuoteOptions } from '../../components/sales/CoverageForm';
+import { formatTerm } from '../../components/sales/options';
 import { ParticipantPicker } from '../../components/sales/ParticipantPicker';
 import { ProductChooser } from '../../components/sales/ProductChooser';
 import { QuotePreview, useIndicativeQuote } from '../../components/sales/QuotePreview';
-import { RiskDetails } from '../../components/sales/RiskDetails';
+import { riskDetailItems } from '../../components/sales/RiskDetails';
 import '../../styles/sales.css';
 
 const STEPS = [
@@ -105,6 +106,26 @@ function CoverageStep({ product, participant, initialValues, onBack, onReview }:
   );
 }
 
+function CoverageSummary({ product, coverage }: { product: Product; coverage: CoverageValues }) {
+  const plan = product.config.plans?.find((candidate) => candidate.code === coverage.planCode);
+  const coverageType = product.config.coverageTypes?.find((candidate) => candidate.code === coverage.coverageType);
+  return (
+    <Descriptions
+      size="small"
+      column={{ xs: 1, md: 2 }}
+      items={[
+        { key: 'product', label: 'Product', children: product.name },
+        ...(plan ? [{ key: 'plan', label: 'Plan', children: plan.name }] : []),
+        ...(coverage.termMonths && product.ratingEngine === 'FIXED_PLAN' ? [{ key: 'term', label: 'Coverage period', children: formatTerm(coverage.termMonths) }] : []),
+        ...(coverageType ? [{ key: 'type', label: 'Coverage type', children: coverageType.name }] : []),
+        ...(plan?.additionalCover ? [{ key: 'additional', label: 'Additional cover', children: coverage.additionalCover ? plan.additionalCover.name : 'Not included' }] : []),
+        { key: 'start', label: 'Cover starts', children: coverage.startDate ? coverage.startDate.format('DD MMM YYYY') : 'On the date of issue' },
+        ...riskDetailItems(toQuoteOptions(product, coverage).riskDetails, product.config.riskFields),
+      ]}
+    />
+  );
+}
+
 /** Step 4: summary of the quotation before it is saved. */
 function ReviewStep({ product, participant, coverage, onBack }: { product: Product; participant: ParticipantMatch; coverage: CoverageValues; onBack(): void }) {
   const navigate = useNavigate();
@@ -121,8 +142,8 @@ function ReviewStep({ product, participant, coverage, onBack }: { product: Produ
       <ParticipantSummary participant={participant} />
       <Row gutter={[16, 0]}>
         <Col xs={24} xl={14}>
-          <Card size="small" title={product.name} className="content-card">
-            <RiskDetails details={options.riskDetails} fields={product.config.riskFields} />
+          <Card size="small" title="Coverage" className="content-card">
+            <CoverageSummary product={product} coverage={coverage} />
           </Card>
         </Col>
         <Col xs={24} xl={10}>

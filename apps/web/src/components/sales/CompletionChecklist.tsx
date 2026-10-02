@@ -5,7 +5,6 @@ import type { PolicyDetail } from '../../api/types';
 import { formatDateTime, formatMoney } from '../../utils/format';
 import { formatTerm } from './options';
 import type { Signer } from './SignatureModal';
-import '../../styles/sales.css';
 
 export type DraftAction = 'coverage' | 'questionnaire' | 'nominees' | 'documents' | 'link' | `sign-${Lowercase<Signer>}`;
 

@@ -231,6 +231,16 @@ class TechnicalWriter(ProposalWriter):
         self.h1("Contents", numbered=False)
         self.toc()
 
+    def table(self, headers, rows, widths, caption=None, **kwargs):
+        """Branded table; group rows are kept with the row that follows them."""
+        table = super().table(headers, rows, widths, caption=caption, **kwargs)
+        for index, row_values in enumerate(rows, start=1):
+            if isinstance(row_values, tuple) and row_values and row_values[0] == "GROUP":
+                for cell in table.rows[index].cells:
+                    for paragraph in cell.paragraphs:
+                        paragraph.paragraph_format.keep_with_next = True
+        return table
+
     # -- extra building blocks ---------------------------------------------------------------------
     def code(self, text, size=8):
         """Monospaced block on a light grey panel for commands and configuration."""

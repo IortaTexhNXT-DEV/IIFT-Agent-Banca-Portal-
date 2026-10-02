@@ -5,6 +5,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { PageHeader } from '../../components/PageHeader';
 import { ParticipantList } from '../../components/sales/ParticipantList';
 import { P } from '../../utils/permissions';
+import '../../styles/sales.css';
 
 /** AP-11/12: participants registered by, or insured through, the agency. */
 export default function ParticipantListPage() {

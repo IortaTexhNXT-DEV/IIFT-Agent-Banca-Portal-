@@ -4,6 +4,7 @@ import { useApiQuery } from '../../api/hooks';
 import type { Payment } from '../../api/types';
 import { QueryState } from '../../components/QueryState';
 import { PaymentDetailView } from '../../components/sales/PaymentDetailView';
+import '../../styles/sales.css';
 
 /** BO: payment submitted by an agency or bank, with a shortcut to its verification request. */
 export default function PaymentDetailPage() {

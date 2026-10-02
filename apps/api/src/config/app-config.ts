@@ -178,6 +178,11 @@ export class AppConfig {
     if (this.apiDocsEnabled) {
       problems.push('API_DOCS_ENABLED must be false in production');
     }
+    if (!this.documents.clamavHost) {
+      problems.push(
+        'CLAMAV_HOST is required in production so that uploads are scanned for malware',
+      );
+    }
     if (this.integration.mode === 'live') {
       if (!this.integration.core) problems.push('CORE_API_BASE_URL is required in live mode');
       if (!this.integration.finance) problems.push('FINANCE_API_BASE_URL is required in live mode');

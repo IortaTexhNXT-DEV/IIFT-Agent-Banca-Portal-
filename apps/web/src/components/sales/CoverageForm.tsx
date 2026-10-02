@@ -5,7 +5,6 @@ import type { QuoteOptions } from '../../api/sales-types';
 import type { PolicyDetail, Product, ProductPlan, RiskField } from '../../api/types';
 import { formatMoney } from '../../utils/format';
 import { formatTerm, ISO_DATE } from './options';
-import '../../styles/sales.css';
 
 type RiskValue = string | number | boolean | Dayjs | null | undefined;
 
@@ -95,7 +94,7 @@ function PlanOption({ plan, terms }: { plan: ProductPlan; terms: number[] }) {
       <div className="choice-card__title">{plan.name}</div>
       <div>Sum covered {formatMoney(plan.sumCovered)}</div>
       <div className="muted">{terms.map((term) => `${formatMoney(plan.contributions[String(term)])} / ${formatTerm(term)}`).join(' · ')}</div>
-      {plan.additionalCover && <div className="muted">Additional cover available (+{formatMoney(plan.additionalCover.amount)})</div>}
+      {plan.additionalCover && <div className="muted">Additional cover +{formatMoney(plan.additionalCover.amount)}</div>}
     </div>
   );
 }

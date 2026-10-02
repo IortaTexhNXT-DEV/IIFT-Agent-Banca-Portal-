@@ -12,7 +12,7 @@ interface Props {
   submitLabel: string;
   onCreated(participant: Participant): void;
   /** Action offered when the ID number is already registered (single shared profile, AP-11). */
-  duplicateAction(match: ParticipantMatch): ReactNode;
+  renderDuplicateAction(match: ParticipantMatch): ReactNode;
   onCancel?(): void;
   /** e.g. the ID type and number from an unsuccessful lookup. */
   initialValues?: ParticipantFormValues;
@@ -21,7 +21,7 @@ interface Props {
 const INDIVIDUAL_ID_TYPES = ['NRIC', 'PASSPORT'] as const;
 
 /** AP-13: register an individual or corporate participant; screened for AML on creation. */
-export function ParticipantRegistrationForm({ submitLabel, onCreated, duplicateAction, onCancel, initialValues }: Props) {
+export function ParticipantRegistrationForm({ submitLabel, onCreated, renderDuplicateAction, onCancel, initialValues }: Props) {
   const [form] = Form.useForm<ParticipantFormValues>();
   const type = Form.useWatch('type', form) ?? 'INDIVIDUAL';
   const individual = type === 'INDIVIDUAL';
@@ -61,7 +61,7 @@ export function ParticipantRegistrationForm({ submitLabel, onCreated, duplicateA
           showIcon
           title={`${duplicate.fullName} is already registered as ${duplicate.participantNo}`}
           description="Each participant has a single profile shared across agencies. Use the existing record instead of registering again."
-          action={duplicateAction(duplicate)}
+          action={renderDuplicateAction(duplicate)}
         />
       ) : (
         <ErrorAlert error={create.error} className="mb-16" />

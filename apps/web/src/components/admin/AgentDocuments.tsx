@@ -1,14 +1,15 @@
-import { DownloadOutlined, UploadOutlined } from '@ant-design/icons';
+import { UploadOutlined } from '@ant-design/icons';
 import { Alert, Button, DatePicker, Flex, Form, Modal, Select, Table, Tag, Tooltip, Typography, Upload } from 'antd';
 import type { UploadFile } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useState } from 'react';
-import { api, download } from '../../api/client';
+import { api } from '../../api/client';
 import { useApiMutation, useApiQuery } from '../../api/hooks';
 import type { Channel, DocumentView } from '../../api/types';
 import { fileSize, formatDate, formatDateTime } from '../../utils/format';
 import { ErrorAlert } from '../ErrorAlert';
 import { StatusTag } from '../StatusTag';
+import { DocumentDownloadButton } from './DocumentDownloadButton';
 import { DocumentReviewActions } from './DocumentReviewActions';
 import { useCodes } from './useCodes';
 
@@ -101,9 +102,7 @@ export function AgentDocuments({ agentId, channel, canUpload = false, canReview 
             key: 'actions',
             render: (_: unknown, doc) => (
               <Flex gap={4} align="center" className="table-actions">
-                <Tooltip title="Download">
-                  <Button type="text" icon={<DownloadOutlined />} aria-label={`Download ${doc.fileName}`} onClick={() => void download(`/common/documents/${doc.id}/content`)} />
-                </Tooltip>
+                <DocumentDownloadButton documentId={doc.id} fileName={doc.fileName} />
                 {canReview && <DocumentReviewActions document={doc} />}
               </Flex>
             ),

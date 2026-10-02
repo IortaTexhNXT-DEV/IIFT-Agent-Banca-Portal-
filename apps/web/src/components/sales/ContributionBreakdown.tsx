@@ -1,6 +1,5 @@
 import type { Money as MoneyValue } from '../../api/types';
 import { Money } from '../Money';
-import '../../styles/sales.css';
 
 interface Props {
   lines: { label: string; amount: string }[];

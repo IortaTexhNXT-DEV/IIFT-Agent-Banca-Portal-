@@ -5,7 +5,6 @@ import type { AgencyOption } from '../../api/sales-types';
 import type { PolicyPaymentStatus, PolicyStatus, Product } from '../../api/types';
 import { FilterBar } from '../FilterBar';
 import { ISO_DATE, POLICY_PAYMENT_STATUS_OPTIONS, POLICY_STATUS_OPTIONS } from './options';
-import '../../styles/sales.css';
 
 export interface PolicyFilterValues {
   search?: string;

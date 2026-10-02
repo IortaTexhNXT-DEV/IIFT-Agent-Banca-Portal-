@@ -3,6 +3,7 @@ import { useApiQuery } from '../../api/hooks';
 import type { ParticipantDetail } from '../../api/sales-types';
 import { QueryState } from '../../components/QueryState';
 import { ParticipantDetailView } from '../../components/sales/ParticipantDetailView';
+import '../../styles/sales.css';
 
 /** BO: participant profile with policies, documents, update requests and AML screening history. */
 export default function ParticipantDetailPage() {

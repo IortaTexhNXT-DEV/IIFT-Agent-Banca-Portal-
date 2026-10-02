@@ -1,6 +1,5 @@
 import { Radio, Tag, Typography } from 'antd';
 import type { Product } from '../../api/types';
-import '../../styles/sales.css';
 
 interface Props {
   products: Product[];

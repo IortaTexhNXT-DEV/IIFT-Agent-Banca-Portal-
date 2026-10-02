@@ -121,3 +121,82 @@
   color: var(--muted);
   margin: 4px 0 6px;
 }
+
+/* ---- Filter bars with trailing actions ---------------------------------- */
+
+.filter-bar__spacer {
+  flex: 1;
+}
+
+/* ---- AML ---------------------------------------------------------------- */
+
+.watchlist-replace {
+  margin-top: 12px;
+}
+
+/* ---- Audit -------------------------------------------------------------- */
+
+.audit-meta {
+  margin-top: 12px;
+}
+
+/* ---- Integration -------------------------------------------------------- */
+
+.json-block {
+  margin: 0;
+  max-height: 320px;
+  overflow: auto;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ---- Roles -------------------------------------------------------------- */
+
+.permission-group {
+  height: 100%;
+  margin: 0;
+  padding: 6px 12px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.permission-group legend {
+  width: auto;
+  margin: 0;
+  padding: 0 4px;
+  font-size: 14px;
+  border: none;
+}
+
+.permission-group > div {
+  padding: 2px 0;
+}
+
+/* ---- Workflows ---------------------------------------------------------- */
+
+.workflow-level {
+  padding-top: 6px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.workflow-level--first {
+  padding-top: 36px;
+}
+
+.workflow-step-actions--first {
+  margin-top: 30px;
+}
+
+/* ---- Products ----------------------------------------------------------- */
+
+.json-editor,
+.json-editor textarea {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}

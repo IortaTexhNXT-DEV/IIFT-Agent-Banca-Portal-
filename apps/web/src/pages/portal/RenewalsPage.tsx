@@ -12,6 +12,7 @@ import { StatusTag } from '../../components/StatusTag';
 import { PolicyLink } from '../../components/sales/PolicyTable';
 import { formatDate } from '../../utils/format';
 import { P } from '../../utils/permissions';
+import '../../styles/sales.css';
 
 function ExpiryTag({ endDate }: { endDate: string | null }) {
   if (!endDate) return null;
@@ -67,6 +68,7 @@ export default function RenewalsPage() {
                   {
                     key: 'renew',
                     align: 'right' as const,
+                    fixed: 'right' as const,
                     render: (_: unknown, policy: PolicySummary) => (
                       <Button size="small" type="primary" ghost loading={renew.isPending && renew.variables === policy.id} onClick={() => renew.mutate(policy.id)}>
                         Renew

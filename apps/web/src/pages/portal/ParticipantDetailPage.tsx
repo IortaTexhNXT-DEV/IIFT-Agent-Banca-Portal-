@@ -8,6 +8,7 @@ import { QueryState } from '../../components/QueryState';
 import { ParticipantDetailView } from '../../components/sales/ParticipantDetailView';
 import { ParticipantUpdateModal } from '../../components/sales/ParticipantUpdateModal';
 import { P } from '../../utils/permissions';
+import '../../styles/sales.css';
 
 /** AP-12/14/15: participant profile with policies and documents; changes go through approval. */
 export default function ParticipantDetailPage() {

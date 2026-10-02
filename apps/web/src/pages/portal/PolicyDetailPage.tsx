@@ -20,6 +20,7 @@ import { SignatureLinkModal } from '../../components/sales/SignatureLinkModal';
 import { SignatureModal } from '../../components/sales/SignatureModal';
 import { formatDate, formatMoney } from '../../utils/format';
 import { P } from '../../utils/permissions';
+import '../../styles/sales.css';
 
 type Dialog = Exclude<DraftAction, 'documents'> | 'endorse' | 'cancel' | 'email';
 

@@ -6,6 +6,7 @@ import type { PolicySummary } from '../../api/types';
 import { PageHeader } from '../../components/PageHeader';
 import { filtersFromUrl, type PolicyFilterValues, PolicyFilters, policyQuery } from '../../components/sales/PolicyFilters';
 import { PolicyTable } from '../../components/sales/PolicyTable';
+import '../../styles/sales.css';
 
 /** BO: every quotation and policy across agencies and banks (read-only). */
 export default function PolicyListPage() {

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import type { Participant } from '../../api/types';
 import { PageHeader } from '../../components/PageHeader';
 import { ParticipantRegistrationForm } from '../../components/sales/ParticipantRegistrationForm';
+import '../../styles/sales.css';
 
 /** AP-13/16: register an individual or corporate participant; AML screening runs on save. */
 export default function ParticipantFormPage() {
@@ -30,7 +31,7 @@ export default function ParticipantFormPage() {
           submitLabel="Register participant"
           onCreated={created}
           onCancel={() => navigate('/portal/participants')}
-          duplicateAction={(match) => (
+          renderDuplicateAction={(match) => (
             <Flex gap={8} wrap>
               <Button size="small" onClick={() => navigate(`/portal/participants/${match.id}`)}>
                 Open record

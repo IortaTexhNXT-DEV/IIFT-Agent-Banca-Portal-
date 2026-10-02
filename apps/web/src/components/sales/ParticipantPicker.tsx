@@ -155,7 +155,7 @@ export function ParticipantPicker({ onSelect }: Props) {
           submitLabel="Register and continue"
           initialValues={registration}
           onCreated={onSelect}
-          duplicateAction={(match) => (
+          renderDuplicateAction={(match) => (
             <Button size="small" type="primary" onClick={() => onSelect(match)}>
               Use existing participant
             </Button>

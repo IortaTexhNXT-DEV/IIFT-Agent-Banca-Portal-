@@ -34,7 +34,12 @@ describe('AppConfig', () => {
   });
 
   it('accepts a complete production configuration', () => {
-    const config = new AppConfig({ ...base, NODE_ENV: 'production', API_DOCS_ENABLED: 'false' });
+    const config = new AppConfig({
+      ...base,
+      NODE_ENV: 'production',
+      API_DOCS_ENABLED: 'false',
+      CLAMAV_HOST: 'clamav',
+    });
     expect(config.session.secureCookie).toBe(true);
   });
 });

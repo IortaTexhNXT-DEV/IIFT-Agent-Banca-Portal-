@@ -10,7 +10,6 @@ import { Money } from '../Money';
 import { StatusTag } from '../StatusTag';
 import { PAYMENT_STATUS_OPTIONS } from './options';
 import { useSalesLinks } from './useSalesLinks';
-import '../../styles/sales.css';
 
 type Filters = {
   search?: string;

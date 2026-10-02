@@ -7,7 +7,6 @@ import { formatDate, humanise } from '../../utils/format';
 import { FilterBar } from '../FilterBar';
 import { StatusTag } from '../StatusTag';
 import { useSalesLinks } from './useSalesLinks';
-import '../../styles/sales.css';
 
 type Filters = {
   search?: string;

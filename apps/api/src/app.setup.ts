@@ -21,7 +21,13 @@ export function configureApp(app: NestExpressApplication): void {
   app.useLogger(app.get(Logger));
   app.set('trust proxy', config.trustProxyHops);
   app.disable('x-powered-by');
-  app.use(helmet());
+  // The API only returns JSON and files, so it is never framed and loads nothing itself.
+  app.use(
+    helmet({
+      frameguard: { action: 'deny' },
+      contentSecurityPolicy: { directives: { defaultSrc: ["'none'"], frameAncestors: ["'none'"] } },
+    }),
+  );
   app.useBodyParser('json', { limit: '2mb' });
 
   // Order matters: correlation id → server-side session → per-request context.

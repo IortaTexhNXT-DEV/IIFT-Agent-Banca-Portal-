@@ -67,7 +67,7 @@
 }
 
 .product-chooser__group + .product-chooser__group {
-  margin-top: 8px;
+  margin-top: 20px;
 }
 
 .choice-cards {
@@ -98,6 +98,7 @@
 }
 
 .choice-card .ant-radio {
+  align-self: flex-start;
   margin-top: 3px;
 }
 
@@ -254,4 +255,28 @@
 .question + .question {
   border-top: 1px solid var(--border);
   padding-top: 12px;
+}
+
+.cell-form-item.ant-form-item {
+  margin-bottom: 0;
+}
+
+.policy-search {
+  max-width: 480px;
+}
+
+/* ---- Public e-signature page -------------------------------------------- */
+
+.public-page__logo {
+  display: block;
+  height: 64px;
+  width: auto;
+  margin: 0 auto 20px;
+}
+
+.public-page__footer {
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 16px;
 }

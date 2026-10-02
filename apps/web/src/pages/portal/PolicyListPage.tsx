@@ -9,6 +9,7 @@ import { PageHeader } from '../../components/PageHeader';
 import { filtersFromUrl, type PolicyFilterValues, PolicyFilters, policyQuery } from '../../components/sales/PolicyFilters';
 import { PolicyTable } from '../../components/sales/PolicyTable';
 import { P } from '../../utils/permissions';
+import '../../styles/sales.css';
 
 /** AP-21..23: the agent's (or agency's) quotations and policies with search and filters. */
 export default function PolicyListPage() {

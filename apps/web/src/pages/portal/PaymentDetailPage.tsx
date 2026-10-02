@@ -3,6 +3,7 @@ import { useApiQuery } from '../../api/hooks';
 import type { Payment } from '../../api/types';
 import { QueryState } from '../../components/QueryState';
 import { PaymentDetailView } from '../../components/sales/PaymentDetailView';
+import '../../styles/sales.css';
 
 /** AP-38..41: a submitted payment with its allocations, proof, e-Receipts and verification. */
 export default function PaymentDetailPage() {
