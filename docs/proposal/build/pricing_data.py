@@ -42,7 +42,7 @@ RECHARGE_BASIS = "disbursement"
 # ---------------------------------------------------------------------------
 ONE_TIME_ITEMS = [
     (1, "licence", "SalesVerse 2.0 software licence (Agent/Banca Portal and Back-office)",
-     "One-off, perpetual", 26_000, 22_000, True,
+     "One-off, perpetual", 32_500, 27_500, True,
      "Perpetual, non-exclusive, non-transferable enterprise licence for IIFT. Unlimited named users; "
      "production, DR and non-production environments included. Option A only."),
     (2, "implementation", "Implementation and customisation (project management, business analysis, "
@@ -793,12 +793,12 @@ SOFTWARE_COMPONENTS = [
 # Expected totals – a self-check so that a typo in the data above fails the build.
 # ---------------------------------------------------------------------------
 EXPECTED = {
-    "one_time_a": 178_000,
+    "one_time_a": 190_000,
     "one_time_b": 130_000,
     "integration_total": 30_500,
-    "amc_base": 142_500,
-    "amc_year1": 31_350,
-    "amc_5yr": 173_230,
+    "amc_base": 154_500,
+    "amc_year1": 33_990,
+    "amc_5yr": 187_816,
     "subscription_year1": 40_800,
     "cloud_setup": 15_000,
     "subscription_5yr": 225_468,
