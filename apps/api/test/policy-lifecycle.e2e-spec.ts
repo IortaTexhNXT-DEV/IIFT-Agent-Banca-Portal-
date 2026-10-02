@@ -136,6 +136,26 @@ describe('Quotation to e-Policy and e-Receipt (FFR03, AP-17..45, BO-16..19)', ()
       })
       .expect(200);
 
+    // Re-saving with the nominee id but no ID number keeps the stored (encrypted) value.
+    const [saved] = await prisma.nominee.findMany({ where: { policyId: id } });
+    await agent.agent
+      .put(`/api/v1/portal/policies/${id}/nominees`)
+      .set(csrf)
+      .send({
+        nominees: [
+          {
+            id: saved.id,
+            fullName: 'Kamal bin Ali',
+            relationship: 'PARENT',
+            role: 'NOMINEE',
+            sharePercent: 100,
+          },
+        ],
+      })
+      .expect(200);
+    const [resaved] = await prisma.nominee.findMany({ where: { policyId: id } });
+    expect(resaved.idNumberEnc).toBe(saved.idNumberEnc);
+
     const missing = await agent.agent
       .post(`/api/v1/portal/policies/${id}/submit`)
       .set(csrf)

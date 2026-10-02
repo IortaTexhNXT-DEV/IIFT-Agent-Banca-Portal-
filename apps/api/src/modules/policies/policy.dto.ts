@@ -58,6 +58,8 @@ export class QuestionnaireDto {
 }
 
 export class NomineeDto {
+  /** Existing nominee; when idNumber is omitted the stored ID number is kept. */
+  @ApiPropertyOptional() @IsOptional() @IsUUID() id?: string;
   @ApiProperty() @IsString() @MinLength(2) @MaxLength(150) fullName: string;
   @ApiPropertyOptional() @IsOptional() @Matches(/^[A-Za-z0-9-/ ]{5,30}$/) idNumber?: string;
   @ApiProperty() @IsString() @MaxLength(50) relationship: string;

@@ -9,7 +9,12 @@ import { type DataScope, DataScopeService } from '../../common/security/data-sco
 import type { SessionUser } from '../../common/security/session-user.js';
 import { addDays, businessToday, parseIsoDate } from '../../common/util/dates.js';
 import { money, sum } from '../../common/util/money.js';
-import { type Participant, Prisma, type Product } from '../../generated/prisma/client.js';
+import {
+  type Nominee,
+  type Participant,
+  Prisma,
+  type Product,
+} from '../../generated/prisma/client.js';
 import { AmlService } from '../aml/aml.service.js';
 import { AuditService } from '../audit/audit.service.js';
 import { DocumentsService } from '../documents/documents.service.js';
@@ -292,8 +297,9 @@ export class PoliciesService {
     const policy = await this.editableQuotation(user, id);
     await this.assertNominees(nominees);
     return this.prisma.$transaction(async (tx) => {
+      const stored = await tx.nominee.findMany({ where: { policyId: id } });
       await tx.nominee.deleteMany({ where: { policyId: id } });
-      await tx.nominee.createMany({ data: this.nomineeRows(id, nominees) });
+      await tx.nominee.createMany({ data: this.nomineeRows(id, nominees, stored) });
       await tx.policy.update({
         where: { id, version: policy.version },
         data: { version: { increment: 1 } },
@@ -594,6 +600,9 @@ export class PoliciesService {
     if (input.nominees) {
       await this.assertNominees(input.nominees);
     }
+    const stored = input.nominees
+      ? await this.prisma.nominee.findMany({ where: { policyId: id } })
+      : [];
     return this.prisma.$transaction((tx) =>
       this.workflow.submit(tx, {
         type: 'POLICY_ENDORSEMENT',
@@ -605,11 +614,14 @@ export class PoliciesService {
           policyNo: policy.policyNo,
           endorsementType: input.endorsementType,
           description: input.description,
-          nominees: input.nominees?.map(({ idNumber, ...nominee }) => ({
-            ...nominee,
-            idNumberEnc: idNumber ? this.crypto.encrypt(idNumber.trim()) : null,
-            idNumberMasked: idNumber ? maskIdentifier(idNumber) : null,
-          })),
+          nominees: input.nominees?.map(({ id: nomineeId, idNumber, ...nominee }) => {
+            const idNumberEnc = this.nomineeIdNumber(nomineeId, idNumber, stored);
+            return {
+              ...nominee,
+              idNumberEnc,
+              idNumberMasked: idNumberEnc ? maskIdentifier(this.crypto.decrypt(idNumberEnc)) : null,
+            };
+          }),
         } as unknown as Prisma.InputJsonValue,
       }),
     );
@@ -740,15 +752,30 @@ export class PoliciesService {
     }
   }
 
-  private nomineeRows(policyId: string, nominees: NomineeDto[]) {
+  private nomineeRows(policyId: string, nominees: NomineeDto[], stored: Nominee[]) {
     return nominees.map((n) => ({
       policyId,
       fullName: n.fullName.trim(),
-      idNumberEnc: n.idNumber ? this.crypto.encrypt(n.idNumber.trim()) : null,
+      idNumberEnc: this.nomineeIdNumber(n.id, n.idNumber, stored),
       relationship: n.relationship,
       role: n.role,
       sharePercent: money(n.sharePercent),
     }));
+  }
+
+  /**
+   * ID numbers are only ever returned masked, so a nominee that is resubmitted without
+   * one keeps the encrypted value already stored against the same nominee id.
+   */
+  private nomineeIdNumber(
+    nomineeId: string | undefined,
+    idNumber: string | undefined,
+    stored: Nominee[],
+  ): string | null {
+    if (idNumber) {
+      return this.crypto.encrypt(idNumber.trim());
+    }
+    return stored.find((row) => row.id === nomineeId)?.idNumberEnc ?? null;
   }
 
   /** Portal users act on policies in their scope; back-office users on any policy. */

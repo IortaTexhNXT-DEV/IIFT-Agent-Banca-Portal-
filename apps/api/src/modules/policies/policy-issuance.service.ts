@@ -14,6 +14,7 @@ import { NotificationsService } from '../notifications/notifications.service.js'
 import { Setting } from '../settings/setting-keys.js';
 import { SettingsService } from '../settings/settings.service.js';
 import type { ContributionLine } from '../products/rating/rating.types.js';
+import { describePlan } from '../products/plan-label.js';
 
 export const POLICY_WITH_PARTIES = {
   product: true,
@@ -132,7 +133,10 @@ export class PolicyIssuanceService {
           fields: [
             ['Product', `${policy.product.name} (${policy.product.code})`],
             ['Line of business', policy.product.lineOfBusiness],
-            ['Plan', [policy.planCode, policy.coverageType].filter(Boolean).join(' / ') || '-'],
+            [
+              'Plan',
+              describePlan(policy.product.config, policy.planCode, policy.coverageType) ?? '-',
+            ],
             ['Period of cover', `${formatDate(policy.startDate)} to ${formatDate(policy.endDate)}`],
             ['Sum covered', formatMoney(policy.sumCovered)],
             ['Date of issue', formatDate(policy.issuedAt)],

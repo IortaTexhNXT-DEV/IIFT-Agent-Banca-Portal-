@@ -13,6 +13,7 @@ import { formatMoney } from '../documents/pdf-renderer.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { Setting } from '../settings/setting-keys.js';
 import { SettingsService } from '../settings/settings.service.js';
+import { describePlan } from '../products/plan-label.js';
 
 const MAX_SIGNATURE_BYTES = 512 * 1024;
 const PNG_DATA_URL = /^data:image\/png;base64,([A-Za-z0-9+/=]+)$/;
@@ -121,7 +122,7 @@ export class ESignService {
       quotationNo: policy.quotationNo,
       participantName: request.recipientName,
       product: policy.product.name,
-      plan: [policy.planCode, policy.coverageType].filter(Boolean).join(' / ') || null,
+      plan: describePlan(policy.product.config, policy.planCode, policy.coverageType),
       sumCovered: policy.sumCovered.toFixed(2),
       contribution: policy.contribution.toFixed(2),
       termMonths: policy.termMonths,
