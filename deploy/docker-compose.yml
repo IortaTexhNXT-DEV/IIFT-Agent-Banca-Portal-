@@ -62,7 +62,9 @@ services:
       - api
 
   clamav:
-    image: clamav/clamav:stable
+    build:
+      context: ..
+      dockerfile: deploy/clamav/Dockerfile
     restart: unless-stopped
 
 volumes:

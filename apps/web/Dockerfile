@@ -11,7 +11,11 @@ COPY apps/web apps/web
 RUN npm run build --workspace apps/web
 
 FROM nginxinc/nginx-unprivileged:1.29-alpine
-COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
+# The API host is a variable so the same image serves Docker Compose (api:3000)
+# and platforms with their own service DNS, e.g. api.railway.internal:3000.
+ENV API_UPSTREAM=api:3000
+COPY apps/web/nginx/default.conf.template /etc/nginx/templates/default.conf.template
+COPY apps/web/nginx/10-resolver.envsh /docker-entrypoint.d/10-resolver.envsh
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s CMD wget -qO- http://127.0.0.1:8080/ >/dev/null || exit 1

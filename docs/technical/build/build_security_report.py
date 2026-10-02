@@ -202,7 +202,7 @@ def summarise(check):
 
 
 def nginx_headers():
-    text = (ROOT / "apps" / "web" / "nginx.conf").read_text()
+    text = (ROOT / "apps" / "web" / "nginx" / "default.conf.template").read_text()
     headers = re.findall(r'add_header\s+([\w-]+)\s+"([^"]+)"\s+always;', text)
     extras = []
     if "server_tokens off" in text:
@@ -368,7 +368,7 @@ def configuration_section(w, checks):
     w.h1("Configuration review")
     w.h2("Web-tier headers and limits (nginx)", numbered=False)
     w.table(["Directive", "Value"], nginx_headers(), widths=[4.4, 12.6], font_size=7.5, padding=20,
-            bold_first_col=True, caption="apps/web/nginx.conf")
+            bold_first_col=True, caption="apps/web/nginx/default.conf.template")
     api_headers = next((r["evidence"] for r in checks["results"] if r["id"] == "SEC-01"), {})
     w.h2("API response headers (observed)", numbered=False)
     w.table(["Header", "Value"], [[k, v if v else "Absent"] for k, v in api_headers.items()],

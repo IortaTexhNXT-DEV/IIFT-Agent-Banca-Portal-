@@ -2,7 +2,7 @@
  * Demonstration data for DEV / SIT / UAT environments and training. It drives the real
  * business services (registration, maker-checker approvals, quotation, submission,
  * payment verification, claims, issues, end-of-day), so it also acts as an end-to-end
- * smoke test of the API. Refuses to run when NODE_ENV=production.
+ * smoke test of the API. Refuses to run when NODE_ENV=production unless ALLOW_DEMO_DATA=true.
  *
  *   DEMO_PASSWORD='<password for all demo users>' npm run db:seed:demo
  */
@@ -41,7 +41,9 @@ import {
 } from '../src/modules/products/product-definitions.js';
 import { WorkflowService } from '../src/modules/workflow/workflow.service.js';
 
-if (process.env.NODE_ENV === 'production') {
+// A production build may hold demonstration data only when the environment says so
+// explicitly (a hosted demonstration or training environment), never by default.
+if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DEMO_DATA !== 'true') {
   throw new Error('Demonstration data must never be loaded into production');
 }
 const DEMO_PASSWORD = process.env.DEMO_PASSWORD ?? '';

@@ -15,3 +15,4 @@ playwright-report/
 test-results/
 docs/proposal/build/__pycache__/
 *.tsbuildinfo
+dist-seed/

@@ -11,7 +11,7 @@ RUN npm install -g npm@11.21.0 && npm ci --workspace apps/api --include-workspac
 FROM deps AS build
 COPY apps/api apps/api
 WORKDIR /app/apps/api
-RUN npx prisma generate && npx nest build
+RUN npx prisma generate && npx nest build && npx tsc -p tsconfig.seed.json
 
 # One-off job that applies database migrations and reference data before a release.
 FROM build AS migrate
@@ -26,6 +26,12 @@ COPY --from=deps /app/package.json /app/package-lock.json ./
 COPY apps/api/package.json apps/api/package.json
 RUN npm install -g npm@11.21.0 && npm ci --workspace apps/api --include-workspace-root=false --omit=dev && npm cache clean --force
 COPY --from=build /app/apps/api/dist apps/api/dist
+# Compiled seeds, schema and migrations so a release can run
+# `npx prisma migrate deploy && node dist-seed/prisma/seed.js` from this image.
+COPY --from=build /app/apps/api/dist-seed apps/api/dist-seed
+COPY apps/api/prisma/schema.prisma apps/api/prisma/schema.prisma
+COPY apps/api/prisma/migrations apps/api/prisma/migrations
+COPY apps/api/prisma.config.ts apps/api/prisma.config.ts
 RUN mkdir -p /data/documents && chown -R salesverse:salesverse /data
 USER salesverse
 WORKDIR /app/apps/api

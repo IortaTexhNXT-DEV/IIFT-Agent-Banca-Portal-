@@ -1,0 +1,11 @@
+#!/bin/sh
+# Sourced by the nginx entrypoint before the configuration template is rendered.
+# Uses the container's own name server unless DNS_RESOLVER is given explicitly.
+if [ -z "${DNS_RESOLVER:-}" ]; then
+  ns=$(awk '/^nameserver/ { print $2; exit }' /etc/resolv.conf)
+  case "$ns" in
+    *:*) DNS_RESOLVER="[$ns]" ;;
+    *)   DNS_RESOLVER="$ns" ;;
+  esac
+  export DNS_RESOLVER
+fi
