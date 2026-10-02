@@ -6,6 +6,11 @@ interface Props {
   height?: number;
 }
 
+function point(event: PointerEvent<HTMLCanvasElement>) {
+  const rect = event.currentTarget.getBoundingClientRect();
+  return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+}
+
 /** Canvas signature capture for touch and mouse (AP-62). Produces a PNG data URL. */
 export function SignaturePad({ onChange, height = 160 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -25,11 +30,6 @@ export function SignaturePad({ onChange, height = 160 }: Props) {
     context.lineJoin = 'round';
     context.strokeStyle = '#1F2A6B';
   }, [height]);
-
-  const point = (event: PointerEvent<HTMLCanvasElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
-  };
 
   const start = (event: PointerEvent<HTMLCanvasElement>) => {
     event.currentTarget.setPointerCapture(event.pointerId);

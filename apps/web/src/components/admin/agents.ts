@@ -10,7 +10,14 @@ export function idTypeLabel(idType: string): string {
   return idType === 'NRIC' ? 'IC number' : idType === 'PASSPORT' ? 'Passport number' : 'ID number';
 }
 
-export const AGENT_STATUSES: AgentStatus[] = ['PENDING', 'ACTIVE', 'INACTIVE', 'SUSPENDED', 'TERMINATED', 'REJECTED'];
+export const AGENT_STATUSES: AgentStatus[] = [
+  'PENDING',
+  'ACTIVE',
+  'INACTIVE',
+  'SUSPENDED',
+  'TERMINATED',
+  'REJECTED',
+];
 
 export const AGENT_TYPE_LABELS: Record<AgentType, string> = {
   MAIN_AGENT: 'Main agent',

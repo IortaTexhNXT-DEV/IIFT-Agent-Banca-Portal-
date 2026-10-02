@@ -10,6 +10,7 @@ export function useSalesLinks() {
     policy: (id: string) => `${base}/policies/${id}`,
     participant: (id: string) => `${base}/participants/${id}`,
     claim: (id: string) => `${base}/claims/${id}`,
-    payment: (id: string) => (backoffice ? `/backoffice/payments/${id}` : `/portal/billing/payments/${id}`),
+    payment: (id: string) =>
+      backoffice ? `/backoffice/payments/${id}` : `/portal/billing/payments/${id}`,
   };
 }

@@ -6,7 +6,11 @@ import '../../styles/sales.css';
 export default function PaymentListPage() {
   return (
     <>
-      <PageHeader title="Payments" subtitle="Contribution payments submitted by agencies and banks" breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Payments' }]} />
+      <PageHeader
+        title="Payments"
+        subtitle="Contribution payments submitted by agencies and banks"
+        breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Payments' }]}
+      />
       <PaymentList path="/backoffice/billing/payments" showAgency />
     </>
   );

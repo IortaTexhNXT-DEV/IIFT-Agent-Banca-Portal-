@@ -9,7 +9,11 @@ import { policyReference } from './options';
 import { useSalesLinks } from './useSalesLinks';
 
 /** Policy or quotation number linking to the policy page of the current module. */
-export function PolicyLink({ policy }: { policy: { id: string; policyNo: string | null; quotationNo: string } }) {
+export function PolicyLink({
+  policy,
+}: {
+  policy: { id: string; policyNo: string | null; quotationNo: string };
+}) {
   const links = useSalesLinks();
   return <Link to={links.policy(policy.id)}>{policyReference(policy)}</Link>;
 }
@@ -23,17 +27,46 @@ interface Props {
 }
 
 /** AP-21..23: quotations and policies with their workflow and payment status. */
-export function PolicyTable({ policies, loading, pagination, showAgent = false, showAgency = false }: Props) {
+export function PolicyTable({
+  policies,
+  loading,
+  pagination,
+  showAgent = false,
+  showAgency = false,
+}: Props) {
   const columns: ColumnsType<PolicySummary> = [
-    { title: 'Policy / quotation no.', key: 'reference', fixed: 'left', render: (_, policy) => <PolicyLink policy={policy} /> },
+    {
+      title: 'Policy / quotation no.',
+      key: 'reference',
+      fixed: 'left',
+      render: (_, policy) => <PolicyLink policy={policy} />,
+    },
     { title: 'Product', dataIndex: ['product', 'name'] },
     { title: 'Participant', dataIndex: ['participant', 'fullName'] },
     ...(showAgent ? [{ title: 'Agent', dataIndex: ['agent', 'fullName'] }] : []),
     ...(showAgency ? [{ title: 'Agency / bank', dataIndex: ['agency', 'name'] }] : []),
-    { title: 'Status', dataIndex: 'status', render: (status: string) => <StatusTag status={status} /> },
-    { title: 'Payment', dataIndex: 'paymentStatus', render: (status: string) => <StatusTag status={status} /> },
-    { title: 'Contribution', dataIndex: 'contribution', align: 'right', render: (value: string) => <Money value={value} /> },
-    { title: 'Outstanding', dataIndex: 'outstandingAmount', align: 'right', render: (value: string) => <Money value={value} /> },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      render: (status: string) => <StatusTag status={status} />,
+    },
+    {
+      title: 'Payment',
+      dataIndex: 'paymentStatus',
+      render: (status: string) => <StatusTag status={status} />,
+    },
+    {
+      title: 'Contribution',
+      dataIndex: 'contribution',
+      align: 'right',
+      render: (value: string) => <Money value={value} />,
+    },
+    {
+      title: 'Outstanding',
+      dataIndex: 'outstandingAmount',
+      align: 'right',
+      render: (value: string) => <Money value={value} />,
+    },
     { title: 'Created', dataIndex: 'createdAt', render: formatDate },
     { title: 'Issued', dataIndex: 'issuedAt', render: formatDate },
   ];

@@ -22,8 +22,14 @@ interface Props {
 export function PaymentDetailView({ payment, actions }: Props) {
   const { backoffice } = useSalesLinks();
   const breadcrumb = backoffice
-    ? [{ title: 'Home', to: '/backoffice' }, { title: 'Payments', to: '/backoffice/payments' }]
-    : [{ title: 'Home', to: '/portal' }, { title: 'Billing & payments', to: '/portal/billing' }];
+    ? [
+        { title: 'Home', to: '/backoffice' },
+        { title: 'Payments', to: '/backoffice/payments' },
+      ]
+    : [
+        { title: 'Home', to: '/portal' },
+        { title: 'Billing & payments', to: '/portal/billing' },
+      ];
 
   return (
     <>
@@ -54,12 +60,20 @@ export function PaymentDetailView({ payment, actions }: Props) {
               size="small"
               column={1}
               items={[
-                { key: 'amount', label: 'Total amount', children: <Money value={payment.totalAmount} strong /> },
+                {
+                  key: 'amount',
+                  label: 'Total amount',
+                  children: <Money value={payment.totalAmount} strong />,
+                },
                 { key: 'method', label: 'Method', children: humanise(payment.method) },
                 { key: 'bank', label: 'Bank', children: payment.bankName ?? '–' },
                 { key: 'reference', label: 'Reference', children: payment.referenceNo },
                 { key: 'date', label: 'Payment date', children: formatDate(payment.paymentDate) },
-                { key: 'verified', label: 'Verified', children: formatDateTime(payment.verifiedAt) },
+                {
+                  key: 'verified',
+                  label: 'Verified',
+                  children: formatDateTime(payment.verifiedAt),
+                },
                 { key: 'remarks', label: 'Remarks', children: payment.remarks ?? '–' },
               ]}
             />
@@ -73,9 +87,22 @@ export function PaymentDetailView({ payment, actions }: Props) {
               pagination={false}
               dataSource={payment.allocations}
               columns={[
-                { title: 'Policy / quotation no.', key: 'policy', render: (_, allocation) => <PolicyLink policy={allocation.policy} /> },
-                { title: 'Participant', key: 'participant', render: (_, allocation) => allocation.policy.participant.fullName },
-                { title: 'Amount', dataIndex: 'amount', align: 'right', render: (value: MoneyValue) => <Money value={value} /> },
+                {
+                  title: 'Policy / quotation no.',
+                  key: 'policy',
+                  render: (_, allocation) => <PolicyLink policy={allocation.policy} />,
+                },
+                {
+                  title: 'Participant',
+                  key: 'participant',
+                  render: (_, allocation) => allocation.policy.participant.fullName,
+                },
+                {
+                  title: 'Amount',
+                  dataIndex: 'amount',
+                  align: 'right',
+                  render: (value: MoneyValue) => <Money value={value} />,
+                },
               ]}
             />
           </Card>

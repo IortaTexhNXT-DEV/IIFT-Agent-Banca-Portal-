@@ -6,7 +6,8 @@ import { formatDateTime, formatMoney } from '../../utils/format';
 import { formatTerm } from './options';
 import type { Signer } from './SignatureModal';
 
-export type DraftAction = 'coverage' | 'questionnaire' | 'nominees' | 'documents' | 'link' | `sign-${Lowercase<Signer>}`;
+export type DraftAction =
+  'coverage' | 'questionnaire' | 'nominees' | 'documents' | 'link' | `sign-${Lowercase<Signer>}`;
 
 interface Item {
   key: string;
@@ -44,7 +45,9 @@ function checklist(policy: PolicyDetail): Item[] {
       key: 'questionnaire',
       title: 'Declarations',
       done: answered,
-      detail: answered ? 'All questions answered' : `${product.questionnaire.length} questions to answer`,
+      detail: answered
+        ? 'All questions answered'
+        : `${product.questionnaire.length} questions to answer`,
       actions: [{ action: 'questionnaire', label: answered ? 'Review answers' : 'Answer' }],
     });
   }
@@ -54,8 +57,18 @@ function checklist(policy: PolicyDetail): Item[] {
       key: 'nominees',
       title: 'Nominees',
       done: policy.nominees.length > 0,
-      detail: policy.nominees.length > 0 ? policy.nominees.map((nominee) => `${nominee.fullName} (${Number(nominee.sharePercent)}%)`).join(', ') : 'At least one nominee, beneficiary or executor',
-      actions: [{ action: 'nominees', label: policy.nominees.length > 0 ? 'Edit nominees' : 'Add nominees' }],
+      detail:
+        policy.nominees.length > 0
+          ? policy.nominees
+              .map((nominee) => `${nominee.fullName} (${Number(nominee.sharePercent)}%)`)
+              .join(', ')
+          : 'At least one nominee, beneficiary or executor',
+      actions: [
+        {
+          action: 'nominees',
+          label: policy.nominees.length > 0 ? 'Edit nominees' : 'Add nominees',
+        },
+      ],
     });
   }
 
@@ -81,7 +94,9 @@ function checklist(policy: PolicyDetail): Item[] {
   }
 
   const participantSigned = hasDocument(policy, PARTICIPANT_SIGNATURE_TYPES);
-  const pendingLink = policy.signatures.find((link) => !link.signedAt && new Date(link.expiresAt) > new Date());
+  const pendingLink = policy.signatures.find(
+    (link) => !link.signedAt && new Date(link.expiresAt) > new Date(),
+  );
   items.push({
     key: 'participant-signature',
     title: 'Participant signature',
@@ -126,7 +141,7 @@ export function CompletionChecklist({ policy, canEdit, onAction, submit }: Props
 
   return (
     <Card
-      className="content-card checklist"
+      className="content-card"
       title="Application checklist"
       extra={
         <Flex align="center" gap={12}>
@@ -139,9 +154,17 @@ export function CompletionChecklist({ policy, canEdit, onAction, submit }: Props
     >
       <div className="checklist__grid">
         {items.map((item) => (
-          <section key={item.key} className={`checklist__item${item.done ? ' checklist__item--done' : ''}`} aria-label={item.title}>
+          <section
+            key={item.key}
+            className={`checklist__item${item.done ? ' checklist__item--done' : ''}`}
+            aria-label={item.title}
+          >
             <Typography.Text type={item.done ? 'success' : 'warning'} className="checklist__icon">
-              {item.done ? <CheckCircleFilled aria-label="Complete" /> : <ExclamationCircleOutlined aria-label="To do" />}
+              {item.done ? (
+                <CheckCircleFilled aria-label="Complete" />
+              ) : (
+                <ExclamationCircleOutlined aria-label="To do" />
+              )}
             </Typography.Text>
             <div className="checklist__body">
               <div className="checklist__title">

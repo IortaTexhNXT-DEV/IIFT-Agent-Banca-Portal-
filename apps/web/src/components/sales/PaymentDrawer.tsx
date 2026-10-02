@@ -1,4 +1,19 @@
-import { Button, Col, DatePicker, Drawer, Flex, Form, Input, InputNumber, Row, Select, Table, Typography, Upload, type UploadFile } from 'antd';
+import {
+  Button,
+  Col,
+  DatePicker,
+  Drawer,
+  Flex,
+  Form,
+  Input,
+  InputNumber,
+  Row,
+  Select,
+  Table,
+  Typography,
+  Upload,
+  type UploadFile,
+} from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useState } from 'react';
 import { api } from '../../api/client';
@@ -44,11 +59,19 @@ export function PaymentDrawer({ policies, onClose, onSubmitted }: Props) {
       data.append('referenceNo', values.referenceNo.trim());
       data.append('paymentDate', values.paymentDate.format(ISO_DATE));
       if (values.remarks?.trim()) data.append('remarks', values.remarks.trim());
-      data.append('allocations', JSON.stringify(policies.map((policy) => ({ policyId: policy.id, amount: values.amounts[policy.id] }))));
+      data.append(
+        'allocations',
+        JSON.stringify(
+          policies.map((policy) => ({ policyId: policy.id, amount: values.amounts[policy.id] })),
+        ),
+      );
       data.append('proof', proof[0].originFileObj as File);
       return api.upload<Payment>('/portal/billing/payments', data);
     },
-    { invalidate: ['/portal/billing', '/portal/policies', '/portal/dashboard'], onSuccess: onSubmitted },
+    {
+      invalidate: ['/portal/billing', '/portal/policies', '/portal/dashboard'],
+      onSuccess: onSubmitted,
+    },
   );
 
   const send = () => {
@@ -90,7 +113,9 @@ export function PaymentDrawer({ policies, onClose, onSubmitted }: Props) {
         initialValues={{
           method: 'BANK_TRANSFER',
           paymentDate: dayjs(),
-          amounts: Object.fromEntries(policies.map((policy) => [policy.id, Number(policy.outstandingAmount)])),
+          amounts: Object.fromEntries(
+            policies.map((policy) => [policy.id, Number(policy.outstandingAmount)]),
+          ),
         }}
       >
         <Typography.Title level={5} className="form-section-title">
@@ -103,9 +128,18 @@ export function PaymentDrawer({ policies, onClose, onSubmitted }: Props) {
           dataSource={policies}
           className="mb-16"
           columns={[
-            { title: 'Policy / quotation no.', key: 'reference', render: (_, policy) => policyReference(policy) },
+            {
+              title: 'Policy / quotation no.',
+              key: 'reference',
+              render: (_, policy) => policyReference(policy),
+            },
             { title: 'Participant', dataIndex: ['participant', 'fullName'] },
-            { title: 'Outstanding', dataIndex: 'outstandingAmount', align: 'right', render: (value: string) => <Money value={value} /> },
+            {
+              title: 'Outstanding',
+              dataIndex: 'outstandingAmount',
+              align: 'right',
+              render: (value: string) => <Money value={value} />,
+            },
             {
               title: 'Amount paid',
               key: 'amount',
@@ -116,10 +150,22 @@ export function PaymentDrawer({ policies, onClose, onSubmitted }: Props) {
                   className="cell-form-item"
                   rules={[
                     { required: true, message: 'Enter the amount' },
-                    { type: 'number', min: 0.01, max: Number(policy.outstandingAmount), message: `Up to ${formatMoney(policy.outstandingAmount)}` },
+                    {
+                      type: 'number',
+                      min: 0.01,
+                      max: Number(policy.outstandingAmount),
+                      message: `Up to ${formatMoney(policy.outstandingAmount)}`,
+                    },
                   ]}
                 >
-                  <InputNumber aria-label={`Amount paid for ${policyReference(policy)}`} className="full-width" min={0.01} max={Number(policy.outstandingAmount)} precision={2} prefix="B$" />
+                  <InputNumber
+                    aria-label={`Amount paid for ${policyReference(policy)}`}
+                    className="full-width"
+                    min={0.01}
+                    max={Number(policy.outstandingAmount)}
+                    precision={2}
+                    prefix="B$"
+                  />
                 </Form.Item>
               ),
             },
@@ -137,7 +183,11 @@ export function PaymentDrawer({ policies, onClose, onSubmitted }: Props) {
           </Col>
           <Col xs={24} md={12}>
             <Form.Item name="bankName" label="Bank">
-              <Select allowClear loading={banks.loading} options={banks.options.map((bank) => ({ value: bank.label, label: bank.label }))} />
+              <Select
+                allowClear
+                loading={banks.loading}
+                options={banks.options.map((bank) => ({ value: bank.label, label: bank.label }))}
+              />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
@@ -145,23 +195,44 @@ export function PaymentDrawer({ policies, onClose, onSubmitted }: Props) {
               name="referenceNo"
               label="Bank reference"
               rules={[
-                { required: true, whitespace: true, message: 'Enter the transaction or cheque reference' },
-                { pattern: /^[A-Za-z0-9\-/ ]{3,50}$/, message: '3 to 50 letters, digits, spaces, - or /' },
+                {
+                  required: true,
+                  whitespace: true,
+                  message: 'Enter the transaction or cheque reference',
+                },
+                {
+                  pattern: /^[A-Za-z0-9\-/ ]{3,50}$/,
+                  message: '3 to 50 letters, digits, spaces, - or /',
+                },
               ]}
             >
               <Input maxLength={50} />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
-            <Form.Item name="paymentDate" label="Payment date" rules={[{ required: true, message: 'Choose the payment date' }]}>
-              <DatePicker className="full-width" format="DD MMM YYYY" disabledDate={(date) => date.isAfter(dayjs(), 'day')} />
+            <Form.Item
+              name="paymentDate"
+              label="Payment date"
+              rules={[{ required: true, message: 'Choose the payment date' }]}
+            >
+              <DatePicker
+                className="full-width"
+                format="DD MMM YYYY"
+                disabledDate={(date) => date.isAfter(dayjs(), 'day')}
+              />
             </Form.Item>
           </Col>
         </Row>
         <Form.Item name="remarks" label="Remarks" rules={[{ max: 500 }]}>
           <Input.TextArea rows={2} maxLength={500} />
         </Form.Item>
-        <Form.Item label="Proof of payment" required extra="Bank slip, transfer confirmation or cheque copy – PDF, PNG or JPEG" validateStatus={proofMissing ? 'error' : undefined} help={proofMissing ? 'Attach the proof of payment' : undefined}>
+        <Form.Item
+          label="Proof of payment"
+          required
+          extra="Bank slip, transfer confirmation or cheque copy – PDF, PNG or JPEG"
+          validateStatus={proofMissing ? 'error' : undefined}
+          help={proofMissing ? 'Attach the proof of payment' : undefined}
+        >
           <Upload.Dragger
             accept={ACCEPT}
             maxCount={1}

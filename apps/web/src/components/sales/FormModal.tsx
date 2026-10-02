@@ -17,7 +17,19 @@ interface Props<T> {
 }
 
 /** Modal around a vertical form: validates, submits and shows the server's error details. */
-export function FormModal<T>({ title, okText, form, onSubmit, onClose, pending, error, children, initialValues, width, danger = false }: Props<T>) {
+export function FormModal<T>({
+  title,
+  okText,
+  form,
+  onSubmit,
+  onClose,
+  pending,
+  error,
+  children,
+  initialValues,
+  width,
+  danger = false,
+}: Props<T>) {
   return (
     <Modal
       open

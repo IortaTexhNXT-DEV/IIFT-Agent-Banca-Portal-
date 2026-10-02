@@ -6,7 +6,9 @@ import { occupationClassLabel } from './ParticipantProfile';
 import { useCodes } from './useCodes';
 
 /** Form values: as CreateParticipantDto, with the date of birth as a date picker value. */
-export type ParticipantFormValues = Partial<Omit<ParticipantInput, 'dateOfBirth'>> & { dateOfBirth?: Dayjs | null };
+export type ParticipantFormValues = Partial<Omit<ParticipantInput, 'dateOfBirth'>> & {
+  dateOfBirth?: Dayjs | null;
+};
 
 /** Trims text, drops empty values and formats the date of birth for the API. */
 export function toParticipantPayload(values: ParticipantFormValues): Partial<ParticipantInput> {
@@ -23,7 +25,10 @@ export function toParticipantPayload(values: ParticipantFormValues): Partial<Par
   return payload;
 }
 
-const OCCUPATION_CLASS_OPTIONS = [1, 2, 3, 4].map((value) => ({ value, label: occupationClassLabel(value) }));
+const OCCUPATION_CLASS_OPTIONS = [1, 2, 3, 4].map((value) => ({
+  value,
+  label: occupationClassLabel(value),
+}));
 
 /**
  * Particulars and contact details shared by registration and update requests, with the
@@ -50,8 +55,16 @@ export function ParticipantDetailsFields({ individual }: { individual: boolean }
       </Col>
       {individual ? (
         <Col xs={24} md={12}>
-          <Form.Item name="dateOfBirth" label="Date of birth" rules={[{ required: true, message: 'Enter the date of birth' }]}>
-            <DatePicker className="full-width" format="DD MMM YYYY" disabledDate={(date) => date.isAfter(dayjs(), 'day')} />
+          <Form.Item
+            name="dateOfBirth"
+            label="Date of birth"
+            rules={[{ required: true, message: 'Enter the date of birth' }]}
+          >
+            <DatePicker
+              className="full-width"
+              format="DD MMM YYYY"
+              disabledDate={(date) => date.isAfter(dayjs(), 'day')}
+            />
           </Form.Item>
         </Col>
       ) : (
@@ -62,36 +75,71 @@ export function ParticipantDetailsFields({ individual }: { individual: boolean }
         </Col>
       )}
       <Col xs={24} md={12}>
-        <Form.Item name="nationality" label={individual ? 'Nationality' : 'Country of registration'}>
-          <Select allowClear showSearch={{ optionFilterProp: 'label' }} options={nationalities.options} loading={nationalities.loading} />
+        <Form.Item
+          name="nationality"
+          label={individual ? 'Nationality' : 'Country of registration'}
+        >
+          <Select
+            allowClear
+            showSearch={{ optionFilterProp: 'label' }}
+            options={nationalities.options}
+            loading={nationalities.loading}
+          />
         </Form.Item>
       </Col>
       {individual && (
         <>
           <Col xs={24} md={12}>
             <Form.Item name="occupation" label="Occupation">
-              <Select allowClear showSearch={{ optionFilterProp: 'label' }} options={occupations.options} loading={occupations.loading} />
+              <Select
+                allowClear
+                showSearch={{ optionFilterProp: 'label' }}
+                options={occupations.options}
+                loading={occupations.loading}
+              />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
-            <Form.Item name="occupationClass" label="Occupational class" extra="Class I: professional, managerial, administrative – no manual work">
+            <Form.Item
+              name="occupationClass"
+              label="Occupational class"
+              extra="Class I: professional, managerial, administrative – no manual work"
+            >
               <Select allowClear options={OCCUPATION_CLASS_OPTIONS} />
             </Form.Item>
           </Col>
         </>
       )}
       <Col xs={24} md={12}>
-        <Form.Item name="mobile" label="Mobile" rules={[{ required: true, message: 'Enter the mobile number' }, { pattern: /^\+?[0-9]{7,15}$/, message: '7 to 15 digits, optionally starting with +' }]}>
+        <Form.Item
+          name="mobile"
+          label="Mobile"
+          rules={[
+            { required: true, message: 'Enter the mobile number' },
+            { pattern: /^\+?[0-9]{7,15}$/, message: '7 to 15 digits, optionally starting with +' },
+          ]}
+        >
           <Input inputMode="tel" maxLength={16} />
         </Form.Item>
       </Col>
       <Col xs={24} md={12}>
-        <Form.Item name="email" label="E-mail" rules={[{ type: 'email', message: 'Enter a valid e-mail address' }, { max: 254 }]}>
+        <Form.Item
+          name="email"
+          label="E-mail"
+          rules={[{ type: 'email', message: 'Enter a valid e-mail address' }, { max: 254 }]}
+        >
           <Input inputMode="email" maxLength={254} />
         </Form.Item>
       </Col>
       <Col xs={24} md={12}>
-        <Form.Item name="addressLine1" label="Address line 1" rules={[{ required: true, whitespace: true, message: 'Enter the address' }, { min: 3, max: 200 }]}>
+        <Form.Item
+          name="addressLine1"
+          label="Address line 1"
+          rules={[
+            { required: true, whitespace: true, message: 'Enter the address' },
+            { min: 3, max: 200 },
+          ]}
+        >
           <Input maxLength={200} />
         </Form.Item>
       </Col>
@@ -101,7 +149,11 @@ export function ParticipantDetailsFields({ individual }: { individual: boolean }
         </Form.Item>
       </Col>
       <Col xs={24} md={12}>
-        <Form.Item name="postcode" label="Postcode" rules={[{ pattern: /^[A-Za-z0-9 ]{2,10}$/, message: '2 to 10 letters or digits' }]}>
+        <Form.Item
+          name="postcode"
+          label="Postcode"
+          rules={[{ pattern: /^[A-Za-z0-9 ]{2,10}$/, message: '2 to 10 letters or digits' }]}
+        >
           <Input maxLength={10} />
         </Form.Item>
       </Col>

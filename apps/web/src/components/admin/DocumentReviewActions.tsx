@@ -7,12 +7,18 @@ import { RemarksModal } from './RemarksModal';
 
 type Decision = { decision: 'VERIFIED' | 'REJECTED'; remarks?: string };
 
-function useReview(documentId: string, options: { onSuccess?: () => void; onError?: (error: Error) => void }) {
-  return useApiMutation((body: Decision) => api.post<DocumentView>(`/backoffice/documents/${documentId}/review`, body), {
-    success: 'Document review recorded',
-    invalidate: ['/common/documents', '/backoffice'],
-    ...options,
-  });
+function useReview(
+  documentId: string,
+  options: { onSuccess?: () => void; onError?: (error: Error) => void },
+) {
+  return useApiMutation(
+    (body: Decision) => api.post<DocumentView>(`/backoffice/documents/${documentId}/review`, body),
+    {
+      success: 'Document review recorded',
+      invalidate: ['/common/documents', '/backoffice'],
+      ...options,
+    },
+  );
 }
 
 /** BO-11/12: verify or reject an uploaded document (rejection needs remarks). */

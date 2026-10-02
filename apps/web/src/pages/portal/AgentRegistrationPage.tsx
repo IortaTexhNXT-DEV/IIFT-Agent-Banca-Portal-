@@ -7,7 +7,11 @@ import type { RegisterAgentInput } from '../../api/admin-types';
 import type { Agency, AgentType, AgentView, Page } from '../../api/types';
 import { useAuth } from '../../auth/AuthContext';
 import { AgentDocuments } from '../../components/admin/AgentDocuments';
-import { AgentFormFields, type AgentFormValues, toRegisterInput } from '../../components/admin/AgentFormFields';
+import {
+  AgentFormFields,
+  type AgentFormValues,
+  toRegisterInput,
+} from '../../components/admin/AgentFormFields';
 import { AGENT_TYPE_LABELS, PARENT_TYPE } from '../../components/admin/agents';
 import { ErrorAlert } from '../../components/ErrorAlert';
 import { PageHeader } from '../../components/PageHeader';
@@ -25,7 +29,11 @@ const PORTAL_TYPE: Record<Agency['channel'], AgentType> = { AGENCY: 'SUB_AGENT',
 function ReportingLineField({ agentType }: { agentType: AgentType }) {
   const { user, can } = useAuth();
   const parentType = PARENT_TYPE[agentType];
-  const candidates = useApiQuery<Page<AgentView>>(parentType ? '/portal/agents' : null, { agentType: parentType, status: 'ACTIVE', pageSize: 100 });
+  const candidates = useApiQuery<Page<AgentView>>(parentType ? '/portal/agents' : null, {
+    agentType: parentType,
+    status: 'ACTIVE',
+    pageSize: 100,
+  });
   // Without agency-wide access a user may only register agents under themselves.
   const options = (candidates.data?.items ?? [])
     .filter((agent) => can(P.portalAgencyWideView) || agent.id === user?.agentId)
@@ -36,34 +44,70 @@ function ReportingLineField({ agentType }: { agentType: AgentType }) {
     <Form.Item
       name="parentAgentId"
       label="Reports to"
-      extra={agentType === 'BANKER' ? 'Leave empty if the officer does not report to a senior bank officer' : undefined}
-      rules={[{ required: agentType === 'SUB_AGENT', message: 'Choose the main agent this sub-agent reports to' }]}
+      extra={
+        agentType === 'BANKER'
+          ? 'Leave empty if the officer does not report to a senior bank officer'
+          : undefined
+      }
+      rules={[
+        {
+          required: agentType === 'SUB_AGENT',
+          message: 'Choose the main agent this sub-agent reports to',
+        },
+      ]}
     >
-      <Select allowClear={agentType === 'BANKER'} loading={candidates.isLoading} options={options} showSearch={{ optionFilterProp: 'label' }} />
+      <Select
+        allowClear={agentType === 'BANKER'}
+        loading={candidates.isLoading}
+        options={options}
+        showSearch={{ optionFilterProp: 'label' }}
+      />
     </Form.Item>
   );
 }
 
-function RegistrationForm({ agency, onRegistered }: { agency: Agency; onRegistered(agent: AgentView): void }) {
+function RegistrationForm({
+  agency,
+  onRegistered,
+}: {
+  agency: Agency;
+  onRegistered(agent: AgentView): void;
+}) {
   const { user } = useAuth();
   const [form] = Form.useForm<FormValues>();
   const agentType = PORTAL_TYPE[agency.channel];
-  const register = useApiMutation((input: RegisterAgentInput) => api.post<AgentView>('/portal/agents', input), {
-    success: 'Registration submitted',
-    invalidate: ['/portal/agents', '/portal/hierarchy', '/portal/agency', '/portal/requests'],
-    onSuccess: onRegistered,
-  });
+  const register = useApiMutation(
+    (input: RegisterAgentInput) => api.post<AgentView>('/portal/agents', input),
+    {
+      success: 'Registration submitted',
+      invalidate: ['/portal/agents', '/portal/hierarchy', '/portal/agency', '/portal/requests'],
+      onSuccess: onRegistered,
+    },
+  );
 
   return (
     <Card title={`${AGENT_TYPE_LABELS[agentType]} details`} className="content-card">
-      {agency.status !== 'ACTIVE' && <Alert className="mb-16" type="error" showIcon title="Registrations are only accepted while your agency or bank is active" />}
+      {agency.status !== 'ACTIVE' && (
+        <Alert
+          className="mb-16"
+          type="error"
+          showIcon
+          title="Registrations are only accepted while your agency or bank is active"
+        />
+      )}
       <ErrorAlert error={register.error} className="mb-16" />
       <Form<FormValues>
         form={form}
         layout="vertical"
         requiredMark="optional"
         initialValues={{ idType: 'NRIC', parentAgentId: user?.agentId }}
-        onFinish={(values) => register.mutate({ ...toRegisterInput(values), agentType, parentAgentId: values.parentAgentId })}
+        onFinish={(values) =>
+          register.mutate({
+            ...toRegisterInput(values),
+            agentType,
+            parentAgentId: values.parentAgentId,
+          })
+        }
       >
         <Row gutter={16}>
           <Col xs={24} md={12}>
@@ -72,7 +116,12 @@ function RegistrationForm({ agency, onRegistered }: { agency: Agency; onRegister
         </Row>
         <AgentFormFields />
         <Flex justify="flex-end">
-          <Button type="primary" htmlType="submit" loading={register.isPending} disabled={agency.status !== 'ACTIVE'}>
+          <Button
+            type="primary"
+            htmlType="submit"
+            loading={register.isPending}
+            disabled={agency.status !== 'ACTIVE'}
+          >
             Submit registration
           </Button>
         </Flex>
@@ -83,11 +132,23 @@ function RegistrationForm({ agency, onRegistered }: { agency: Agency; onRegister
 
 const AML_OUTCOME: Record<string, { type: 'success' | 'warning' | 'info'; text: string }> = {
   CLEAR: { type: 'success', text: 'No watch-list match was found.' },
-  FLAGGED: { type: 'warning', text: 'A possible watch-list match was found. IIFT Compliance will review it before the registration can be approved.' },
-  NOT_SCREENED: { type: 'info', text: 'Screening has not been completed yet. IIFT will screen the applicant before approval.' },
+  FLAGGED: {
+    type: 'warning',
+    text: 'A possible watch-list match was found. IIFT Compliance will review it before the registration can be approved.',
+  },
+  NOT_SCREENED: {
+    type: 'info',
+    text: 'Screening has not been completed yet. IIFT will screen the applicant before approval.',
+  },
 };
 
-function RegistrationSubmitted({ agent, onRegisterAnother }: { agent: AgentView; onRegisterAnother(): void }) {
+function RegistrationSubmitted({
+  agent,
+  onRegisterAnother,
+}: {
+  agent: AgentView;
+  onRegisterAnother(): void;
+}) {
   const navigate = useNavigate();
   const aml = AML_OUTCOME[agent.amlStatus] ?? AML_OUTCOME.NOT_SCREENED;
   return (
@@ -100,11 +161,25 @@ function RegistrationSubmitted({ agent, onRegisterAnother }: { agent: AgentView;
           items={[
             { key: 'code', label: 'Agent code', children: <strong>{agent.agentCode}</strong> },
             { key: 'name', label: 'Name', children: agent.fullName },
-            { key: 'status', label: 'Status', children: <StatusTag status={agent.status} label="Pending approval" /> },
-            { key: 'aml', label: 'AML screening', children: <StatusTag status={agent.amlStatus} /> },
+            {
+              key: 'status',
+              label: 'Status',
+              children: <StatusTag status={agent.status} label="Pending approval" />,
+            },
+            {
+              key: 'aml',
+              label: 'AML screening',
+              children: <StatusTag status={agent.amlStatus} />,
+            },
           ]}
         />
-        <Alert className="mb-16" type={aml.type} showIcon title="AML/KYC screening" description={aml.text} />
+        <Alert
+          className="mb-16"
+          type={aml.type}
+          showIcon
+          title="AML/KYC screening"
+          description={aml.text}
+        />
         <Alert
           type="info"
           showIcon
@@ -113,7 +188,13 @@ function RegistrationSubmitted({ agent, onRegisterAnother }: { agent: AgentView;
         />
       </Card>
       <Card className="content-card">
-        <AgentDocuments agentId={agent.id} channel={agent.agency.channel} canUpload checkRequired title="Supporting documents" />
+        <AgentDocuments
+          agentId={agent.id}
+          channel={agent.agency.channel}
+          canUpload
+          checkRequired
+          title="Supporting documents"
+        />
       </Card>
       <Flex gap={8} justify="flex-end">
         <Button onClick={onRegisterAnother}>Register another</Button>
@@ -137,7 +218,8 @@ export default function AgentRegistrationPage() {
       <PageHeader
         title={title}
         subtitle={agency.data && `Registering under ${agency.data.name} (${agency.data.code})`}
-        breadcrumb={[{ title: 'Team & hierarchy', to: '/portal/team' }, { title }]} />
+        breadcrumb={[{ title: 'Team & hierarchy', to: '/portal/team' }, { title }]}
+      />
       <Card className="content-card">
         <Steps
           current={registered ? 1 : 0}
@@ -151,7 +233,10 @@ export default function AgentRegistrationPage() {
       <QueryState query={agency}>
         {(data) =>
           registered ? (
-            <RegistrationSubmitted agent={registered} onRegisterAnother={() => setRegistered(undefined)} />
+            <RegistrationSubmitted
+              agent={registered}
+              onRegisterAnother={() => setRegistered(undefined)}
+            />
           ) : (
             <RegistrationForm agency={data} onRegistered={setRegistered} />
           )

@@ -4,7 +4,12 @@ import { useSearchParams } from 'react-router';
 import { usePagedQuery } from '../../api/hooks';
 import type { PolicySummary } from '../../api/types';
 import { PageHeader } from '../../components/PageHeader';
-import { filtersFromUrl, type PolicyFilterValues, PolicyFilters, policyQuery } from '../../components/sales/PolicyFilters';
+import {
+  filtersFromUrl,
+  type PolicyFilterValues,
+  PolicyFilters,
+  policyQuery,
+} from '../../components/sales/PolicyFilters';
 import { PolicyTable } from '../../components/sales/PolicyTable';
 import '../../styles/sales.css';
 
@@ -16,7 +21,11 @@ export default function PolicyListPage() {
 
   return (
     <>
-      <PageHeader title="Policies" subtitle="Quotations and policies from all agencies and banks" breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Policies' }]} />
+      <PageHeader
+        title="Policies"
+        subtitle="Quotations and policies from all agencies and banks"
+        breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Policies' }]}
+      />
       <PolicyFilters
         value={filters}
         showAgency
@@ -26,7 +35,13 @@ export default function PolicyListPage() {
         }}
       />
       <Card className="content-card" styles={{ body: { padding: 0 } }}>
-        <PolicyTable policies={policies.items} loading={policies.isFetching} pagination={policies.pagination} showAgent showAgency />
+        <PolicyTable
+          policies={policies.items}
+          loading={policies.isFetching}
+          pagination={policies.pagination}
+          showAgent
+          showAgency
+        />
       </Card>
     </>
   );

@@ -33,6 +33,8 @@ export interface QuoteRequest extends QuoteOptions {
 }
 
 export interface NomineeInput {
+  /** Existing nominee; the API keeps its stored ID number when idNumber is left blank. */
+  id?: string;
   fullName: string;
   idNumber?: string;
   relationship: string;

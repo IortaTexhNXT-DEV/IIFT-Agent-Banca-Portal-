@@ -16,13 +16,19 @@ function ScalarList({ entries }: { entries: [string, unknown][] }) {
       bordered
       column={{ xs: 1, md: 2 }}
       className="mb-16"
-      items={entries.map(([key, value]) => ({ key, label: keyLabel(key), children: formatValue(key, value) }))}
+      items={entries.map(([key, value]) => ({
+        key,
+        label: keyLabel(key),
+        children: formatValue(key, value),
+      }))}
     />
   );
 }
 
 function ObjectTable({ name, rows }: { name: string; rows: Payload[] }) {
-  const columns = [...new Set(rows.flatMap((row) => Object.keys(row)))].filter((key) => !isHiddenKey(key));
+  const columns = [...new Set(rows.flatMap((row) => Object.keys(row)))].filter(
+    (key) => !isHiddenKey(key),
+  );
   return (
     <Table<Payload & { rowKey: string }>
       size="small"
@@ -30,7 +36,11 @@ function ObjectTable({ name, rows }: { name: string; rows: Payload[] }) {
       rowKey="rowKey"
       dataSource={rows.map((row, index) => ({ ...row, rowKey: `${name}-${index}` }))}
       scroll={{ x: 'max-content' }}
-      columns={columns.map((key) => ({ key, title: keyLabel(key), render: (_: unknown, row: Payload) => formatValue(key, row[key]) }))}
+      columns={columns.map((key) => ({
+        key,
+        title: keyLabel(key),
+        render: (_: unknown, row: Payload) => formatValue(key, row[key]),
+      }))}
     />
   );
 }
@@ -69,7 +79,10 @@ export function PayloadView({ payload }: { payload: Payload }) {
   const isChangeRequest = isRecord(changes);
   const entries = visibleEntries(isChangeRequest ? rest : payload);
   const scalars = entries.filter(([, value]) => !isRecord(value) && !Array.isArray(value));
-  const sections = entries.filter((entry): entry is [string, unknown[] | Payload] => isRecord(entry[1]) || Array.isArray(entry[1]));
+  const sections = entries.filter(
+    (entry): entry is [string, unknown[] | Payload] =>
+      isRecord(entry[1]) || Array.isArray(entry[1]),
+  );
 
   return (
     <>
@@ -77,7 +90,12 @@ export function PayloadView({ payload }: { payload: Payload }) {
       {isChangeRequest && (
         <div className="payload-section">
           <Typography.Title level={5}>Requested changes</Typography.Title>
-          <ChangeTable before={before} after={changes} beforeTitle="Current" afterTitle="Requested" />
+          <ChangeTable
+            before={before}
+            after={changes}
+            beforeTitle="Current"
+            afterTitle="Requested"
+          />
         </div>
       )}
       {sections.map(([name, value]) => (

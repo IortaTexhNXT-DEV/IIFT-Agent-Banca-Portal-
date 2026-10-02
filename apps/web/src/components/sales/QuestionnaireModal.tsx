@@ -12,13 +12,22 @@ export function QuestionnaireModal({ policy, onClose }: { policy: PolicyDetail; 
   const [form] = Form.useForm<Values>();
   const questions = policy.product.questionnaire;
   const answers = Form.useWatch([], form);
-  const save = useApiMutation((body: { answers: QuestionnaireAnswer[] }) => api.put(`/portal/policies/${policy.id}/questionnaire`, body), {
-    success: 'Declarations saved',
-    invalidate: ['/portal/policies'],
-    onSuccess: onClose,
-  });
+  const save = useApiMutation(
+    (body: { answers: QuestionnaireAnswer[] }) =>
+      api.put(`/portal/policies/${policy.id}/questionnaire`, body),
+    {
+      success: 'Declarations saved',
+      invalidate: ['/portal/policies'],
+      onSuccess: onClose,
+    },
+  );
 
-  const initialValues: Values = Object.fromEntries((policy.questionnaire ?? []).map((answer) => [answer.code, { answer: answer.answer, details: answer.details }]));
+  const initialValues: Values = Object.fromEntries(
+    (policy.questionnaire ?? []).map((answer) => [
+      answer.code,
+      { answer: answer.answer, details: answer.details },
+    ]),
+  );
 
   const submit = (values: Values) =>
     save.mutate({
@@ -29,10 +38,24 @@ export function QuestionnaireModal({ policy, onClose }: { policy: PolicyDetail; 
     });
 
   return (
-    <FormModal<Values> title="Declarations" okText="Save declarations" form={form} initialValues={initialValues} onSubmit={submit} onClose={onClose} pending={save.isPending} error={save.error} width={720}>
+    <FormModal<Values>
+      title="Declarations"
+      okText="Save declarations"
+      form={form}
+      initialValues={initialValues}
+      onSubmit={submit}
+      onClose={onClose}
+      pending={save.isPending}
+      error={save.error}
+      width={720}
+    >
       {questions.map((question, index) => (
         <div key={question.code} className="question">
-          <Form.Item name={[question.code, 'answer']} label={`${index + 1}. ${question.text}`} rules={[{ required: true, message: 'Answer yes or no' }]}>
+          <Form.Item
+            name={[question.code, 'answer']}
+            label={`${index + 1}. ${question.text}`}
+            rules={[{ required: true, message: 'Answer yes or no' }]}
+          >
             <Radio.Group
               options={[
                 { value: false, label: 'No' },
@@ -44,7 +67,9 @@ export function QuestionnaireModal({ policy, onClose }: { policy: PolicyDetail; 
             <Form.Item
               name={[question.code, 'details']}
               label="Details"
-              extra={question.referIfYes ? 'A "yes" answer is referred to IIFT underwriting.' : undefined}
+              extra={
+                question.referIfYes ? 'A "yes" answer is referred to IIFT underwriting.' : undefined
+              }
               rules={[
                 { required: true, whitespace: true, message: 'Give details for a "yes" answer' },
                 { max: 500, message: 'Up to 500 characters' },

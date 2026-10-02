@@ -7,11 +7,23 @@ import { policyReference } from './options';
 import { useSalesLinks } from './useSalesLinks';
 
 /** Policy / quotation number with workflow and payment status, product and participant. */
-export function PolicyPageHeader({ policy, actions }: { policy: PolicyDetail; actions?: ReactNode }) {
+export function PolicyPageHeader({
+  policy,
+  actions,
+}: {
+  policy: PolicyDetail;
+  actions?: ReactNode;
+}) {
   const { backoffice } = useSalesLinks();
   const breadcrumb = backoffice
-    ? [{ title: 'Home', to: '/backoffice' }, { title: 'Policies', to: '/backoffice/policies' }]
-    : [{ title: 'Home', to: '/portal' }, { title: 'Quotations & policies', to: '/portal/policies' }];
+    ? [
+        { title: 'Home', to: '/backoffice' },
+        { title: 'Policies', to: '/backoffice/policies' },
+      ]
+    : [
+        { title: 'Home', to: '/portal' },
+        { title: 'Quotations & policies', to: '/portal/policies' },
+      ];
   const reference = policyReference(policy);
 
   return (

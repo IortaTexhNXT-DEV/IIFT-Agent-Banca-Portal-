@@ -14,11 +14,21 @@ type Filters = {
   amlStatus?: AmlStatus;
 };
 
-const TYPE_OPTIONS = (['INDIVIDUAL', 'CORPORATE'] as const).map((value) => ({ value, label: humanise(value) }));
-const AML_OPTIONS = (['CLEAR', 'FLAGGED', 'REJECTED', 'NOT_SCREENED'] as const).map((value) => ({ value, label: humanise(value) }));
+const TYPE_OPTIONS = (['INDIVIDUAL', 'CORPORATE'] as const).map((value) => ({
+  value,
+  label: humanise(value),
+}));
+const AML_OPTIONS = (['CLEAR', 'FLAGGED', 'REJECTED', 'NOT_SCREENED'] as const).map((value) => ({
+  value,
+  label: humanise(value),
+}));
 
 /** AP-11/12: searchable participant register (portal: own agency; back-office: all). */
-export function ParticipantList({ path }: { path: '/portal/participants' | '/backoffice/participants' }) {
+export function ParticipantList({
+  path,
+}: {
+  path: '/portal/participants' | '/backoffice/participants';
+}) {
   const links = useSalesLinks();
   const [filters, setFilters] = useState<Filters>({});
   const participants = usePagedQuery<Participant>(path, filters);
@@ -37,8 +47,24 @@ export function ParticipantList({ path }: { path: '/portal/participants' | '/bac
           onSearch={(search) => set({ search: search.trim() || undefined })}
           className="filter-search"
         />
-        <Select placeholder="Type" aria-label="Participant type" allowClear options={TYPE_OPTIONS} value={filters.type} onChange={(type) => set({ type })} className="filter-select" />
-        <Select placeholder="AML status" aria-label="AML status" allowClear options={AML_OPTIONS} value={filters.amlStatus} onChange={(amlStatus) => set({ amlStatus })} className="filter-select" />
+        <Select
+          placeholder="Type"
+          aria-label="Participant type"
+          allowClear
+          options={TYPE_OPTIONS}
+          value={filters.type}
+          onChange={(type) => set({ type })}
+          className="filter-select"
+        />
+        <Select
+          placeholder="AML status"
+          aria-label="AML status"
+          allowClear
+          options={AML_OPTIONS}
+          value={filters.amlStatus}
+          onChange={(amlStatus) => set({ amlStatus })}
+          className="filter-select"
+        />
       </FilterBar>
       <Card className="content-card" styles={{ body: { padding: 0 } }}>
         <Table<Participant>
@@ -50,13 +76,23 @@ export function ParticipantList({ path }: { path: '/portal/participants' | '/bac
           scroll={{ x: 'max-content' }}
           locale={{ emptyText: 'No participants match the filters' }}
           columns={[
-            { title: 'Participant no.', dataIndex: 'participantNo', render: (value: string, participant) => <Link to={links.participant(participant.id)}>{value}</Link> },
+            {
+              title: 'Participant no.',
+              dataIndex: 'participantNo',
+              render: (value: string, participant) => (
+                <Link to={links.participant(participant.id)}>{value}</Link>
+              ),
+            },
             { title: 'Name', dataIndex: 'fullName' },
             { title: 'Type', dataIndex: 'type', render: humanise },
             { title: 'ID', dataIndex: 'idNumberMasked' },
             { title: 'Date of birth', dataIndex: 'dateOfBirth', render: formatDate },
             { title: 'Mobile', dataIndex: 'mobile' },
-            { title: 'AML', dataIndex: 'amlStatus', render: (status: string) => <StatusTag status={status} /> },
+            {
+              title: 'AML',
+              dataIndex: 'amlStatus',
+              render: (status: string) => <StatusTag status={status} />,
+            },
             { title: 'Registered', dataIndex: 'createdAt', render: formatDate },
           ]}
         />

@@ -19,7 +19,8 @@ function guidanceFor(error: unknown): ReactNode {
     case 'AML_NOT_CLEARED':
       return (
         <>
-          Compliance must clear the AML screening first. Review the case under <Link to="/backoffice/aml">AML / KYC</Link>, then approve again.
+          Compliance must clear the AML screening first. Review the case under{' '}
+          <Link to="/backoffice/aml">AML / KYC</Link>, then approve again.
         </>
       );
     case 'DOCUMENTS_MISSING':
@@ -33,7 +34,10 @@ function guidanceFor(error: unknown): ReactNode {
 export function ApprovalDecision({ request }: { request: ApprovalRequest }) {
   const [decision, setDecision] = useState<Decision>();
   const decide = useApiMutation(
-    ({ action, remarks }: { action: Decision; remarks: string }) => api.post<ApprovalRequest>(`/backoffice/approvals/${request.id}/${action}`, { remarks: remarks || undefined }),
+    ({ action, remarks }: { action: Decision; remarks: string }) =>
+      api.post<ApprovalRequest>(`/backoffice/approvals/${request.id}/${action}`, {
+        remarks: remarks || undefined,
+      }),
     {
       success: decision === 'approve' ? 'Request approved' : 'Request rejected',
       invalidate: ['/backoffice', '/common/notifications'],

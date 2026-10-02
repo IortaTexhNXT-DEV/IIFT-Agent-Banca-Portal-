@@ -18,13 +18,19 @@ import '../../styles/sales.css';
 export default function CommissionPage() {
   const { can } = useAuth();
   const [period, setPeriod] = useState<Dayjs | null>(null);
-  const commissions = usePagedQuery<Commission>('/portal/billing/commissions', { period: period?.format('YYYY-MM') });
+  const commissions = usePagedQuery<Commission>('/portal/billing/commissions', {
+    period: period?.format('YYYY-MM'),
+  });
   // The commission endpoint adds per-status totals for the whole filter to the usual page.
   const totals = (commissions.data as CommissionResult | undefined)?.totals ?? {};
 
   return (
     <>
-      <PageHeader title="Commission" subtitle="Commission and referral fees on issued policies" breadcrumb={[{ title: 'Home', to: '/portal' }, { title: 'Commission' }]} />
+      <PageHeader
+        title="Commission"
+        subtitle="Commission and referral fees on issued policies"
+        breadcrumb={[{ title: 'Home', to: '/portal' }, { title: 'Commission' }]}
+      />
       <FilterBar>
         <DatePicker
           picker="month"
@@ -40,7 +46,11 @@ export default function CommissionPage() {
       </FilterBar>
       <Row gutter={[16, 16]} className="mb-16">
         <Col xs={12} xl={6}>
-          <StatCard label="Accrued, not yet paid" value={formatMoney(totals.ACCRUED ?? 0)} tone="warning" />
+          <StatCard
+            label="Accrued, not yet paid"
+            value={formatMoney(totals.ACCRUED ?? 0)}
+            tone="warning"
+          />
         </Col>
         <Col xs={12} xl={6}>
           <StatCard label="Paid" value={formatMoney(totals.PAID ?? 0)} />
@@ -56,14 +66,39 @@ export default function CommissionPage() {
           scroll={{ x: 'max-content' }}
           locale={{ emptyText: 'No commission for this period' }}
           columns={[
-            { title: 'Period', dataIndex: 'period', render: (period: string) => dayjs(`${period}-01`).format('MMM YYYY') },
+            {
+              title: 'Period',
+              dataIndex: 'period',
+              render: (value: string) => dayjs(`${value}-01`).format('MMM YYYY'),
+            },
             { title: 'Policy no.', dataIndex: ['policy', 'policyNo'] },
             { title: 'Product', dataIndex: ['policy', 'product', 'name'] },
-            ...(can(P.portalAgencyWideView) ? [{ title: 'Agent', dataIndex: ['agent', 'fullName'] }] : []),
-            { title: 'Contribution', dataIndex: 'contribution', align: 'right', render: (value: MoneyValue) => <Money value={value} /> },
-            { title: 'Rate', dataIndex: 'rate', align: 'right', render: (rate: string) => `${Math.round(Number(rate) * 10000) / 100}%` },
-            { title: 'Commission', dataIndex: 'amount', align: 'right', render: (value: MoneyValue) => <Money value={value} strong /> },
-            { title: 'Status', dataIndex: 'status', render: (status: string) => <StatusTag status={status} /> },
+            ...(can(P.portalAgencyWideView)
+              ? [{ title: 'Agent', dataIndex: ['agent', 'fullName'] }]
+              : []),
+            {
+              title: 'Contribution',
+              dataIndex: 'contribution',
+              align: 'right',
+              render: (value: MoneyValue) => <Money value={value} />,
+            },
+            {
+              title: 'Rate',
+              dataIndex: 'rate',
+              align: 'right',
+              render: (rate: string) => `${Math.round(Number(rate) * 10000) / 100}%`,
+            },
+            {
+              title: 'Commission',
+              dataIndex: 'amount',
+              align: 'right',
+              render: (value: MoneyValue) => <Money value={value} strong />,
+            },
+            {
+              title: 'Status',
+              dataIndex: 'status',
+              render: (status: string) => <StatusTag status={status} />,
+            },
             { title: 'Paid on', dataIndex: 'paidAt', render: formatDate },
           ]}
         />

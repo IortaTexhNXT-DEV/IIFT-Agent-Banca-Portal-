@@ -6,7 +6,11 @@ import '../../styles/sales.css';
 export default function ClaimListPage() {
   return (
     <>
-      <PageHeader title="Claims" subtitle="Claim notifications from agencies and banks" breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Claims' }]} />
+      <PageHeader
+        title="Claims"
+        subtitle="Claim notifications from agencies and banks"
+        breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Claims' }]}
+      />
       <ClaimList path="/backoffice/claims" />
     </>
   );

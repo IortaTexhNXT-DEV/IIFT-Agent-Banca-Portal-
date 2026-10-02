@@ -200,3 +200,13 @@
   font-size: 12px;
   line-height: 1.5;
 }
+
+/* ---- Parameters --------------------------------------------------------- */
+
+.parameter-key {
+  font-size: 12px;
+}
+
+.parameter-error {
+  margin-top: 8px;
+}

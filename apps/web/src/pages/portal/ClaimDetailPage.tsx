@@ -19,7 +19,14 @@ export default function ClaimDetailPage() {
   const claim = useApiQuery<Claim>(`/portal/claims/${id}`);
   return (
     <QueryState query={claim}>
-      {(data) => <ClaimDetailView claim={data} uploadTypes={can(P.portalClaimsSubmit) && data.status !== 'CLOSED' ? CLAIM_DOCUMENTS : undefined} />}
+      {(data) => (
+        <ClaimDetailView
+          claim={data}
+          uploadTypes={
+            can(P.portalClaimsSubmit) && data.status !== 'CLOSED' ? CLAIM_DOCUMENTS : undefined
+          }
+        />
+      )}
     </QueryState>
   );
 }

@@ -20,10 +20,13 @@ export default function RequestDetailPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const request = useApiQuery<ApprovalRequest>(`/portal/requests/${id}`);
-  const withdraw = useApiMutation(() => api.post<ApprovalRequest>(`/portal/requests/${id}/withdraw`), {
-    success: 'Request withdrawn',
-    invalidate: ['/portal'],
-  });
+  const withdraw = useApiMutation(
+    () => api.post<ApprovalRequest>(`/portal/requests/${id}/withdraw`),
+    {
+      success: 'Request withdrawn',
+      invalidate: ['/portal'],
+    },
+  );
 
   return (
     <QueryState query={request}>
@@ -39,12 +42,25 @@ export default function RequestDetailPage() {
                 </Flex>
               }
               subtitle={humanise(data.type)}
-              breadcrumb={[{ title: 'My requests', to: '/portal/requests' }, { title: data.requestNo }]}
+              breadcrumb={[
+                { title: 'My requests', to: '/portal/requests' },
+                { title: data.requestNo },
+              ]}
               extra={
                 <>
-                  {record && <Button onClick={() => navigate(record)}>Open {data.entityType.toLowerCase()}</Button>}
+                  {record && (
+                    <Button onClick={() => navigate(record)}>
+                      Open {data.entityType.toLowerCase()}
+                    </Button>
+                  )}
                   {data.status === 'PENDING' && data.makerId === user?.id && (
-                    <Popconfirm title="Withdraw this request?" description="It will no longer be reviewed by IIFT." okText="Withdraw" okButtonProps={{ danger: true }} onConfirm={() => withdraw.mutate(undefined)}>
+                    <Popconfirm
+                      title="Withdraw this request?"
+                      description="It will no longer be reviewed by IIFT."
+                      okText="Withdraw"
+                      okButtonProps={{ danger: true }}
+                      onConfirm={() => withdraw.mutate(undefined)}
+                    >
                       <Button danger loading={withdraw.isPending}>
                         Withdraw
                       </Button>
@@ -54,7 +70,14 @@ export default function RequestDetailPage() {
               }
             />
             <ErrorAlert error={withdraw.error} className="mb-16" />
-            <RejectionAlert request={data} resubmitHint={record ? 'Open the record to correct the details and submit a new request.' : undefined} />
+            <RejectionAlert
+              request={data}
+              resubmitHint={
+                record
+                  ? 'Open the record to correct the details and submit a new request.'
+                  : undefined
+              }
+            />
             <Card title="Request" className="content-card">
               <RequestSummary request={data} />
             </Card>

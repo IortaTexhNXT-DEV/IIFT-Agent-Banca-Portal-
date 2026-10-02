@@ -1,4 +1,15 @@
-import { Alert, Button, Card, Descriptions, Flex, Input, Segmented, Select, Space, Table } from 'antd';
+import {
+  Alert,
+  Button,
+  Card,
+  Descriptions,
+  Flex,
+  Input,
+  Segmented,
+  Select,
+  Space,
+  Table,
+} from 'antd';
 import { useState } from 'react';
 import { api } from '../../api/client';
 import { useApiMutation, useApiQuery } from '../../api/hooks';
@@ -18,10 +29,23 @@ interface Props {
   onSelect(participant: ParticipantMatch): void;
 }
 
-function SelectButton({ participant, onSelect }: { participant: ParticipantMatch; onSelect(participant: ParticipantMatch): void }) {
+function SelectButton({
+  participant,
+  onSelect,
+}: {
+  participant: ParticipantMatch;
+  onSelect(participant: ParticipantMatch): void;
+}) {
   const rejected = participant.amlStatus === 'REJECTED';
   return (
-    <Button size="small" type="primary" ghost disabled={rejected} title={rejected ? 'Not accepted by Compliance' : undefined} onClick={() => onSelect(participant)}>
+    <Button
+      size="small"
+      type="primary"
+      ghost
+      disabled={rejected}
+      title={rejected ? 'Not accepted by Compliance' : undefined}
+      onClick={() => onSelect(participant)}
+    >
       Select
     </Button>
   );
@@ -29,7 +53,10 @@ function SelectButton({ participant, onSelect }: { participant: ParticipantMatch
 
 function ParticipantSearch({ onSelect }: Props) {
   const [search, setSearch] = useState('');
-  const results = useApiQuery<Page<Participant>>('/portal/participants', { search: search || undefined, pageSize: 8 });
+  const results = useApiQuery<Page<Participant>>('/portal/participants', {
+    search: search || undefined,
+    pageSize: 8,
+  });
   return (
     <>
       <Input.Search
@@ -47,24 +74,43 @@ function ParticipantSearch({ onSelect }: Props) {
         dataSource={results.data?.items ?? []}
         pagination={false}
         scroll={{ x: 'max-content' }}
-        locale={{ emptyText: search ? 'No participants found. Try the ID lookup or register a new participant.' : 'No participants registered by your agency yet' }}
+        locale={{
+          emptyText: search
+            ? 'No participants found. Try the ID lookup or register a new participant.'
+            : 'No participants registered by your agency yet',
+        }}
         columns={[
           { title: 'Participant no.', dataIndex: 'participantNo' },
           { title: 'Name', dataIndex: 'fullName' },
           { title: 'ID', dataIndex: 'idNumberMasked' },
           { title: 'Date of birth', dataIndex: 'dateOfBirth', render: formatDate },
-          { title: 'AML', dataIndex: 'amlStatus', render: (status: string) => <StatusTag status={status} /> },
-          { key: 'select', align: 'right', render: (_, participant) => <SelectButton participant={participant} onSelect={onSelect} /> },
+          {
+            title: 'AML',
+            dataIndex: 'amlStatus',
+            render: (status: string) => <StatusTag status={status} />,
+          },
+          {
+            key: 'select',
+            align: 'right',
+            render: (_, participant) => (
+              <SelectButton participant={participant} onSelect={onSelect} />
+            ),
+          },
         ]}
       />
     </>
   );
 }
 
-function ParticipantIdLookup({ onSelect, onRegister }: Props & { onRegister(values: ParticipantFormValues): void }) {
+function ParticipantIdLookup({
+  onSelect,
+  onRegister,
+}: Props & { onRegister(values: ParticipantFormValues): void }) {
   const [idType, setIdType] = useState<IdType>('NRIC');
   const [idNumber, setIdNumber] = useState('');
-  const lookup = useApiMutation((query: { idType: IdType; idNumber: string }) => api.get<ParticipantLookup>('/portal/participants/lookup', query));
+  const lookup = useApiMutation((query: { idType: IdType; idNumber: string }) =>
+    api.get<ParticipantLookup>('/portal/participants/lookup', query),
+  );
   const result = lookup.data;
   const validNumber = /^[A-Za-z0-9-/ ]{5,30}$/.test(idNumber.trim());
   const search = () => {
@@ -78,10 +124,19 @@ function ParticipantIdLookup({ onSelect, onRegister }: Props & { onRegister(valu
           aria-label="ID type"
           value={idType}
           onChange={setIdType}
-          options={(['NRIC', 'PASSPORT', 'BUSINESS_REG'] as const).map((value) => ({ value, label: ID_TYPE_LABELS[value] }))}
+          options={(['NRIC', 'PASSPORT', 'BUSINESS_REG'] as const).map((value) => ({
+            value,
+            label: ID_TYPE_LABELS[value],
+          }))}
           className="lookup-bar__type"
         />
-        <Input aria-label="ID number" placeholder="Exact ID number" value={idNumber} onChange={(event) => setIdNumber(event.target.value)} onPressEnter={search} />
+        <Input
+          aria-label="ID number"
+          placeholder="Exact ID number"
+          value={idNumber}
+          onChange={(event) => setIdNumber(event.target.value)}
+          onPressEnter={search}
+        />
         <Button type="primary" disabled={!validNumber} loading={lookup.isPending} onClick={search}>
           Look up
         </Button>
@@ -97,7 +152,11 @@ function ParticipantIdLookup({ onSelect, onRegister }: Props & { onRegister(valu
                 { key: 'name', label: 'Name', children: result.participant.fullName },
                 { key: 'no', label: 'Participant no.', children: result.participant.participantNo },
                 { key: 'id', label: 'ID', children: result.participant.idNumberMasked },
-                { key: 'aml', label: 'AML', children: <StatusTag status={result.participant.amlStatus} /> },
+                {
+                  key: 'aml',
+                  label: 'AML',
+                  children: <StatusTag status={result.participant.amlStatus} />,
+                },
               ]}
             />
             <SelectButton participant={result.participant} onSelect={onSelect} />
@@ -110,7 +169,16 @@ function ParticipantIdLookup({ onSelect, onRegister }: Props & { onRegister(valu
           showIcon
           title="No participant is registered with this ID"
           action={
-            <Button size="small" onClick={() => onRegister({ type: idType === 'BUSINESS_REG' ? 'CORPORATE' : 'INDIVIDUAL', idType, idNumber: idNumber.trim() })}>
+            <Button
+              size="small"
+              onClick={() =>
+                onRegister({
+                  type: idType === 'BUSINESS_REG' ? 'CORPORATE' : 'INDIVIDUAL',
+                  idType,
+                  idNumber: idNumber.trim(),
+                })
+              }
+            >
               Register new participant
             </Button>
           }

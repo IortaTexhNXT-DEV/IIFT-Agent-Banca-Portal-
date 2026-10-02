@@ -13,13 +13,16 @@ interface Values {
 export function SignatureLinkModal({ policy, onClose }: { policy: PolicyDetail; onClose(): void }) {
   const { message } = App.useApp();
   const [form] = Form.useForm<Values>();
-  const send = useApiMutation((body: Values) => api.post<SentTo>(`/portal/policies/${policy.id}/signatures/link`, body), {
-    invalidate: ['/portal/policies'],
-    onSuccess: (result) => {
-      message.success(`Link sent to ${result.sentTo}`);
-      onClose();
+  const send = useApiMutation(
+    (body: Values) => api.post<SentTo>(`/portal/policies/${policy.id}/signatures/link`, body),
+    {
+      invalidate: ['/portal/policies'],
+      onSuccess: (result) => {
+        message.success(`Link sent to ${result.sentTo}`);
+        onClose();
+      },
     },
-  });
+  );
 
   return (
     <FormModal<Values>
@@ -33,9 +36,17 @@ export function SignatureLinkModal({ policy, onClose }: { policy: PolicyDetail; 
       error={send.error}
     >
       <Typography.Paragraph>
-        {policy.participant.fullName} receives a link to review quotation {policy.quotationNo} and sign it. The link can be used once and expires after the period set by IIFT.
+        {policy.participant.fullName} receives a link to review quotation {policy.quotationNo} and
+        sign it. The link can be used once and expires after the period set by IIFT.
       </Typography.Paragraph>
-      <Form.Item name="email" label="Participant e-mail" rules={[{ required: true, message: 'Enter the e-mail address' }, { type: 'email', message: 'Enter a valid e-mail address' }]}>
+      <Form.Item
+        name="email"
+        label="Participant e-mail"
+        rules={[
+          { required: true, message: 'Enter the e-mail address' },
+          { type: 'email', message: 'Enter a valid e-mail address' },
+        ]}
+      >
         <Input inputMode="email" maxLength={254} />
       </Form.Item>
     </FormModal>

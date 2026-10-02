@@ -3,7 +3,13 @@ import dayjs from 'dayjs';
 import type { Issue, IssuePriority, IssueStatus } from '../../api/types';
 import { formatDateTime } from '../../utils/format';
 
-export const ISSUE_STATUSES: IssueStatus[] = ['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
+export const ISSUE_STATUSES: IssueStatus[] = [
+  'OPEN',
+  'ASSIGNED',
+  'IN_PROGRESS',
+  'RESOLVED',
+  'CLOSED',
+];
 export const ISSUE_PRIORITIES: IssuePriority[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
 
 const DOCUMENT_TYPES = ['SCREENSHOT', 'OTHER'];

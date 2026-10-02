@@ -1,4 +1,10 @@
-import { formatDate, formatDateTime, formatMoney, humanise, labelFromKey } from '../../utils/format';
+import {
+  formatDate,
+  formatDateTime,
+  formatMoney,
+  humanise,
+  labelFromKey,
+} from '../../utils/format';
 
 const MONEY_KEY = /(amount|contribution|sumCovered|total|limit)$/i;
 const ENUM_KEY = /(type|status|method|role|relationship|from|to|reason|reasonCode)$/i;
@@ -26,6 +32,7 @@ const KEY_LABELS: Record<string, string> = {
   idType: 'ID type',
   sharePercent: 'Share (%)',
   parentAgentId: 'Reports to (agent ID)',
+  parent: 'Reports to',
   addressLine1: 'Address line 1',
   addressLine2: 'Address line 2',
   amlStatus: 'AML status',
@@ -48,8 +55,10 @@ export function formatValue(key: string, value: unknown): string {
     if (MONEY_KEY.test(key) && !Number.isNaN(Number(value))) return formatMoney(value);
     if (typeof value === 'string') {
       if (ISO_DATE.test(value)) return formatDate(value);
-      if (ISO_DATE_TIME.test(value)) return value.includes('T00:00:00') ? formatDate(value) : formatDateTime(value);
-      if (ENUM_VALUE.test(value) && (value.includes('_') || ENUM_KEY.test(key))) return humanise(value);
+      if (ISO_DATE_TIME.test(value))
+        return value.includes('T00:00:00') ? formatDate(value) : formatDateTime(value);
+      if (ENUM_VALUE.test(value) && (value.includes('_') || ENUM_KEY.test(key)))
+        return humanise(value);
     }
     return String(value);
   }

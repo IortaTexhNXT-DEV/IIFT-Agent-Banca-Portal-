@@ -27,7 +27,11 @@ export const theme: ThemeConfig = {
   },
   components: {
     Layout: { headerBg: '#FFFFFF', siderBg: '#FFFFFF', headerHeight: 64, headerPadding: '0 24px' },
-    Menu: { itemSelectedBg: brand.magentaLight, itemSelectedColor: brand.magentaDark, itemBorderRadius: 8 },
+    Menu: {
+      itemSelectedBg: brand.magentaLight,
+      itemSelectedColor: brand.magentaDark,
+      itemBorderRadius: 8,
+    },
     Card: { headerFontSize: 15 },
     Table: { headerBg: '#FBF7FA', headerColor: brand.ink },
     Statistic: { contentFontSize: 26 },

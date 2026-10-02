@@ -40,15 +40,52 @@ function AgentEvidence({ agentId }: { agentId: string }) {
             className="mb-16"
             column={{ xs: 1, md: 3 }}
             items={[
-              { key: 'agent', label: 'Agent', children: <Link to={`/backoffice/agents/${data.id}`}>{`${data.fullName} (${data.agentCode})`}</Link> },
-              { key: 'status', label: 'Agent status', children: <StatusTag status={data.status} /> },
+              {
+                key: 'agent',
+                label: 'Agent',
+                children: (
+                  <Link
+                    to={`/backoffice/agents/${data.id}`}
+                  >{`${data.fullName} (${data.agentCode})`}</Link>
+                ),
+              },
+              {
+                key: 'status',
+                label: 'Agent status',
+                children: <StatusTag status={data.status} />,
+              },
               { key: 'aml', label: 'AML status', children: <StatusTag status={data.amlStatus} /> },
             ]}
           />
           {data.amlStatus === 'FLAGGED' && (
-            <Alert className="mb-16" type="warning" showIcon title="AML screening flagged a possible match" description={<>Compliance must clear the case under <Link to="/backoffice/aml">AML / KYC</Link> before the registration can be approved.</>} />
+            <Alert
+              className="mb-16"
+              type="warning"
+              showIcon
+              title="AML screening flagged a possible match"
+              description={
+                <>
+                  Compliance must clear the case under <Link to="/backoffice/aml">AML / KYC</Link>{' '}
+                  before the registration can be approved.
+                </>
+              }
+            />
           )}
-          <AgentDocuments agentId={data.id} channel={data.agency.channel} canReview={can(P.boDocumentsVerify)} checkRequired={data.status === 'PENDING'} />
+          {data.amlStatus === 'REJECTED' && data.status === 'PENDING' && (
+            <Alert
+              className="mb-16"
+              type="error"
+              showIcon
+              title="Compliance confirmed a watch-list match"
+              description="The applicant cannot be onboarded. Reject this request."
+            />
+          )}
+          <AgentDocuments
+            agentId={data.id}
+            channel={data.agency.channel}
+            canReview={can(P.boDocumentsVerify)}
+            checkRequired={data.status === 'PENDING'}
+          />
         </>
       )}
     </QueryState>
@@ -56,7 +93,15 @@ function AgentEvidence({ agentId }: { agentId: string }) {
 }
 
 function RecordEvidence({ ownerType, ownerId }: { ownerType: DocumentOwnerType; ownerId: string }) {
-  return ownerType === 'AGENT' ? <AgentEvidence agentId={ownerId} /> : <DocumentPanel ownerType={ownerType} ownerId={ownerId} title={`${humanise(ownerType)} documents`} />;
+  return ownerType === 'AGENT' ? (
+    <AgentEvidence agentId={ownerId} />
+  ) : (
+    <DocumentPanel
+      ownerType={ownerType}
+      ownerId={ownerId}
+      title={`${humanise(ownerType)} documents`}
+    />
+  );
 }
 
 /** BO-16..21: review a request, its evidence and history, and decide it (maker-checker). */
@@ -65,10 +110,13 @@ export default function ApprovalDetailPage() {
   const { user, can } = useAuth();
   const navigate = useNavigate();
   const request = useApiQuery<ApprovalRequestDetail>(`/backoffice/approvals/${id}`);
-  const withdraw = useApiMutation(() => api.post<ApprovalRequest>(`/backoffice/approvals/${id}/withdraw`), {
-    success: 'Request withdrawn',
-    invalidate: ['/backoffice'],
-  });
+  const withdraw = useApiMutation(
+    () => api.post<ApprovalRequest>(`/backoffice/approvals/${id}/withdraw`),
+    {
+      success: 'Request withdrawn',
+      invalidate: ['/backoffice'],
+    },
+  );
 
   return (
     <QueryState query={request}>
@@ -77,8 +125,14 @@ export default function ApprovalDetailPage() {
         const evidence = evidenceOwner(data.entityType);
         const pending = data.status === 'PENDING';
         const isMaker = data.makerId === user?.id;
-        const alreadyApproved = (data.actions ?? []).some((action) => action.action === 'APPROVE' && action.actorId === user?.id);
-        const canDecide = pending && !isMaker && !alreadyApproved && can(data.levelPermissions[data.currentLevel - 1] ?? '');
+        const alreadyApproved = (data.actions ?? []).some(
+          (action) => action.action === 'APPROVE' && action.actorId === user?.id,
+        );
+        const canDecide =
+          pending &&
+          !isMaker &&
+          !alreadyApproved &&
+          can(data.levelPermissions[data.currentLevel - 1] ?? '');
         return (
           <>
             <PageHeader
@@ -89,12 +143,24 @@ export default function ApprovalDetailPage() {
                 </Flex>
               }
               subtitle={`${humanise(data.type)}${pending ? ` · level ${data.currentLevel} of ${data.totalLevels}` : ''}`}
-              breadcrumb={[{ title: 'Approvals', to: '/backoffice/approvals' }, { title: data.requestNo }]}
+              breadcrumb={[
+                { title: 'Approvals', to: '/backoffice/approvals' },
+                { title: data.requestNo },
+              ]}
               extra={
                 <>
-                  {record && <Button onClick={() => navigate(record)}>Open {data.entityType.toLowerCase()}</Button>}
+                  {record && (
+                    <Button onClick={() => navigate(record)}>
+                      Open {data.entityType.toLowerCase()}
+                    </Button>
+                  )}
                   {pending && isMaker && (
-                    <Popconfirm title="Withdraw this request?" okText="Withdraw" okButtonProps={{ danger: true }} onConfirm={() => withdraw.mutate(undefined)}>
+                    <Popconfirm
+                      title="Withdraw this request?"
+                      okText="Withdraw"
+                      okButtonProps={{ danger: true }}
+                      onConfirm={() => withdraw.mutate(undefined)}
+                    >
                       <Button danger loading={withdraw.isPending}>
                         Withdraw
                       </Button>
@@ -105,8 +171,22 @@ export default function ApprovalDetailPage() {
               }
             />
             <ErrorAlert error={withdraw.error} className="mb-16" />
-            {pending && isMaker && <Alert className="mb-16" type="info" showIcon title="You submitted this request, so another approver must decide it." />}
-            {pending && !isMaker && !canDecide && <Alert className="mb-16" type="info" showIcon title="This request is waiting for an approver at its current level; you cannot decide it." />}
+            {pending && isMaker && (
+              <Alert
+                className="mb-16"
+                type="info"
+                showIcon
+                title="You submitted this request, so another approver must decide it."
+              />
+            )}
+            {pending && !isMaker && !canDecide && (
+              <Alert
+                className="mb-16"
+                type="info"
+                showIcon
+                title="This request is waiting for an approver at its current level; you cannot decide it."
+              />
+            )}
             <RejectionAlert request={data} />
             <Card title="Request" className="content-card">
               <RequestSummary request={data} />

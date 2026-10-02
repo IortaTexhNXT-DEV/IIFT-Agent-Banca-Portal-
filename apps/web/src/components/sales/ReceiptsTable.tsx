@@ -4,7 +4,7 @@ import { formatDateTime } from '../../utils/format';
 import { Money } from '../Money';
 import { DocumentDownloadButton } from './DocumentDownloadButton';
 
-export interface ReceiptRow {
+interface ReceiptRow {
   id: string;
   receiptNo: string;
   amount: MoneyValue;
@@ -24,11 +24,22 @@ export function ReceiptsTable({ receipts }: { receipts: ReceiptRow[] }) {
       columns={[
         { title: 'Receipt no.', dataIndex: 'receiptNo' },
         { title: 'Issued', dataIndex: 'issuedAt', render: formatDateTime },
-        { title: 'Amount', dataIndex: 'amount', align: 'right', render: (value: MoneyValue) => <Money value={value} /> },
+        {
+          title: 'Amount',
+          dataIndex: 'amount',
+          align: 'right',
+          render: (value: MoneyValue) => <Money value={value} />,
+        },
         {
           key: 'download',
           width: 56,
-          render: (_, receipt) => receipt.documentId && <DocumentDownloadButton documentId={receipt.documentId} label={`receipt ${receipt.receiptNo}`} />,
+          render: (_, receipt) =>
+            receipt.documentId && (
+              <DocumentDownloadButton
+                documentId={receipt.documentId}
+                label={`receipt ${receipt.receiptNo}`}
+              />
+            ),
         },
       ]}
     />

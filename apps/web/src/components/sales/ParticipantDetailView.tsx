@@ -24,12 +24,36 @@ function ParticipantPolicies({ policies }: { policies: ParticipantPolicy[] }) {
       scroll={{ x: 'max-content' }}
       locale={{ emptyText: 'No quotations or policies' }}
       columns={[
-        { title: 'Policy / quotation no.', key: 'reference', render: (_, policy) => <PolicyLink policy={policy} /> },
+        {
+          title: 'Policy / quotation no.',
+          key: 'reference',
+          render: (_, policy) => <PolicyLink policy={policy} />,
+        },
         { title: 'Product', dataIndex: ['product', 'name'] },
-        { title: 'Status', dataIndex: 'status', render: (status: string) => <StatusTag status={status} /> },
-        { title: 'Payment', dataIndex: 'paymentStatus', render: (status: string) => <StatusTag status={status} /> },
-        { title: 'Contribution', dataIndex: 'contribution', align: 'right', render: (value: MoneyValue) => <Money value={value} /> },
-        { title: 'Cover', key: 'cover', render: (_, policy) => (policy.startDate ? `${formatDate(policy.startDate)} – ${formatDate(policy.endDate)}` : '–') },
+        {
+          title: 'Status',
+          dataIndex: 'status',
+          render: (status: string) => <StatusTag status={status} />,
+        },
+        {
+          title: 'Payment',
+          dataIndex: 'paymentStatus',
+          render: (status: string) => <StatusTag status={status} />,
+        },
+        {
+          title: 'Contribution',
+          dataIndex: 'contribution',
+          align: 'right',
+          render: (value: MoneyValue) => <Money value={value} />,
+        },
+        {
+          title: 'Cover',
+          key: 'cover',
+          render: (_, policy) =>
+            policy.startDate
+              ? `${formatDate(policy.startDate)} – ${formatDate(policy.endDate)}`
+              : '–',
+        },
         { title: 'Agency / bank', dataIndex: ['agency', 'name'] },
         { title: 'Agent', dataIndex: ['agent', 'fullName'] },
       ]}
@@ -59,10 +83,16 @@ export function ParticipantDetailView({ participant, actions, canUpload = false 
           </Flex>
         }
         subtitle={`${participant.participantNo} · ${humanise(participant.type)}`}
-        breadcrumb={[{ title: 'Home', to: home }, { title: 'Participants', to: `${home}/participants` }, { title: participant.participantNo }]}
+        breadcrumb={[
+          { title: 'Home', to: home },
+          { title: 'Participants', to: `${home}/participants` },
+          { title: participant.participantNo },
+        ]}
         extra={actions}
       />
-      {participant.amlStatus !== 'CLEAR' && <AmlOutcome status={participant.amlStatus} className="mb-16" />}
+      {participant.amlStatus !== 'CLEAR' && (
+        <AmlOutcome status={participant.amlStatus} className="mb-16" />
+      )}
       <Card title="Profile" className="content-card">
         <ParticipantProfile participant={participant} />
       </Card>
@@ -71,10 +101,36 @@ export function ParticipantDetailView({ participant, actions, canUpload = false 
           activeKey={tab}
           onChange={setTab}
           items={[
-            { key: 'policies', label: `Policies (${participant.policies.length})`, children: <ParticipantPolicies policies={participant.policies} /> },
-            { key: 'documents', label: 'Documents', children: <DocumentPanel ownerType="PARTICIPANT" ownerId={participant.id} canUpload={canUpload} /> },
-            { key: 'approvals', label: 'Update requests', children: <ApprovalHistory approvals={participant.approvals} /> },
-            ...(backoffice ? [{ key: 'screenings', label: 'AML screening', children: <AmlScreeningsTable screenings={participant.screenings} /> }] : []),
+            {
+              key: 'policies',
+              label: `Policies (${participant.policies.length})`,
+              children: <ParticipantPolicies policies={participant.policies} />,
+            },
+            {
+              key: 'documents',
+              label: 'Documents',
+              children: (
+                <DocumentPanel
+                  ownerType="PARTICIPANT"
+                  ownerId={participant.id}
+                  canUpload={canUpload}
+                />
+              ),
+            },
+            {
+              key: 'approvals',
+              label: 'Update requests',
+              children: <ApprovalHistory approvals={participant.approvals} />,
+            },
+            ...(backoffice
+              ? [
+                  {
+                    key: 'screenings',
+                    label: 'AML screening',
+                    children: <AmlScreeningsTable screenings={participant.screenings} />,
+                  },
+                ]
+              : []),
           ]}
         />
       </Card>

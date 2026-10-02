@@ -9,5 +9,9 @@ import '../../styles/sales.css';
 export default function ParticipantDetailPage() {
   const { id } = useParams();
   const participant = useApiQuery<ParticipantDetail>(`/backoffice/participants/${id}`);
-  return <QueryState query={participant}>{(data) => <ParticipantDetailView participant={data} />}</QueryState>;
+  return (
+    <QueryState query={participant}>
+      {(data) => <ParticipantDetailView participant={data} />}
+    </QueryState>
+  );
 }

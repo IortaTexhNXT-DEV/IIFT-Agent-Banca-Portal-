@@ -26,16 +26,31 @@ export function ParticipantProfile({ participant, compact = false }: Props) {
   const occupations = useCodes('OCCUPATION');
   const districts = useCodes('DISTRICT');
   const individual = participant.type === 'INDIVIDUAL';
-  const address = [participant.addressLine1, participant.addressLine2, participant.postcode, districts.label(participant.district)].filter(Boolean).join(', ');
+  const address = [
+    participant.addressLine1,
+    participant.addressLine2,
+    participant.postcode,
+    districts.label(participant.district),
+  ]
+    .filter(Boolean)
+    .join(', ');
 
   const items: DescriptionsProps['items'] = [
     {
       key: 'name',
       label: individual ? 'Name' : 'Company name',
-      children: compact ? <Link to={links.participant(participant.id)}>{participant.fullName}</Link> : participant.fullName,
+      children: compact ? (
+        <Link to={links.participant(participant.id)}>{participant.fullName}</Link>
+      ) : (
+        participant.fullName
+      ),
     },
     { key: 'no', label: 'Participant no.', children: participant.participantNo },
-    { key: 'id', label: ID_TYPE_LABELS[participant.idType] ?? participant.idType, children: participant.idNumberMasked },
+    {
+      key: 'id',
+      label: ID_TYPE_LABELS[participant.idType] ?? participant.idType,
+      children: participant.idNumberMasked,
+    },
     ...(individual
       ? [
           {
@@ -56,13 +71,31 @@ export function ParticipantProfile({ participant, compact = false }: Props) {
       ...(individual
         ? [
             { key: 'gender', label: 'Gender', children: humanise(participant.gender) },
-            { key: 'occupation', label: 'Occupation', children: occupations.label(participant.occupation) },
-            { key: 'class', label: 'Occupational class', children: occupationClassLabel(participant.occupationClass) },
+            {
+              key: 'occupation',
+              label: 'Occupation',
+              children: occupations.label(participant.occupation),
+            },
+            {
+              key: 'class',
+              label: 'Occupational class',
+              children: occupationClassLabel(participant.occupationClass),
+            },
           ]
-        : [{ key: 'contact', label: 'Contact person', children: participant.contactPerson ?? '–' }]),
-      { key: 'nationality', label: individual ? 'Nationality' : 'Country of registration', children: nationalities.label(participant.nationality) },
+        : [
+            { key: 'contact', label: 'Contact person', children: participant.contactPerson ?? '–' },
+          ]),
+      {
+        key: 'nationality',
+        label: individual ? 'Nationality' : 'Country of registration',
+        children: nationalities.label(participant.nationality),
+      },
       { key: 'address', label: 'Address', children: address, span: 2 },
-      { key: 'screened', label: 'Last screened', children: formatDateTime(participant.amlScreenedAt) },
+      {
+        key: 'screened',
+        label: 'Last screened',
+        children: formatDateTime(participant.amlScreenedAt),
+      },
       { key: 'registered', label: 'Registered', children: formatDate(participant.createdAt) },
     );
   }

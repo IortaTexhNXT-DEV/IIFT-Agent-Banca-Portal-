@@ -22,7 +22,16 @@ const TYPES: ApprovalType[] = [
 const STATUSES: ApprovalStatus[] = ['PENDING', 'APPROVED', 'REJECTED', 'WITHDRAWN'];
 
 function TypeFilter({ onChange }: { onChange(type?: ApprovalType): void }) {
-  return <Select allowClear placeholder="All request types" aria-label="Request type" style={{ width: 220 }} options={enumOptions(TYPES, humanise)} onChange={onChange} />;
+  return (
+    <Select
+      allowClear
+      placeholder="All request types"
+      aria-label="Request type"
+      style={{ width: 220 }}
+      options={enumOptions(TYPES, humanise)}
+      onChange={onChange}
+    />
+  );
 }
 
 /** BO-21: requests waiting for the user's decision at their current level (never their own). */
@@ -40,7 +49,12 @@ function Inbox() {
         />
       </FilterBar>
       <Card className="content-card">
-        <ApprovalTable items={inbox.items} loading={inbox.isFetching} pagination={inbox.pagination} emptyText="Nothing is waiting for your decision" />
+        <ApprovalTable
+          items={inbox.items}
+          loading={inbox.isFetching}
+          pagination={inbox.pagination}
+          emptyText="Nothing is waiting for your decision"
+        />
       </Card>
     </>
   );
@@ -63,12 +77,31 @@ function AllRequests() {
   return (
     <>
       <FilterBar>
-        <Input.Search allowClear placeholder="Request no." aria-label="Request number" style={{ width: 200 }} onSearch={(value) => update({ requestNo: value.trim() || undefined })} />
+        <Input.Search
+          allowClear
+          placeholder="Request no."
+          aria-label="Request number"
+          style={{ width: 200 }}
+          onSearch={(value) => update({ requestNo: value.trim() || undefined })}
+        />
         <TypeFilter onChange={(type) => update({ type })} />
-        <Select allowClear placeholder="All statuses" aria-label="Status" style={{ width: 160 }} options={enumOptions(STATUSES, humanise)} onChange={(status?: ApprovalStatus) => update({ status })} />
+        <Select
+          allowClear
+          placeholder="All statuses"
+          aria-label="Status"
+          style={{ width: 160 }}
+          options={enumOptions(STATUSES, humanise)}
+          onChange={(status?: ApprovalStatus) => update({ status })}
+        />
       </FilterBar>
       <Card className="content-card">
-        <ApprovalTable items={requests.items} loading={requests.isFetching} pagination={requests.pagination} showStatus emptyText="No requests match the filters" />
+        <ApprovalTable
+          items={requests.items}
+          loading={requests.isFetching}
+          pagination={requests.pagination}
+          showStatus
+          emptyText="No requests match the filters"
+        />
       </Card>
     </>
   );

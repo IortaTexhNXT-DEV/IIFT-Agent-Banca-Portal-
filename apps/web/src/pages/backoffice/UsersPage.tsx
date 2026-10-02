@@ -16,8 +16,15 @@ import { PageHeader } from '../../components/PageHeader';
 import { StatusTag } from '../../components/StatusTag';
 import { formatDateTime, humanise } from '../../utils/format';
 
-const USER_TYPE_LABELS: Record<UserType, string> = { STAFF: 'Staff', AGENT: 'Agent', BANCA: 'Bank officer' };
-const USER_TYPE_OPTIONS = Object.entries(USER_TYPE_LABELS).map(([value, label]) => ({ value: value as UserType, label }));
+const USER_TYPE_LABELS: Record<UserType, string> = {
+  STAFF: 'Staff',
+  AGENT: 'Agent',
+  BANCA: 'Bank officer',
+};
+const USER_TYPE_OPTIONS = Object.entries(USER_TYPE_LABELS).map(([value, label]) => ({
+  value: value as UserType,
+  label,
+}));
 const STATUSES: UserStatus[] = ['ACTIVE', 'LOCKED', 'DISABLED'];
 const INVALIDATE = ['/backoffice/users'];
 
@@ -29,37 +36,75 @@ interface Filters {
 
 type Action = 'status' | 'unlock' | 'reset';
 
-const isLocked = (user: UserSummary) => user.status === 'LOCKED' || (user.lockedUntil !== null && dayjs(user.lockedUntil).isAfter(dayjs()));
+const isLocked = (user: UserSummary) =>
+  user.status === 'LOCKED' ||
+  (user.lockedUntil !== null && dayjs(user.lockedUntil).isAfter(dayjs()));
+
+const menuFor = (user: UserSummary): MenuProps['items'] => [
+  {
+    key: 'status',
+    label: user.status === 'DISABLED' ? 'Activate' : 'Disable',
+    danger: user.status !== 'DISABLED',
+  },
+  ...(isLocked(user) && user.status !== 'DISABLED' ? [{ key: 'unlock', label: 'Unlock' }] : []),
+  ...(user.authSource === 'LOCAL' ? [{ key: 'reset', label: 'Reset password' }] : []),
+];
 
 /** Activate/disable, unlock and password reset, each confirmed before it runs. */
 function useAccountActions(onPassword: (user: UserSummary, password: string) => void) {
   const { modal } = App.useApp();
-  const setStatus = useApiMutation((user: UserSummary) => api.put<UserSummary>(`/backoffice/users/${user.id}/status`, { status: user.status === 'DISABLED' ? 'ACTIVE' : 'DISABLED' }), {
-    success: 'Account status changed',
-    invalidate: INVALIDATE,
-  });
-  const unlock = useApiMutation((user: UserSummary) => api.post<UserSummary>(`/backoffice/users/${user.id}/unlock`), { success: 'Account unlocked', invalidate: INVALIDATE });
-  const reset = useApiMutation((user: UserSummary) => api.post<TemporaryPassword>(`/backoffice/users/${user.id}/reset-password`), {
-    invalidate: INVALIDATE,
-    onSuccess: (result, user) => result.temporaryPassword && onPassword(user, result.temporaryPassword),
-  });
+  const setStatus = useApiMutation(
+    (user: UserSummary) =>
+      api.put<UserSummary>(`/backoffice/users/${user.id}/status`, {
+        status: user.status === 'DISABLED' ? 'ACTIVE' : 'DISABLED',
+      }),
+    {
+      success: 'Account status changed',
+      invalidate: INVALIDATE,
+    },
+  );
+  const unlock = useApiMutation(
+    (user: UserSummary) => api.post<UserSummary>(`/backoffice/users/${user.id}/unlock`),
+    { success: 'Account unlocked', invalidate: INVALIDATE },
+  );
+  const reset = useApiMutation(
+    (user: UserSummary) =>
+      api.post<TemporaryPassword>(`/backoffice/users/${user.id}/reset-password`),
+    {
+      invalidate: INVALIDATE,
+      onSuccess: (result, user) =>
+        result.temporaryPassword && onPassword(user, result.temporaryPassword),
+    },
+  );
 
   const confirm = (action: Action, user: UserSummary) => {
     const disabling = user.status !== 'DISABLED';
     const config = {
       status: {
         title: disabling ? `Disable ${user.username}?` : `Activate ${user.username}?`,
-        content: disabling ? 'The user is signed out and can no longer sign in.' : 'The user can sign in again.',
+        content: disabling
+          ? 'The user is signed out and can no longer sign in.'
+          : 'The user can sign in again.',
         run: () => setStatus.mutateAsync(user),
       },
-      unlock: { title: `Unlock ${user.username}?`, content: 'Failed sign-in attempts are cleared.', run: () => unlock.mutateAsync(user) },
+      unlock: {
+        title: `Unlock ${user.username}?`,
+        content: 'Failed sign-in attempts are cleared.',
+        run: () => unlock.mutateAsync(user),
+      },
       reset: {
         title: `Reset the password of ${user.username}?`,
         content: 'A temporary password is issued and all of the user’s sessions end.',
         run: () => reset.mutateAsync(user),
       },
     }[action];
-    void modal.confirm({ title: config.title, content: config.content, okText: 'Confirm', okButtonProps: { danger: action !== 'unlock' }, onOk: () => config.run().catch(() => undefined) });
+    void modal.confirm({
+      title: config.title,
+      content: config.content,
+      okText: 'Confirm',
+      okButtonProps: { danger: action !== 'unlock' },
+      onOk: () => config.run().catch(() => undefined),
+    });
   };
 
   return { confirm, error: setStatus.error ?? unlock.error ?? reset.error };
@@ -72,17 +117,13 @@ export default function UsersPage() {
   const [editing, setEditing] = useState<UserSummary | 'new'>();
   const [password, setPassword] = useState<{ username: string; value: string }>();
   const users = usePagedQuery<UserSummary>('/backoffice/users', { ...filters });
-  const actions = useAccountActions((user, value) => setPassword({ username: user.username, value }));
+  const actions = useAccountActions((user, value) =>
+    setPassword({ username: user.username, value }),
+  );
   const update = (changes: Filters) => {
     setFilters((current) => ({ ...current, ...changes }));
     users.resetPage();
   };
-
-  const menuFor = (user: UserSummary): MenuProps['items'] => [
-    { key: 'status', label: user.status === 'DISABLED' ? 'Activate' : 'Disable', danger: user.status !== 'DISABLED' },
-    ...(isLocked(user) && user.status !== 'DISABLED' ? [{ key: 'unlock', label: 'Unlock' }] : []),
-    ...(user.authSource === 'LOCAL' ? [{ key: 'reset', label: 'Reset password' }] : []),
-  ];
 
   return (
     <>
@@ -97,9 +138,29 @@ export default function UsersPage() {
         }
       />
       <FilterBar>
-        <Input.Search allowClear placeholder="User name, name or email" aria-label="Search users" style={{ width: 260 }} onSearch={(value) => update({ search: value.trim() || undefined })} />
-        <Select allowClear placeholder="User type" aria-label="User type" style={{ width: 160 }} options={USER_TYPE_OPTIONS} onChange={(userType?: UserType) => update({ userType })} />
-        <Select allowClear placeholder="Status" aria-label="Status" style={{ width: 150 }} options={enumOptions(STATUSES, humanise)} onChange={(status?: UserStatus) => update({ status })} />
+        <Input.Search
+          allowClear
+          placeholder="User name, name or email"
+          aria-label="Search users"
+          style={{ width: 260 }}
+          onSearch={(value) => update({ search: value.trim() || undefined })}
+        />
+        <Select
+          allowClear
+          placeholder="User type"
+          aria-label="User type"
+          style={{ width: 160 }}
+          options={USER_TYPE_OPTIONS}
+          onChange={(userType?: UserType) => update({ userType })}
+        />
+        <Select
+          allowClear
+          placeholder="Status"
+          aria-label="Status"
+          style={{ width: 150 }}
+          options={enumOptions(STATUSES, humanise)}
+          onChange={(status?: UserStatus) => update({ status })}
+        />
       </FilterBar>
       <ErrorAlert error={actions.error} className="mb-16" />
       <Card className="content-card">
@@ -112,14 +173,35 @@ export default function UsersPage() {
           scroll={{ x: 'max-content' }}
           locale={{ emptyText: 'No users match the filters' }}
           columns={[
-            { title: 'User name', dataIndex: 'username' },
-            { title: 'Name', dataIndex: 'fullName' },
-            { title: 'Email', dataIndex: 'email' },
-            { title: 'Type', dataIndex: 'userType', render: (type: UserType) => USER_TYPE_LABELS[type] },
+            {
+              title: 'User name',
+              dataIndex: 'username',
+              render: (username: string, user) => (
+                <Flex gap={6} align="center">
+                  {username}
+                  {user.authSource === 'DIRECTORY' && <Tag variant="filled">Directory</Tag>}
+                </Flex>
+              ),
+            },
+            {
+              title: 'Name',
+              dataIndex: 'fullName',
+              render: (name: string, user) => (
+                <>
+                  <div>{name}</div>
+                  <div className="muted">{user.email}</div>
+                </>
+              ),
+            },
+            {
+              title: 'Type',
+              dataIndex: 'userType',
+              render: (type: UserType) => USER_TYPE_LABELS[type],
+            },
             {
               title: 'Roles',
               dataIndex: 'roles',
-              width: 260,
+              width: 240,
               render: (roles: UserSummary['roles']) => (
                 <Flex gap={4} wrap>
                   {roles.map(({ role }) => (
@@ -130,8 +212,15 @@ export default function UsersPage() {
                 </Flex>
               ),
             },
-            { title: 'Sign-in', dataIndex: 'authSource', render: (source: string) => (source === 'LOCAL' ? 'Password' : 'Directory') },
-            { title: 'Status', dataIndex: 'status', render: (_: unknown, user) => <StatusTag status={isLocked(user) && user.status !== 'DISABLED' ? 'LOCKED' : user.status} /> },
+            {
+              title: 'Status',
+              dataIndex: 'status',
+              render: (_: unknown, user) => (
+                <StatusTag
+                  status={isLocked(user) && user.status !== 'DISABLED' ? 'LOCKED' : user.status}
+                />
+              ),
+            },
             { title: 'Last sign-in', dataIndex: 'lastLoginAt', render: formatDateTime },
             {
               key: 'actions',
@@ -141,8 +230,18 @@ export default function UsersPage() {
                     Edit
                   </Button>
                   {user.id !== me?.id && (
-                    <Dropdown menu={{ items: menuFor(user), onClick: ({ key }) => actions.confirm(key as Action, user) }} trigger={['click']}>
-                      <Button size="small" type="link" aria-label={`More actions for ${user.username}`}>
+                    <Dropdown
+                      menu={{
+                        items: menuFor(user),
+                        onClick: ({ key }) => actions.confirm(key as Action, user),
+                      }}
+                      trigger={['click']}
+                    >
+                      <Button
+                        size="small"
+                        type="link"
+                        aria-label={`More actions for ${user.username}`}
+                      >
                         More <DownOutlined />
                       </Button>
                     </Dropdown>
@@ -157,10 +256,19 @@ export default function UsersPage() {
         <UserFormModal
           user={editing === 'new' ? undefined : editing}
           onClose={() => setEditing(undefined)}
-          onCreated={(result) => result.temporaryPassword && setPassword({ username: result.user.username, value: result.temporaryPassword })}
+          onCreated={(result) =>
+            result.temporaryPassword &&
+            setPassword({ username: result.user.username, value: result.temporaryPassword })
+          }
         />
       )}
-      {password && <TemporaryPasswordModal username={password.username} password={password.value} onClose={() => setPassword(undefined)} />}
+      {password && (
+        <TemporaryPasswordModal
+          username={password.username}
+          password={password.value}
+          onClose={() => setPassword(undefined)}
+        />
+      )}
     </>
   );
 }

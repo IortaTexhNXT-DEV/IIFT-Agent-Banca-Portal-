@@ -1,9 +1,10 @@
 import { Table, type TablePaginationConfig } from 'antd';
 import { Link } from 'react-router';
 import type { ApprovalRequest } from '../../api/types';
-import { formatDateTime, humanise } from '../../utils/format';
+import { formatDate, formatDateTime, humanise } from '../../utils/format';
 import { Money } from '../Money';
 import { StatusTag } from '../StatusTag';
+import { CellText } from './CellText';
 
 interface Props {
   items: ApprovalRequest[];
@@ -17,7 +18,14 @@ interface Props {
 }
 
 /** BO-16..21: approval requests with their maker, amount and current level. */
-export function ApprovalTable({ items, loading, pagination = false, showStatus = false, emptyText = 'No requests', compact = false }: Props) {
+export function ApprovalTable({
+  items,
+  loading,
+  pagination = false,
+  showStatus = false,
+  emptyText = 'No requests',
+  compact = false,
+}: Props) {
   return (
     <Table<ApprovalRequest>
       size={compact ? 'small' : 'middle'}
@@ -28,10 +36,23 @@ export function ApprovalTable({ items, loading, pagination = false, showStatus =
       scroll={{ x: 'max-content' }}
       locale={{ emptyText }}
       columns={[
-        { title: 'Request no.', dataIndex: 'requestNo', render: (no: string, row) => <Link to={`/backoffice/approvals/${row.id}`}>{no}</Link> },
+        {
+          title: 'Request no.',
+          dataIndex: 'requestNo',
+          render: (no: string, row) => <Link to={`/backoffice/approvals/${row.id}`}>{no}</Link>,
+        },
         { title: 'Type', dataIndex: 'type', render: humanise },
-        { title: 'Summary', dataIndex: 'summary', width: compact ? 300 : 380, ellipsis: true },
-        { title: 'Amount', dataIndex: 'amount', align: 'right', render: (amount: string | null) => (amount === null ? '–' : <Money value={amount} />) },
+        {
+          title: 'Summary',
+          dataIndex: 'summary',
+          render: (summary: string) => <CellText text={summary} width={compact ? 200 : 300} />,
+        },
+        {
+          title: 'Amount',
+          dataIndex: 'amount',
+          align: 'right',
+          render: (amount: string | null) => (amount === null ? '–' : <Money value={amount} />),
+        },
         ...(compact
           ? []
           : [
@@ -39,11 +60,26 @@ export function ApprovalTable({ items, loading, pagination = false, showStatus =
               {
                 title: 'Level',
                 key: 'level',
-                render: (_: unknown, row: ApprovalRequest) => (row.status === 'PENDING' ? `${row.currentLevel} of ${row.totalLevels}` : row.totalLevels),
+                render: (_: unknown, row: ApprovalRequest) =>
+                  row.status === 'PENDING'
+                    ? `${row.currentLevel} of ${row.totalLevels}`
+                    : row.totalLevels,
               },
             ]),
-        { title: 'Submitted', dataIndex: 'submittedAt', render: formatDateTime },
-        ...(showStatus ? [{ title: 'Status', dataIndex: 'status', render: (status: string) => <StatusTag status={status} /> }] : []),
+        {
+          title: 'Submitted',
+          dataIndex: 'submittedAt',
+          render: (value: string) => (compact ? formatDate(value) : formatDateTime(value)),
+        },
+        ...(showStatus
+          ? [
+              {
+                title: 'Status',
+                dataIndex: 'status',
+                render: (status: string) => <StatusTag status={status} />,
+              },
+            ]
+          : []),
       ]}
     />
   );

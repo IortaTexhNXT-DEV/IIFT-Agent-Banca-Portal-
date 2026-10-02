@@ -2,7 +2,12 @@ import { Alert, App, Button, Card, Col, Flex, Row, Table, Tabs, Tag, Typography 
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useApiQuery } from '../../api/hooks';
-import type { Money as MoneyValue, OutstandingPolicy, OutstandingResponse, Payment } from '../../api/types';
+import type {
+  Money as MoneyValue,
+  OutstandingPolicy,
+  OutstandingResponse,
+  Payment,
+} from '../../api/types';
 import { useAuth } from '../../auth/AuthContext';
 import { Money } from '../../components/Money';
 import { PageHeader } from '../../components/PageHeader';
@@ -30,23 +35,47 @@ function Summary({ summary }: { summary: OutstandingResponse['summary'] }) {
       )}
       <Row gutter={[16, 16]} className="mb-16">
         <Col xs={12} xl={6}>
-          <StatCard label="Outstanding" value={formatMoney(summary.outstandingAmount)} hint={`${summary.outstandingCount} policies awaiting payment`} tone="warning" />
+          <StatCard
+            label="Outstanding"
+            value={formatMoney(summary.outstandingAmount)}
+            hint={`${summary.outstandingCount} ${summary.outstandingCount === 1 ? 'policy' : 'policies'} awaiting payment`}
+            tone="warning"
+          />
         </Col>
         <Col xs={12} xl={6}>
-          <StatCard label="Overdue" value={summary.overdueCount} hint={`${formatMoney(summary.overdueAmount)} past the due date`} tone={summary.overdueCount > 0 ? 'danger' : 'default'} />
+          <StatCard
+            label="Overdue"
+            value={summary.overdueCount}
+            hint={`${formatMoney(summary.overdueAmount)} past the due date`}
+            tone={summary.overdueCount > 0 ? 'danger' : 'default'}
+          />
         </Col>
         <Col xs={12} xl={6}>
-          <StatCard label="Due within 3 days" value={summary.dueSoonCount} tone={summary.dueSoonCount > 0 ? 'warning' : 'default'} />
+          <StatCard
+            label="Due within 3 days"
+            value={summary.dueSoonCount}
+            tone={summary.dueSoonCount > 0 ? 'warning' : 'default'}
+          />
         </Col>
         <Col xs={12} xl={6}>
-          <StatCard label="Pending verification" value={summary.pendingVerificationCount} hint="Payments submitted, awaiting Finance" />
+          <StatCard
+            label="Pending verification"
+            value={summary.pendingVerificationCount}
+            hint="Payments submitted, awaiting Finance"
+          />
         </Col>
       </Row>
     </>
   );
 }
 
-function OutstandingTable({ policies, canSubmit }: { policies: OutstandingPolicy[]; canSubmit: boolean }) {
+function OutstandingTable({
+  policies,
+  canSubmit,
+}: {
+  policies: OutstandingPolicy[];
+  canSubmit: boolean;
+}) {
   const navigate = useNavigate();
   const { message } = App.useApp();
   const { can } = useAuth();
@@ -92,17 +121,34 @@ function OutstandingTable({ policies, canSubmit }: { policies: OutstandingPolicy
             ? {
                 selectedRowKeys: selected,
                 onChange: (keys) => setSelected(keys.map(String)),
-                getCheckboxProps: (policy) => ({ disabled: policy.paymentStatus !== 'UNPAID', 'aria-label': `Select ${policy.policyNo ?? policy.quotationNo}` }),
+                getCheckboxProps: (policy) => ({
+                  disabled: policy.paymentStatus !== 'UNPAID',
+                  'aria-label': `Select ${policy.policyNo ?? policy.quotationNo}`,
+                }),
               }
             : undefined
         }
         columns={[
-          { title: 'Policy / quotation no.', key: 'reference', render: (_, policy) => <PolicyLink policy={policy} /> },
+          {
+            title: 'Policy / quotation no.',
+            key: 'reference',
+            render: (_, policy) => <PolicyLink policy={policy} />,
+          },
           { title: 'Product', dataIndex: ['product', 'name'] },
           { title: 'Participant', dataIndex: ['participant', 'fullName'] },
-          ...(can(P.portalAgencyWideView) ? [{ title: 'Agent', dataIndex: ['agent', 'fullName'] }] : []),
-          { title: 'Status', dataIndex: 'status', render: (status: string) => <StatusTag status={status} /> },
-          { title: 'Payment', dataIndex: 'paymentStatus', render: (status: string) => <StatusTag status={status} /> },
+          ...(can(P.portalAgencyWideView)
+            ? [{ title: 'Agent', dataIndex: ['agent', 'fullName'] }]
+            : []),
+          {
+            title: 'Status',
+            dataIndex: 'status',
+            render: (status: string) => <StatusTag status={status} />,
+          },
+          {
+            title: 'Payment',
+            dataIndex: 'paymentStatus',
+            render: (status: string) => <StatusTag status={status} />,
+          },
           {
             title: 'Due date',
             dataIndex: 'paymentDueDate',
@@ -115,11 +161,18 @@ function OutstandingTable({ policies, canSubmit }: { policies: OutstandingPolicy
                 formatDate(date)
               ),
           },
-          { title: 'Contribution', dataIndex: 'contribution', align: 'right', render: (value: MoneyValue) => <Money value={value} /> },
-          { title: 'Outstanding', dataIndex: 'outstandingAmount', align: 'right', render: (value: MoneyValue) => <Money value={value} strong /> },
+          {
+            title: 'Outstanding',
+            dataIndex: 'outstandingAmount',
+            align: 'right',
+            fixed: 'right',
+            render: (value: MoneyValue) => <Money value={value} strong />,
+          },
         ]}
       />
-      {paying && <PaymentDrawer policies={chosen} onClose={() => setPaying(false)} onSubmitted={submitted} />}
+      {paying && (
+        <PaymentDrawer policies={chosen} onClose={() => setPaying(false)} onSubmitted={submitted} />
+      )}
     </>
   );
 }
@@ -131,7 +184,11 @@ export default function BillingPage() {
 
   return (
     <>
-      <PageHeader title="Billing & payments" subtitle="Contributions awaiting payment and payments submitted to IIFT" breadcrumb={[{ title: 'Home', to: '/portal' }, { title: 'Billing & payments' }]} />
+      <PageHeader
+        title="Billing & payments"
+        subtitle="Contributions awaiting payment and payments submitted to IIFT"
+        breadcrumb={[{ title: 'Home', to: '/portal' }, { title: 'Billing & payments' }]}
+      />
       <QueryState query={outstanding}>
         {({ summary, policies }) => (
           <>
@@ -143,11 +200,18 @@ export default function BillingPage() {
                   label: `Outstanding (${policies.length})`,
                   children: (
                     <Card className="content-card">
-                      <OutstandingTable policies={policies} canSubmit={can(P.portalBillingSubmit)} />
+                      <OutstandingTable
+                        policies={policies}
+                        canSubmit={can(P.portalBillingSubmit)}
+                      />
                     </Card>
                   ),
                 },
-                { key: 'payments', label: 'Payment history', children: <PaymentList path="/portal/billing/payments" /> },
+                {
+                  key: 'payments',
+                  label: 'Payment history',
+                  children: <PaymentList path="/portal/billing/payments" />,
+                },
               ]}
             />
           </>

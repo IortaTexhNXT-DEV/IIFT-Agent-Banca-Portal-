@@ -9,7 +9,7 @@ import { AgentDocuments } from '../../components/admin/AgentDocuments';
 import { AgentStatusModal, AgentUpdateModal } from '../../components/admin/AgentMaintenance';
 import { AgentProfile } from '../../components/admin/AgentProfile';
 import { AGENT_TYPE_LABELS, STATUS_TRANSITIONS } from '../../components/admin/agents';
-import { AmlMatchesTable } from '../../components/admin/AmlMatchesTable';
+import { renderScreeningMatches } from '../../components/admin/AmlMatchesTable';
 import { SubAgentTable } from '../../components/admin/SubAgentTable';
 import { ApprovalHistory } from '../../components/ApprovalHistory';
 import { PageHeader } from '../../components/PageHeader';
@@ -18,13 +18,28 @@ import { StatusTag } from '../../components/StatusTag';
 import { formatDateTime } from '../../utils/format';
 import { P } from '../../utils/permissions';
 
-const agentLink = (agent: { id: string; agentCode: string; fullName: string }) => <Link to={`/backoffice/agents/${agent.id}`}>{`${agent.fullName} (${agent.agentCode})`}</Link>;
+const agentLink = (agent: { id: string; agentCode: string; fullName: string }) => (
+  <Link to={`/backoffice/agents/${agent.id}`}>{`${agent.fullName} (${agent.agentCode})`}</Link>
+);
 
 function Hierarchy({ agent }: { agent: AgentDetail }) {
   return (
     <>
-      <Descriptions size="small" className="mb-16" items={[{ key: 'parent', label: 'Reports to', children: agent.parent ? agentLink(agent.parent) : 'No reporting line' }]} />
-      <SubAgentTable agents={agent.subAgents} memberPath={(agentId) => `/backoffice/agents/${agentId}`} />
+      <Descriptions
+        size="small"
+        className="mb-16"
+        items={[
+          {
+            key: 'parent',
+            label: 'Reports to',
+            children: agent.parent ? agentLink(agent.parent) : 'No reporting line',
+          },
+        ]}
+      />
+      <SubAgentTable
+        agents={agent.subAgents}
+        memberPath={(agentId) => `/backoffice/agents/${agentId}`}
+      />
     </>
   );
 }
@@ -37,15 +52,32 @@ function Screenings({ screenings }: { screenings: AmlScreening[] }) {
       pagination={false}
       dataSource={screenings}
       locale={{ emptyText: 'Not screened yet' }}
-      expandable={{ rowExpandable: (row) => row.matches.length > 0, expandedRowRender: (row) => <AmlMatchesTable matches={row.matches} /> }}
+      expandable={{
+        rowExpandable: (row) => row.matches.length > 0,
+        expandedRowRender: renderScreeningMatches,
+      }}
       columns={[
         { title: 'Screened', dataIndex: 'createdAt', render: formatDateTime },
         { title: 'Provider', dataIndex: 'provider' },
         { title: 'Highest score', dataIndex: 'score', align: 'right' },
-        { title: 'Matches', key: 'matches', align: 'right', render: (_: unknown, row) => row.matches.length },
-        { title: 'Outcome', dataIndex: 'status', render: (status: string) => <StatusTag status={status} /> },
+        {
+          title: 'Matches',
+          key: 'matches',
+          align: 'right',
+          render: (_: unknown, row) => row.matches.length,
+        },
+        {
+          title: 'Outcome',
+          dataIndex: 'status',
+          render: (status: string) => <StatusTag status={status} />,
+        },
         { title: 'Reviewed', dataIndex: 'reviewedAt', render: formatDateTime },
-        { title: 'Review remarks', dataIndex: 'reviewRemarks', ellipsis: true, render: (remarks: string | null) => remarks ?? '–' },
+        {
+          title: 'Review remarks',
+          dataIndex: 'reviewRemarks',
+          ellipsis: true,
+          render: (remarks: string | null) => remarks ?? '–',
+        },
       ]}
     />
   );
@@ -74,7 +106,10 @@ export default function AgentDetailPage() {
                 </Flex>
               }
               subtitle={`${data.agentCode} · ${AGENT_TYPE_LABELS[data.agentType]} · ${data.agency.name}`}
-              breadcrumb={[{ title: 'Agents & bankers', to: '/backoffice/agents' }, { title: data.agentCode }]}
+              breadcrumb={[
+                { title: 'Agents & bankers', to: '/backoffice/agents' },
+                { title: data.agentCode },
+              ]}
               extra={
                 manage &&
                 !closed && (
@@ -84,7 +119,11 @@ export default function AgentDetailPage() {
                         Change status
                       </Button>
                     )}
-                    <Button type="primary" icon={<EditOutlined />} onClick={() => setDialog('update')}>
+                    <Button
+                      type="primary"
+                      icon={<EditOutlined />}
+                      onClick={() => setDialog('update')}
+                    >
                       Request profile update
                     </Button>
                   </>
@@ -99,7 +138,8 @@ export default function AgentDetailPage() {
                 showIcon
                 title={
                   <>
-                    <Link to={`/backoffice/approvals/${approval.id}`}>{approval.requestNo}</Link> is awaiting approval: {approval.summary}
+                    <Link to={`/backoffice/approvals/${approval.id}`}>{approval.requestNo}</Link> is
+                    awaiting approval: {approval.summary}
                   </>
                 }
               />
@@ -109,9 +149,25 @@ export default function AgentDetailPage() {
                 agent={data}
                 parentLink={agentLink}
                 extra={[
-                  { key: 'login', label: 'Portal login', children: data.user ? `${data.user.username} (${data.user.status.toLowerCase()})` : 'Created on approval' },
-                  { key: 'lastLogin', label: 'Last sign-in', children: formatDateTime(data.user?.lastLoginAt) },
-                  { key: 'agencyLink', label: data.agency.channel === 'BANCA' ? 'Bank record' : 'Agency record', children: <Link to={`/backoffice/agencies/${data.agency.id}`}>{data.agency.code}</Link> },
+                  {
+                    key: 'login',
+                    label: 'Portal login',
+                    children: data.user
+                      ? `${data.user.username} (${data.user.status.toLowerCase()})`
+                      : 'Created on approval',
+                  },
+                  {
+                    key: 'lastLogin',
+                    label: 'Last sign-in',
+                    children: formatDateTime(data.user?.lastLoginAt),
+                  },
+                  {
+                    key: 'agencyLink',
+                    label: data.agency.channel === 'BANCA' ? 'Bank record' : 'Agency record',
+                    children: (
+                      <Link to={`/backoffice/agencies/${data.agency.id}`}>{data.agency.code}</Link>
+                    ),
+                  },
                 ]}
               />
             </Card>
@@ -123,17 +179,39 @@ export default function AgentDetailPage() {
                     key: 'documents',
                     label: 'Documents',
                     children: (
-                      <AgentDocuments agentId={data.id} channel={data.agency.channel} canUpload={manage && !closed} canReview={can(P.boDocumentsVerify)} checkRequired={data.status === 'PENDING'} />
+                      <AgentDocuments
+                        agentId={data.id}
+                        channel={data.agency.channel}
+                        canUpload={manage && !closed}
+                        canReview={can(P.boDocumentsVerify)}
+                        checkRequired={data.status === 'PENDING'}
+                      />
                     ),
                   },
-                  { key: 'hierarchy', label: `Hierarchy (${data.subAgents.length})`, children: <Hierarchy agent={data} /> },
-                  { key: 'aml', label: 'AML screening', children: <Screenings screenings={data.screenings ?? []} /> },
-                  { key: 'approvals', label: 'Approval history', children: <ApprovalHistory approvals={data.approvals} /> },
+                  {
+                    key: 'hierarchy',
+                    label: `Hierarchy (${data.subAgents.length})`,
+                    children: <Hierarchy agent={data} />,
+                  },
+                  {
+                    key: 'aml',
+                    label: 'AML screening',
+                    children: <Screenings screenings={data.screenings ?? []} />,
+                  },
+                  {
+                    key: 'approvals',
+                    label: 'Approval history',
+                    children: <ApprovalHistory approvals={data.approvals} />,
+                  },
                 ]}
               />
             </Card>
-            {dialog === 'update' && <AgentUpdateModal agent={data} onClose={() => setDialog(undefined)} />}
-            {dialog === 'status' && <AgentStatusModal agent={data} onClose={() => setDialog(undefined)} />}
+            {dialog === 'update' && (
+              <AgentUpdateModal agent={data} onClose={() => setDialog(undefined)} />
+            )}
+            {dialog === 'status' && (
+              <AgentStatusModal agent={data} onClose={() => setDialog(undefined)} />
+            )}
           </>
         );
       }}

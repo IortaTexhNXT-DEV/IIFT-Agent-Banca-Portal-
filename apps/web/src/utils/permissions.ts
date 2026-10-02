@@ -50,4 +50,10 @@ export const P = {
   boEodRun: 'bo.eod.run',
 } as const;
 
-export const APPROVE_PERMISSIONS = [P.boApproveAgents, P.boApproveParticipants, P.boApprovePolicies, P.boApproveServicing, P.boApprovePayments];
+export const APPROVE_PERMISSIONS = [
+  P.boApproveAgents,
+  P.boApproveParticipants,
+  P.boApprovePolicies,
+  P.boApproveServicing,
+  P.boApprovePayments,
+];

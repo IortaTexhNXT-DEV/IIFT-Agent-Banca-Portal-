@@ -28,7 +28,12 @@ async function fetchMe(): Promise<SessionUser | null> {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
-  const { data: user = null, isLoading } = useQuery({ queryKey: ME_KEY, queryFn: fetchMe, staleTime: Infinity, retry: false });
+  const { data: user = null, isLoading } = useQuery({
+    queryKey: ME_KEY,
+    queryFn: fetchMe,
+    staleTime: Infinity,
+    retry: false,
+  });
 
   const refresh = useCallback(
     (response: AuthResponse) => {
@@ -46,6 +51,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => onSessionEnded(clear), [clear]);
 
+  /** The local session is cleared even when the server call fails. */
+  const logout = useCallback(async () => {
+    await api.post('/auth/logout').finally(clear);
+  }, [clear]);
+
   const value = useMemo<AuthState>(
     () => ({
       user,
@@ -56,17 +66,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refresh(response);
         return response.user;
       },
-      async logout() {
-        try {
-          await api.post('/auth/logout');
-        } finally {
-          clear();
-        }
-      },
+      logout,
       refresh,
       can: (permission) => user?.permissions.includes(permission) ?? false,
     }),
-    [user, isLoading, queryClient, refresh, clear],
+    [user, isLoading, queryClient, refresh, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

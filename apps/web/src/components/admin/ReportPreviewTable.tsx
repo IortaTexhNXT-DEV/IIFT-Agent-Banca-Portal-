@@ -29,13 +29,24 @@ function toColumn(column: Column): TableColumnType<Row> {
 export function ReportPreviewTable({ preview }: { preview: ReportPreview }) {
   return (
     <>
-      {preview.truncated && <Alert className="mb-16" type="info" showIcon title={`Showing the first ${preview.rows.length} rows. Export the report for the complete result.`} />}
+      {preview.truncated && (
+        <Alert
+          className="mb-16"
+          type="info"
+          showIcon
+          title={`Showing the first ${preview.rows.length} rows. Export the report for the complete result.`}
+        />
+      )}
       <Table<Row>
         size="small"
         rowKey="rowKey"
         dataSource={preview.rows.map((row, index) => ({ ...row, rowKey: index }))}
         columns={preview.columns.map(toColumn)}
-        pagination={{ pageSize: 50, showSizeChanger: false, showTotal: (total) => `${total} row${total === 1 ? '' : 's'}` }}
+        pagination={{
+          pageSize: 50,
+          showSizeChanger: false,
+          showTotal: (total) => `${total} row${total === 1 ? '' : 's'}`,
+        }}
         scroll={{ x: 'max-content' }}
         locale={{ emptyText: 'No data for the selected filters' }}
       />

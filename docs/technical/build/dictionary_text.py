@@ -451,7 +451,7 @@ COLUMNS = {
     "audit_log.entity_type": "Type of record affected.",
     "audit_log.entity_id": "Id of the record affected.",
     "audit_log.before": "Values before the change. Passwords, hashes, encrypted identifiers, tokens and storage keys "
-                        "are written as [REDACTED].",
+                        "are written as a fixed REDACTED marker.",
     "audit_log.after": "Values after the change, redacted in the same way.",
     "audit_log.ip_address": "Client IP address as seen through the reverse proxy.",
     "audit_log.user_agent": "Client browser user agent, truncated to 300 characters.",

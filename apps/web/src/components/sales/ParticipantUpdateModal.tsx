@@ -6,7 +6,11 @@ import { useApiMutation } from '../../api/hooks';
 import type { ParticipantInput } from '../../api/sales-types';
 import type { ApprovalRequest, Participant } from '../../api/types';
 import { FormModal } from './FormModal';
-import { ParticipantDetailsFields, type ParticipantFormValues, toParticipantPayload } from './ParticipantFields';
+import {
+  ParticipantDetailsFields,
+  type ParticipantFormValues,
+  toParticipantPayload,
+} from './ParticipantFields';
 
 type Changes = Partial<ParticipantInput>;
 
@@ -31,18 +35,30 @@ function currentValues(participant: Participant): ParticipantFormValues {
 function changedFields(participant: Participant, values: ParticipantFormValues): Changes {
   const before = toParticipantPayload(currentValues(participant));
   const after = toParticipantPayload(values);
-  return Object.fromEntries(Object.entries(after).filter(([key, value]) => before[key as keyof Changes] !== value)) as Changes;
+  return Object.fromEntries(
+    Object.entries(after).filter(([key, value]) => before[key as keyof Changes] !== value),
+  ) as Changes;
 }
 
 /** AP-15: changes to a participant's particulars are applied after back-office approval. */
-export function ParticipantUpdateModal({ participant, onClose }: { participant: Participant; onClose(): void }) {
+export function ParticipantUpdateModal({
+  participant,
+  onClose,
+}: {
+  participant: Participant;
+  onClose(): void;
+}) {
   const [form] = Form.useForm<ParticipantFormValues>();
   const [unchanged, setUnchanged] = useState(false);
-  const request = useApiMutation((changes: Changes) => api.post<ApprovalRequest>(`/portal/participants/${participant.id}/update-requests`, changes), {
-    success: 'Update request submitted for approval',
-    invalidate: ['/portal/participants', '/portal/requests'],
-    onSuccess: onClose,
-  });
+  const request = useApiMutation(
+    (changes: Changes) =>
+      api.post<ApprovalRequest>(`/portal/participants/${participant.id}/update-requests`, changes),
+    {
+      success: 'Update request submitted for approval',
+      invalidate: ['/portal/participants', '/portal/requests'],
+      onSuccess: onClose,
+    },
+  );
 
   const submit = (values: ParticipantFormValues) => {
     const changes = changedFields(participant, values);
@@ -63,7 +79,9 @@ export function ParticipantUpdateModal({ participant, onClose }: { participant: 
       width={760}
     >
       <Typography.Paragraph type={unchanged ? 'danger' : 'secondary'}>
-        {unchanged ? 'Nothing has been changed yet.' : 'Edit the particulars that have changed. The profile is updated once IIFT approves the request.'}
+        {unchanged
+          ? 'Nothing has been changed yet.'
+          : 'Edit the particulars that have changed. The profile is updated once IIFT approves the request.'}
       </Typography.Paragraph>
       <ParticipantDetailsFields individual={participant.type === 'INDIVIDUAL'} />
     </FormModal>

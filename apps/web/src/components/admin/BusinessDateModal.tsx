@@ -15,7 +15,15 @@ interface Props {
 }
 
 /** Asks for the business date of a batch run (end of day, reconciliation); future dates are not allowed. */
-export function BusinessDateModal({ title, okText, description, pending, error, onSubmit, onClose }: Props) {
+export function BusinessDateModal({
+  title,
+  okText,
+  description,
+  pending,
+  error,
+  onSubmit,
+  onClose,
+}: Props) {
   const [form] = Form.useForm<{ businessDate: Dayjs }>();
   return (
     <Modal
@@ -24,14 +32,28 @@ export function BusinessDateModal({ title, okText, description, pending, error, 
       okText={okText}
       okButtonProps={{ loading: pending }}
       onCancel={onClose}
-      onOk={() => form.validateFields().then((values) => onSubmit(values.businessDate.format('YYYY-MM-DD')))}
+      onOk={() => form.submit()}
       destroyOnHidden
     >
       {description && <div className="mb-16">{description}</div>}
       <ErrorAlert error={error} className="mb-16" />
-      <Form form={form} layout="vertical" requiredMark="optional" initialValues={{ businessDate: dayjs() }}>
-        <Form.Item name="businessDate" label="Business date" rules={[{ required: true, message: 'Choose the business date' }]}>
-          <DatePicker format="DD MMM YYYY" style={{ width: '100%' }} disabledDate={(date) => date.isAfter(dayjs(), 'day')} />
+      <Form
+        form={form}
+        onFinish={(values) => onSubmit(values.businessDate.format('YYYY-MM-DD'))}
+        layout="vertical"
+        requiredMark="optional"
+        initialValues={{ businessDate: dayjs() }}
+      >
+        <Form.Item
+          name="businessDate"
+          label="Business date"
+          rules={[{ required: true, message: 'Choose the business date' }]}
+        >
+          <DatePicker
+            format="DD MMM YYYY"
+            style={{ width: '100%' }}
+            disabledDate={(date) => date.isAfter(dayjs(), 'day')}
+          />
         </Form.Item>
       </Form>
     </Modal>

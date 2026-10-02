@@ -4,7 +4,7 @@ import { useApiMutation } from '../../api/hooks';
 import type { NomineeInput } from '../../api/sales-types';
 import type { PolicyDetail } from '../../api/types';
 import { FormModal } from './FormModal';
-import { type NomineeRow, NomineesEditor, toNomineeInputs } from './NomineesEditor';
+import { type NomineeRow, nomineeRows, NomineesEditor, toNomineeInputs } from './NomineesEditor';
 
 interface Values {
   nominees: NomineeRow[];
@@ -13,19 +13,15 @@ interface Values {
 /** AP-19: nominees, beneficiaries or executors of a draft application. */
 export function NomineesModal({ policy, onClose }: { policy: PolicyDetail; onClose(): void }) {
   const [form] = Form.useForm<Values>();
-  const save = useApiMutation((nominees: NomineeInput[]) => api.put(`/portal/policies/${policy.id}/nominees`, { nominees }), {
-    success: 'Nominees saved',
-    invalidate: ['/portal/policies'],
-    onSuccess: onClose,
-  });
-  const existing: NomineeRow[] = policy.nominees.map((nominee) => ({
-    fullName: nominee.fullName,
-    relationship: nominee.relationship,
-    role: nominee.role,
-    sharePercent: Number(nominee.sharePercent),
-    idNumberMasked: nominee.idNumberMasked,
-  }));
-  const initialValues: Values = { nominees: existing.length > 0 ? existing : [{ role: 'NOMINEE', sharePercent: 100 }] };
+  const save = useApiMutation(
+    (nominees: NomineeInput[]) => api.put(`/portal/policies/${policy.id}/nominees`, { nominees }),
+    {
+      success: 'Nominees saved',
+      invalidate: ['/portal/policies'],
+      onSuccess: onClose,
+    },
+  );
+  const initialValues: Values = { nominees: nomineeRows(policy.nominees) };
 
   return (
     <FormModal<Values>
@@ -40,7 +36,12 @@ export function NomineesModal({ policy, onClose }: { policy: PolicyDetail; onClo
       width={1040}
     >
       {policy.nominees.some((nominee) => nominee.idNumberMasked) && (
-        <Alert className="mb-16" type="info" showIcon title="Saving replaces the nominee list. Re-enter the IC or passport number of existing nominees to keep it on record." />
+        <Alert
+          className="mb-16"
+          type="info"
+          showIcon
+          title="Leave the IC / passport number blank to keep the number already on record."
+        />
       )}
       <NomineesEditor required={policy.product.config.requiresNominee === true} />
     </FormModal>

@@ -22,7 +22,9 @@ export function policyQuery({ created, ...filters }: PolicyFilterValues) {
 
 /** Initial filters from the URL, e.g. dashboard links to /portal/policies?status=DRAFT. */
 export function filtersFromUrl(params: URLSearchParams): PolicyFilterValues {
-  const status = POLICY_STATUS_OPTIONS.find((option) => option.value === params.get('status'))?.value;
+  const status = POLICY_STATUS_OPTIONS.find(
+    (option) => option.value === params.get('status'),
+  )?.value;
   return { status };
 }
 
@@ -74,7 +76,10 @@ export function PolicyFilters({ value, onChange, showAgency = false }: Props) {
         showSearch={{ optionFilterProp: 'label' }}
         value={value.productId}
         loading={products.isLoading}
-        options={(products.data ?? []).map((product) => ({ value: product.id, label: product.name }))}
+        options={(products.data ?? []).map((product) => ({
+          value: product.id,
+          label: product.name,
+        }))}
         onChange={(productId) => set({ productId })}
         className="filter-select filter-select--wide"
       />
@@ -86,7 +91,10 @@ export function PolicyFilters({ value, onChange, showAgency = false }: Props) {
           showSearch={{ optionFilterProp: 'label' }}
           value={value.agencyId}
           loading={agencies.isLoading}
-          options={(agencies.data ?? []).map((agency) => ({ value: agency.id, label: agency.name }))}
+          options={(agencies.data ?? []).map((agency) => ({
+            value: agency.id,
+            label: agency.name,
+          }))}
           onChange={(agencyId) => set({ agencyId })}
           className="filter-select filter-select--wide"
         />
@@ -95,7 +103,9 @@ export function PolicyFilters({ value, onChange, showAgency = false }: Props) {
         aria-label="Created between"
         placeholder={['Created from', 'Created to']}
         value={value.created}
-        onChange={(created) => set({ created: created?.[0] && created[1] ? [created[0], created[1]] : null })}
+        onChange={(created) =>
+          set({ created: created?.[0] && created[1] ? [created[0], created[1]] : null })
+        }
         className="filter-range"
       />
     </FilterBar>

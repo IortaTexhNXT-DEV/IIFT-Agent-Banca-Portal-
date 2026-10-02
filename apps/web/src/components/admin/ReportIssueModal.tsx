@@ -27,10 +27,13 @@ export function ReportIssueModal({ onClose }: { onClose(): void }) {
   const [created, setCreated] = useState<Issue>();
   const categories = useCodes('ISSUE_CATEGORY');
   const documentTypes = useCodes('DOCUMENT_TYPE');
-  const report = useApiMutation((values: IssueValues) => api.post<Issue>('/common/issues', values), {
-    invalidate: ['/common/issues'],
-    onSuccess: setCreated,
-  });
+  const report = useApiMutation(
+    (values: IssueValues) => api.post<Issue>('/common/issues', values),
+    {
+      invalidate: ['/common/issues'],
+      onSuccess: setCreated,
+    },
+  );
 
   if (created) {
     const detailPath = `${basePathFor(user?.audience ?? 'PORTAL')}/issues/${created.id}`;
@@ -50,8 +53,19 @@ export function ReportIssueModal({ onClose }: { onClose(): void }) {
         destroyOnHidden
         width={720}
       >
-        <Alert className="mb-16" type="success" showIcon title={`Your reference number is ${created.issueNo}. Support will respond within the target time for ${humanise(created.priority).toLowerCase()} priority.`} />
-        <DocumentPanel ownerType="ISSUE" ownerId={created.id} canUpload uploadTypes={issueUploadTypes(documentTypes.labelOf)} title="Attachments (optional)" />
+        <Alert
+          className="mb-16"
+          type="success"
+          showIcon
+          title={`Your reference number is ${created.issueNo}. Support will respond within the target time for ${humanise(created.priority).toLowerCase()} priority.`}
+        />
+        <DocumentPanel
+          ownerType="ISSUE"
+          ownerId={created.id}
+          canUpload
+          uploadTypes={issueUploadTypes(documentTypes.labelOf)}
+          title="Attachments (optional)"
+        />
       </Modal>
     );
   }
@@ -63,22 +77,58 @@ export function ReportIssueModal({ onClose }: { onClose(): void }) {
       okText="Submit"
       okButtonProps={{ loading: report.isPending }}
       onCancel={onClose}
-      onOk={() => form.validateFields().then((values) => report.mutate({ ...values, title: values.title.trim(), description: values.description.trim() }))}
+      onOk={() => form.submit()}
       destroyOnHidden
       width={640}
     >
       <ErrorAlert error={report.error} className="mb-16" />
-      <Form form={form} layout="vertical" requiredMark="optional" initialValues={{ priority: 'MEDIUM' }}>
-        <Form.Item name="title" label="Title" rules={[{ required: true, whitespace: true, message: 'Enter a short title' }, { min: 5, max: 200 }]}>
+      <Form
+        form={form}
+        onFinish={(values) =>
+          report.mutate({
+            ...values,
+            title: values.title.trim(),
+            description: values.description.trim(),
+          })
+        }
+        layout="vertical"
+        requiredMark="optional"
+        initialValues={{ priority: 'MEDIUM' }}
+      >
+        <Form.Item
+          name="title"
+          label="Title"
+          rules={[
+            { required: true, whitespace: true, message: 'Enter a short title' },
+            { min: 5, max: 200 },
+          ]}
+        >
           <Input />
         </Form.Item>
-        <Form.Item name="category" label="Category" rules={[{ required: true, message: 'Choose a category' }]}>
+        <Form.Item
+          name="category"
+          label="Category"
+          rules={[{ required: true, message: 'Choose a category' }]}
+        >
           <Select options={categories.options} loading={categories.loading} />
         </Form.Item>
-        <Form.Item name="priority" label="Priority" extra="Critical: business stopped. High: a key function is unavailable. Medium: impaired with a workaround. Low: question or minor fault." rules={[{ required: true }]}>
+        <Form.Item
+          name="priority"
+          label="Priority"
+          extra="Critical: business stopped. High: a key function is unavailable. Medium: impaired with a workaround. Low: question or minor fault."
+          rules={[{ required: true }]}
+        >
           <Select options={enumOptions(ISSUE_PRIORITIES, humanise)} />
         </Form.Item>
-        <Form.Item name="description" label="Description" extra="What happened, what you expected, and any reference numbers involved" rules={[{ required: true, whitespace: true, message: 'Describe the issue' }, { min: 10, max: 4000 }]}>
+        <Form.Item
+          name="description"
+          label="Description"
+          extra="What happened, what you expected, and any reference numbers involved"
+          rules={[
+            { required: true, whitespace: true, message: 'Describe the issue' },
+            { min: 10, max: 4000 },
+          ]}
+        >
           <Input.TextArea rows={5} showCount maxLength={4000} />
         </Form.Item>
       </Form>

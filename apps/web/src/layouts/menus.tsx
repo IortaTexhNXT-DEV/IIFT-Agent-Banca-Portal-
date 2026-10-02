@@ -45,28 +45,83 @@ export interface MenuGroup {
 export const PORTAL_MENU: MenuGroup[] = [
   {
     entries: [
-      { path: '/portal', label: 'Dashboard', icon: <DashboardOutlined />, anyOf: [P.portalDashboard] },
-      { path: '/portal/quotations/new', label: 'New quotation', icon: <PlusCircleOutlined />, anyOf: [P.portalPoliciesQuote] },
+      {
+        path: '/portal',
+        label: 'Dashboard',
+        icon: <DashboardOutlined />,
+        anyOf: [P.portalDashboard],
+      },
+      {
+        path: '/portal/quotations/new',
+        label: 'New quotation',
+        icon: <PlusCircleOutlined />,
+        anyOf: [P.portalPoliciesQuote],
+      },
     ],
   },
   {
     label: 'Business',
     entries: [
-      { path: '/portal/policies', label: 'Quotations & policies', icon: <FileProtectOutlined />, anyOf: [P.portalPoliciesView] },
-      { path: '/portal/renewals', label: 'Renewals', icon: <SyncOutlined />, anyOf: [P.portalPoliciesView] },
-      { path: '/portal/participants', label: 'Participants', icon: <TeamOutlined />, anyOf: [P.portalParticipantsView] },
-      { path: '/portal/billing', label: 'Billing & payments', icon: <WalletOutlined />, anyOf: [P.portalBillingView] },
-      { path: '/portal/claims', label: 'Claims', icon: <MedicineBoxOutlined />, anyOf: [P.portalClaimsView] },
+      {
+        path: '/portal/policies',
+        label: 'Quotations & policies',
+        icon: <FileProtectOutlined />,
+        anyOf: [P.portalPoliciesView],
+      },
+      {
+        path: '/portal/renewals',
+        label: 'Renewals',
+        icon: <SyncOutlined />,
+        anyOf: [P.portalPoliciesView],
+      },
+      {
+        path: '/portal/participants',
+        label: 'Participants',
+        icon: <TeamOutlined />,
+        anyOf: [P.portalParticipantsView],
+      },
+      {
+        path: '/portal/billing',
+        label: 'Billing & payments',
+        icon: <WalletOutlined />,
+        anyOf: [P.portalBillingView],
+      },
+      {
+        path: '/portal/claims',
+        label: 'Claims',
+        icon: <MedicineBoxOutlined />,
+        anyOf: [P.portalClaimsView],
+      },
       { path: '/portal/requests', label: 'My requests', icon: <CheckSquareOutlined /> },
     ],
   },
   {
     label: 'Agency',
     entries: [
-      { path: '/portal/team', label: 'Team & hierarchy', icon: <ApartmentOutlined />, anyOf: [P.portalHierarchyView] },
-      { path: '/portal/commission', label: 'Commission', icon: <DollarOutlined />, anyOf: [P.portalCommissionView] },
-      { path: '/portal/reports', label: 'Reports', icon: <BarChartOutlined />, anyOf: [P.portalReports] },
-      { path: '/portal/issues', label: 'Support', icon: <CustomerServiceOutlined />, anyOf: [P.portalIssues] },
+      {
+        path: '/portal/team',
+        label: 'Team & hierarchy',
+        icon: <ApartmentOutlined />,
+        anyOf: [P.portalHierarchyView],
+      },
+      {
+        path: '/portal/commission',
+        label: 'Commission',
+        icon: <DollarOutlined />,
+        anyOf: [P.portalCommissionView],
+      },
+      {
+        path: '/portal/reports',
+        label: 'Reports',
+        icon: <BarChartOutlined />,
+        anyOf: [P.portalReports],
+      },
+      {
+        path: '/portal/issues',
+        label: 'Support',
+        icon: <CustomerServiceOutlined />,
+        anyOf: [P.portalIssues],
+      },
     ],
   },
 ];
@@ -74,51 +129,151 @@ export const PORTAL_MENU: MenuGroup[] = [
 export const BACKOFFICE_MENU: MenuGroup[] = [
   {
     entries: [
-      { path: '/backoffice', label: 'Dashboard', icon: <DashboardOutlined />, anyOf: [P.boDashboard] },
-      { path: '/backoffice/approvals', label: 'Approvals', icon: <CheckSquareOutlined />, anyOf: APPROVE_PERMISSIONS },
+      {
+        path: '/backoffice',
+        label: 'Dashboard',
+        icon: <DashboardOutlined />,
+        anyOf: [P.boDashboard],
+      },
+      {
+        path: '/backoffice/approvals',
+        label: 'Approvals',
+        icon: <CheckSquareOutlined />,
+        anyOf: APPROVE_PERMISSIONS,
+      },
     ],
   },
   {
     label: 'Distribution',
     entries: [
-      { path: '/backoffice/agents', label: 'Agents & bankers', icon: <UserOutlined />, anyOf: [P.boAgentsView] },
-      { path: '/backoffice/agencies', label: 'Agencies & banks', icon: <BankOutlined />, anyOf: [P.boAgenciesView] },
+      {
+        path: '/backoffice/agents',
+        label: 'Agents & bankers',
+        icon: <UserOutlined />,
+        anyOf: [P.boAgentsView],
+      },
+      {
+        path: '/backoffice/agencies',
+        label: 'Agencies & banks',
+        icon: <BankOutlined />,
+        anyOf: [P.boAgenciesView],
+      },
     ],
   },
   {
     label: 'Business',
     entries: [
-      { path: '/backoffice/policies', label: 'Policies', icon: <FileProtectOutlined />, anyOf: [P.boPoliciesView] },
-      { path: '/backoffice/participants', label: 'Participants', icon: <TeamOutlined />, anyOf: [P.boParticipantsView] },
-      { path: '/backoffice/payments', label: 'Payments', icon: <WalletOutlined />, anyOf: [P.boPaymentsView] },
-      { path: '/backoffice/claims', label: 'Claims', icon: <MedicineBoxOutlined />, anyOf: [P.boClaimsManage] },
+      {
+        path: '/backoffice/policies',
+        label: 'Policies',
+        icon: <FileProtectOutlined />,
+        anyOf: [P.boPoliciesView],
+      },
+      {
+        path: '/backoffice/participants',
+        label: 'Participants',
+        icon: <TeamOutlined />,
+        anyOf: [P.boParticipantsView],
+      },
+      {
+        path: '/backoffice/payments',
+        label: 'Payments',
+        icon: <WalletOutlined />,
+        anyOf: [P.boPaymentsView],
+      },
+      {
+        path: '/backoffice/claims',
+        label: 'Claims',
+        icon: <MedicineBoxOutlined />,
+        anyOf: [P.boClaimsManage],
+      },
     ],
   },
   {
     label: 'Control',
     entries: [
-      { path: '/backoffice/aml', label: 'AML / KYC', icon: <SafetyCertificateOutlined />, anyOf: [P.boAmlReview] },
-      { path: '/backoffice/documents', label: 'Document checks', icon: <FileSearchOutlined />, anyOf: [P.boDocumentsVerify] },
-      { path: '/backoffice/audit', label: 'Audit trail', icon: <AuditOutlined />, anyOf: [P.boAuditView] },
+      {
+        path: '/backoffice/aml',
+        label: 'AML / KYC',
+        icon: <SafetyCertificateOutlined />,
+        anyOf: [P.boAmlReview],
+      },
+      {
+        path: '/backoffice/documents',
+        label: 'Document checks',
+        icon: <FileSearchOutlined />,
+        anyOf: [P.boDocumentsVerify],
+      },
+      {
+        path: '/backoffice/audit',
+        label: 'Audit trail',
+        icon: <AuditOutlined />,
+        anyOf: [P.boAuditView],
+      },
     ],
   },
   {
     label: 'Operations',
     entries: [
-      { path: '/backoffice/issues', label: 'Issues', icon: <AlertOutlined />, anyOf: [P.boIssuesManage] },
-      { path: '/backoffice/reports', label: 'Reports', icon: <FundOutlined />, anyOf: [P.boReportsView] },
-      { path: '/backoffice/eod', label: 'End of day', icon: <ScheduleOutlined />, anyOf: [P.boEodRun] },
-      { path: '/backoffice/integration', label: 'Integration', icon: <ReconciliationOutlined />, anyOf: [P.boIntegrationManage] },
+      {
+        path: '/backoffice/issues',
+        label: 'Issues',
+        icon: <AlertOutlined />,
+        anyOf: [P.boIssuesManage],
+      },
+      {
+        path: '/backoffice/reports',
+        label: 'Reports',
+        icon: <FundOutlined />,
+        anyOf: [P.boReportsView],
+      },
+      {
+        path: '/backoffice/eod',
+        label: 'End of day',
+        icon: <ScheduleOutlined />,
+        anyOf: [P.boEodRun],
+      },
+      {
+        path: '/backoffice/integration',
+        label: 'Integration',
+        icon: <ReconciliationOutlined />,
+        anyOf: [P.boIntegrationManage],
+      },
     ],
   },
   {
     label: 'Administration',
     entries: [
-      { path: '/backoffice/users', label: 'Users', icon: <SolutionOutlined />, anyOf: [P.boUsersManage] },
-      { path: '/backoffice/roles', label: 'Roles & permissions', icon: <ClusterOutlined />, anyOf: [P.boRolesManage] },
-      { path: '/backoffice/workflows', label: 'Workflows', icon: <ControlOutlined />, anyOf: [P.boWorkflowConfigure] },
-      { path: '/backoffice/products', label: 'Products', icon: <FileTextOutlined />, anyOf: [P.boProductsManage] },
-      { path: '/backoffice/settings', label: 'Parameters & master data', icon: <SettingOutlined />, anyOf: [P.boConfigManage] },
+      {
+        path: '/backoffice/users',
+        label: 'Users',
+        icon: <SolutionOutlined />,
+        anyOf: [P.boUsersManage],
+      },
+      {
+        path: '/backoffice/roles',
+        label: 'Roles & permissions',
+        icon: <ClusterOutlined />,
+        anyOf: [P.boRolesManage],
+      },
+      {
+        path: '/backoffice/workflows',
+        label: 'Workflows',
+        icon: <ControlOutlined />,
+        anyOf: [P.boWorkflowConfigure],
+      },
+      {
+        path: '/backoffice/products',
+        label: 'Products',
+        icon: <FileTextOutlined />,
+        anyOf: [P.boProductsManage],
+      },
+      {
+        path: '/backoffice/settings',
+        label: 'Parameters & master data',
+        icon: <SettingOutlined />,
+        anyOf: [P.boConfigManage],
+      },
     ],
   },
 ];

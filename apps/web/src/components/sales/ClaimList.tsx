@@ -37,7 +37,15 @@ export function ClaimList({ path }: { path: '/portal/claims' | '/backoffice/clai
           onSearch={(search) => set({ search: search.trim() || undefined })}
           className="filter-search"
         />
-        <Select placeholder="Status" aria-label="Status" allowClear options={CLAIM_STATUS_OPTIONS} value={filters.status} onChange={(status) => set({ status })} className="filter-select" />
+        <Select
+          placeholder="Status"
+          aria-label="Status"
+          allowClear
+          options={CLAIM_STATUS_OPTIONS}
+          value={filters.status}
+          onChange={(status) => set({ status })}
+          className="filter-select"
+        />
       </FilterBar>
       <Card className="content-card" styles={{ body: { padding: 0 } }}>
         <Table<Claim>
@@ -49,15 +57,36 @@ export function ClaimList({ path }: { path: '/portal/claims' | '/backoffice/clai
           scroll={{ x: 'max-content' }}
           locale={{ emptyText: 'No claims notified' }}
           columns={[
-            { title: 'Claim no.', dataIndex: 'claimNo', render: (claimNo: string, claim) => <Link to={links.claim(claim.id)}>{claimNo}</Link> },
-            { title: 'Policy no.', key: 'policy', render: (_, claim) => <Link to={links.policy(claim.policy.id)}>{claim.policy.policyNo}</Link> },
+            {
+              title: 'Claim no.',
+              dataIndex: 'claimNo',
+              render: (claimNo: string, claim) => <Link to={links.claim(claim.id)}>{claimNo}</Link>,
+            },
+            {
+              title: 'Policy no.',
+              key: 'policy',
+              render: (_, claim) => (
+                <Link to={links.policy(claim.policy.id)}>{claim.policy.policyNo}</Link>
+              ),
+            },
             { title: 'Participant', dataIndex: ['policy', 'participant', 'fullName'] },
             { title: 'Product', dataIndex: ['policy', 'product', 'name'] },
-            ...(links.backoffice ? [{ title: 'Agency / bank', dataIndex: ['policy', 'agency', 'name'] }] : []),
+            ...(links.backoffice
+              ? [{ title: 'Agency / bank', dataIndex: ['policy', 'agency', 'name'] }]
+              : []),
             { title: 'Type', dataIndex: 'claimType', render: claimTypes.label },
             { title: 'Event date', dataIndex: 'eventDate', render: formatDate },
-            { title: 'Claimed', dataIndex: 'claimedAmount', align: 'right', render: (value: MoneyValue | null) => <Money value={value} /> },
-            { title: 'Status', dataIndex: 'status', render: (status: string) => <StatusTag status={status} /> },
+            {
+              title: 'Claimed',
+              dataIndex: 'claimedAmount',
+              align: 'right',
+              render: (value: MoneyValue | null) => <Money value={value} />,
+            },
+            {
+              title: 'Status',
+              dataIndex: 'status',
+              render: (status: string) => <StatusTag status={status} />,
+            },
             { title: 'Notified', dataIndex: 'createdAt', render: formatDateTime },
           ]}
         />

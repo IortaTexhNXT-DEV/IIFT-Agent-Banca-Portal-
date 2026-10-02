@@ -21,10 +21,17 @@ function display(key: string, value: unknown): string {
 }
 
 /** Field-by-field comparison of two JSON objects; changed fields are highlighted. */
-export function ChangeTable({ before, after, beforeTitle = 'Before', afterTitle = 'After' }: Props) {
+export function ChangeTable({
+  before,
+  after,
+  beforeTitle = 'Before',
+  afterTitle = 'After',
+}: Props) {
   const left = isRecord(before) ? before : {};
   const right = isRecord(after) ? after : {};
-  const keys = [...new Set([...Object.keys(left), ...Object.keys(right)])].filter((key) => !isHiddenKey(key));
+  const keys = [...new Set([...Object.keys(left), ...Object.keys(right)])].filter(
+    (key) => !isHiddenKey(key),
+  );
   const rows: Row[] = keys.map((key) => {
     const from = key in left ? display(key, left[key]) : '–';
     const to = key in right ? display(key, right[key]) : '–';

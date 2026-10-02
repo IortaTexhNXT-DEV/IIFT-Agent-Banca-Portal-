@@ -8,7 +8,8 @@ import { formatDateTime, humanise } from '../../utils/format';
 import { ErrorAlert } from '../ErrorAlert';
 import { FilterBar } from '../FilterBar';
 import { StatusTag } from '../StatusTag';
-import { AmlMatchesTable } from './AmlMatchesTable';
+import { AmlMatchesTable, renderScreeningMatches } from './AmlMatchesTable';
+import { CellText } from './CellText';
 import { recordPath } from './links';
 import { enumOptions } from './useCodes';
 
@@ -22,11 +23,18 @@ interface ReviewValues {
 
 function ReviewModal({ screening, onClose }: { screening: AmlScreening; onClose(): void }) {
   const [form] = Form.useForm<ReviewValues>();
-  const review = useApiMutation((values: ReviewValues) => api.post<AmlScreening>(`/backoffice/aml/cases/${screening.id}/review`, { ...values, remarks: values.remarks.trim() }), {
-    success: 'Review recorded',
-    invalidate: ['/backoffice'],
-    onSuccess: onClose,
-  });
+  const review = useApiMutation(
+    (values: ReviewValues) =>
+      api.post<AmlScreening>(`/backoffice/aml/cases/${screening.id}/review`, {
+        ...values,
+        remarks: values.remarks.trim(),
+      }),
+    {
+      success: 'Review recorded',
+      invalidate: ['/backoffice'],
+      onSuccess: onClose,
+    },
+  );
 
   return (
     <Modal
@@ -35,7 +43,7 @@ function ReviewModal({ screening, onClose }: { screening: AmlScreening; onClose(
       okText="Record decision"
       okButtonProps={{ loading: review.isPending }}
       onCancel={onClose}
-      onOk={() => form.validateFields().then((values) => review.mutate(values))}
+      onOk={() => form.submit()}
       destroyOnHidden
       width={720}
     >
@@ -43,8 +51,17 @@ function ReviewModal({ screening, onClose }: { screening: AmlScreening; onClose(
       <div className="mb-16">
         <AmlMatchesTable matches={screening.matches} />
       </div>
-      <Form form={form} layout="vertical" requiredMark="optional">
-        <Form.Item name="decision" label="Decision" rules={[{ required: true, message: 'Choose a decision' }]}>
+      <Form
+        form={form}
+        onFinish={(values) => review.mutate(values)}
+        layout="vertical"
+        requiredMark="optional"
+      >
+        <Form.Item
+          name="decision"
+          label="Decision"
+          rules={[{ required: true, message: 'Choose a decision' }]}
+        >
           <Radio.Group
             options={[
               { value: 'CLEARED', label: 'Cleared – not the listed person' },
@@ -52,7 +69,15 @@ function ReviewModal({ screening, onClose }: { screening: AmlScreening; onClose(
             ]}
           />
         </Form.Item>
-        <Form.Item name="remarks" label="Remarks" extra="Evidence checked and basis for the decision" rules={[{ required: true, whitespace: true, message: 'Enter the review remarks' }, { min: 3, max: 1000 }]}>
+        <Form.Item
+          name="remarks"
+          label="Remarks"
+          extra="Evidence checked and basis for the decision"
+          rules={[
+            { required: true, whitespace: true, message: 'Enter the review remarks' },
+            { min: 3, max: 1000 },
+          ]}
+        >
           <Input.TextArea rows={4} maxLength={1000} showCount />
         </Form.Item>
       </Form>
@@ -88,8 +113,16 @@ export function AmlCases() {
           dataSource={cases.items}
           pagination={cases.pagination}
           scroll={{ x: 'max-content' }}
-          locale={{ emptyText: status === 'PENDING_REVIEW' ? 'No screenings are waiting for review' : 'No screenings with this status' }}
-          expandable={{ rowExpandable: (row) => row.matches.length > 0, expandedRowRender: (row) => <AmlMatchesTable matches={row.matches} /> }}
+          locale={{
+            emptyText:
+              status === 'PENDING_REVIEW'
+                ? 'No screenings are waiting for review'
+                : 'No screenings with this status',
+          }}
+          expandable={{
+            rowExpandable: (row) => row.matches.length > 0,
+            expandedRowRender: renderScreeningMatches,
+          }}
           columns={[
             { title: 'Screened', dataIndex: 'createdAt', render: formatDateTime },
             {
@@ -103,10 +136,23 @@ export function AmlCases() {
             { title: 'Type', dataIndex: 'subjectType', render: humanise },
             { title: 'Provider', dataIndex: 'provider', render: humanise },
             { title: 'Highest score', dataIndex: 'score', align: 'right' },
-            { title: 'Matches', key: 'matches', align: 'right', render: (_: unknown, row) => row.matches.length },
-            { title: 'Status', dataIndex: 'status', render: (value: string) => <StatusTag status={value} /> },
+            {
+              title: 'Matches',
+              key: 'matches',
+              align: 'right',
+              render: (_: unknown, row) => row.matches.length,
+            },
+            {
+              title: 'Status',
+              dataIndex: 'status',
+              render: (value: string) => <StatusTag status={value} />,
+            },
             { title: 'Reviewed', dataIndex: 'reviewedAt', render: formatDateTime },
-            { title: 'Remarks', dataIndex: 'reviewRemarks', width: 220, ellipsis: true, render: (remarks: string | null) => remarks ?? '–' },
+            {
+              title: 'Remarks',
+              dataIndex: 'reviewRemarks',
+              render: (remarks: string | null) => <CellText text={remarks} width={220} />,
+            },
             {
               key: 'actions',
               render: (_: unknown, row) =>

@@ -14,14 +14,27 @@ interface CommentValues {
 }
 
 /** Conversation on an issue; support staff can add internal notes hidden from the reporter. */
-export function IssueComments({ issue, canAddInternal }: { issue: Issue; canAddInternal: boolean }) {
+export function IssueComments({
+  issue,
+  canAddInternal,
+}: {
+  issue: Issue;
+  canAddInternal: boolean;
+}) {
   const [form] = Form.useForm<CommentValues>();
   const comments: Comment[] = issue.comments ?? [];
-  const add = useApiMutation((values: CommentValues) => api.post(`/common/issues/${issue.id}/comments`, { body: values.body.trim(), internal: values.internal ?? false }), {
-    success: 'Comment added',
-    invalidate: [`/common/issues`],
-    onSuccess: () => form.resetFields(),
-  });
+  const add = useApiMutation(
+    (values: CommentValues) =>
+      api.post(`/common/issues/${issue.id}/comments`, {
+        body: values.body.trim(),
+        internal: values.internal ?? false,
+      }),
+    {
+      success: 'Comment added',
+      invalidate: [`/common/issues`],
+      onSuccess: () => form.resetFields(),
+    },
+  );
 
   return (
     <>
@@ -30,7 +43,10 @@ export function IssueComments({ issue, canAddInternal }: { issue: Issue; canAddI
       ) : (
         <ol className="comment-thread">
           {comments.map((comment) => (
-            <li key={comment.id} className={`comment${comment.internal ? ' comment--internal' : ''}`}>
+            <li
+              key={comment.id}
+              className={`comment${comment.internal ? ' comment--internal' : ''}`}
+            >
               <Flex justify="space-between" gap={8} wrap className="comment__meta">
                 <span>
                   <strong>{comment.authorName}</strong>
@@ -48,9 +64,22 @@ export function IssueComments({ issue, canAddInternal }: { issue: Issue; canAddI
         </ol>
       )}
       {issue.status !== 'CLOSED' && (
-        <Form form={form} layout="vertical" requiredMark={false} onFinish={(values) => add.mutate(values)} className="comment-form">
+        <Form
+          form={form}
+          layout="vertical"
+          requiredMark={false}
+          onFinish={(values) => add.mutate(values)}
+          className="comment-form"
+        >
           <ErrorAlert error={add.error} className="mb-16" />
-          <Form.Item name="body" label="Add a comment" rules={[{ required: true, whitespace: true, message: 'Write a comment' }, { max: 4000 }]}>
+          <Form.Item
+            name="body"
+            label="Add a comment"
+            rules={[
+              { required: true, whitespace: true, message: 'Write a comment' },
+              { max: 4000 },
+            ]}
+          >
             <Input.TextArea rows={3} maxLength={4000} />
           </Form.Item>
           <Flex justify="space-between" align="center">

@@ -20,7 +20,19 @@ interface Props {
 const MIN_LENGTH = 3;
 
 /** Confirms a decision and captures the remarks or reason that go with it. */
-export function RemarksModal({ title, okText, label = 'Remarks', required = false, danger = false, maxLength = 1000, description, pending, error, onSubmit, onClose }: Props) {
+export function RemarksModal({
+  title,
+  okText,
+  label = 'Remarks',
+  required = false,
+  danger = false,
+  maxLength = 1000,
+  description,
+  pending,
+  error,
+  onSubmit,
+  onClose,
+}: Props) {
   const [form] = Form.useForm<{ remarks?: string }>();
   return (
     <Modal
@@ -29,12 +41,17 @@ export function RemarksModal({ title, okText, label = 'Remarks', required = fals
       okText={okText}
       okButtonProps={{ danger, loading: pending }}
       onCancel={onClose}
-      onOk={() => form.validateFields().then((values) => onSubmit(values.remarks?.trim() ?? ''))}
+      onOk={() => form.submit()}
       destroyOnHidden
     >
       {description && <div className="mb-16">{description}</div>}
       <ErrorAlert error={error} className="mb-16" />
-      <Form form={form} layout="vertical" requiredMark="optional">
+      <Form
+        form={form}
+        onFinish={(values) => onSubmit(values.remarks?.trim() ?? '')}
+        layout="vertical"
+        requiredMark="optional"
+      >
         <Form.Item
           name="remarks"
           label={label}

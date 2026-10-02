@@ -12,22 +12,33 @@ interface Values {
 
 /** Documents are e-mailed once the e-Policy schedule or an e-Receipt has been issued. */
 export function hasIssuedDocuments(policy: PolicyDetail): boolean {
-  return policy.documents.some((doc) => doc.docType === 'POLICY_SCHEDULE' || doc.docType === 'RECEIPT');
+  return policy.documents.some(
+    (doc) => doc.docType === 'POLICY_SCHEDULE' || doc.docType === 'RECEIPT',
+  );
 }
 
 /** AP-45: e-mail the e-Policy schedule and e-Receipts to the participant (or another address). */
-export function EmailDocumentsModal({ policy, onClose }: { policy: PolicyDetail; onClose(): void }) {
+export function EmailDocumentsModal({
+  policy,
+  onClose,
+}: {
+  policy: PolicyDetail;
+  onClose(): void;
+}) {
   const { message } = App.useApp();
   const links = useSalesLinks();
   const [form] = Form.useForm<Values>();
   // The API path matches the module route: /portal/policies/:id or /backoffice/policies/:id.
-  const send = useApiMutation((body: Values) => api.post<SentTo>(`${links.policy(policy.id)}/email-documents`, body), {
-    invalidate: [links.policy(policy.id)],
-    onSuccess: (result) => {
-      message.success(`Policy documents sent to ${result.sentTo}`);
-      onClose();
+  const send = useApiMutation(
+    (body: Values) => api.post<SentTo>(`${links.policy(policy.id)}/email-documents`, body),
+    {
+      invalidate: [links.policy(policy.id)],
+      onSuccess: (result) => {
+        message.success(`Policy documents sent to ${result.sentTo}`);
+        onClose();
+      },
     },
-  });
+  );
 
   return (
     <FormModal<Values>
@@ -40,9 +51,21 @@ export function EmailDocumentsModal({ policy, onClose }: { policy: PolicyDetail;
       pending={send.isPending}
       error={send.error}
     >
-      <Typography.Paragraph>The e-Policy schedule and e-Receipts of {policy.policyNo ?? policy.quotationNo} are attached to the e-mail.</Typography.Paragraph>
-      <Form.Item name="email" label="Send to" extra="Defaults to the participant's e-mail address" rules={[{ type: 'email', message: 'Enter a valid e-mail address' }]}>
-        <Input inputMode="email" maxLength={254} placeholder={policy.participant.email ?? undefined} />
+      <Typography.Paragraph>
+        The e-Policy schedule and e-Receipts of {policy.policyNo ?? policy.quotationNo} are attached
+        to the e-mail.
+      </Typography.Paragraph>
+      <Form.Item
+        name="email"
+        label="Send to"
+        extra="Defaults to the participant's e-mail address"
+        rules={[{ type: 'email', message: 'Enter a valid e-mail address' }]}
+      >
+        <Input
+          inputMode="email"
+          maxLength={254}
+          placeholder={policy.participant.email ?? undefined}
+        />
       </Form.Item>
     </FormModal>
   );

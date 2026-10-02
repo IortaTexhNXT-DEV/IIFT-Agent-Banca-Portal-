@@ -29,13 +29,20 @@ export function PermissionPicker({ permissions, value = [], onChange }: Props) {
           <Col key={group} xs={24} md={12}>
             <fieldset className="permission-group">
               <legend>
-                <Checkbox checked={count === codes.length} indeterminate={count > 0 && count < codes.length} onChange={(event) => setGroup(codes, event.target.checked)}>
+                <Checkbox
+                  checked={count === codes.length}
+                  indeterminate={count > 0 && count < codes.length}
+                  onChange={(event) => setGroup(codes, event.target.checked)}
+                >
                   <Typography.Text strong>{group}</Typography.Text>
                 </Checkbox>
               </legend>
               {members.map((permission) => (
                 <div key={permission.code}>
-                  <Checkbox checked={selected.has(permission.code)} onChange={(event) => setGroup([permission.code], event.target.checked)}>
+                  <Checkbox
+                    checked={selected.has(permission.code)}
+                    onChange={(event) => setGroup([permission.code], event.target.checked)}
+                  >
                     {permission.description}
                   </Checkbox>
                 </div>

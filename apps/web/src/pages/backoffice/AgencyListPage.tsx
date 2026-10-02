@@ -21,7 +21,10 @@ interface Filters {
 }
 
 const STATUSES: Agency['status'][] = ['ACTIVE', 'INACTIVE', 'SUSPENDED'];
-const CHANNEL_OPTIONS = Object.entries(CHANNEL_LABELS).map(([value, label]) => ({ value: value as Channel, label }));
+const CHANNEL_OPTIONS = Object.entries(CHANNEL_LABELS).map(([value, label]) => ({
+  value: value as Channel,
+  label,
+}));
 
 /** BO-09: agencies (agency channel) and partner banks (bancassurance channel). */
 export default function AgencyListPage() {
@@ -49,9 +52,29 @@ export default function AgencyListPage() {
         }
       />
       <FilterBar>
-        <Input.Search allowClear placeholder="Code or name" aria-label="Search agencies" style={{ width: 240 }} onSearch={(value) => update({ search: value.trim() || undefined })} />
-        <Select allowClear placeholder="Channel" aria-label="Channel" style={{ width: 170 }} options={CHANNEL_OPTIONS} onChange={(channel?: Channel) => update({ channel })} />
-        <Select allowClear placeholder="Status" aria-label="Status" style={{ width: 150 }} options={enumOptions(STATUSES, humanise)} onChange={(status?: Agency['status']) => update({ status })} />
+        <Input.Search
+          allowClear
+          placeholder="Code or name"
+          aria-label="Search agencies"
+          style={{ width: 240 }}
+          onSearch={(value) => update({ search: value.trim() || undefined })}
+        />
+        <Select
+          allowClear
+          placeholder="Channel"
+          aria-label="Channel"
+          style={{ width: 170 }}
+          options={CHANNEL_OPTIONS}
+          onChange={(channel?: Channel) => update({ channel })}
+        />
+        <Select
+          allowClear
+          placeholder="Status"
+          aria-label="Status"
+          style={{ width: 150 }}
+          options={enumOptions(STATUSES, humanise)}
+          onChange={(status?: Agency['status']) => update({ status })}
+        />
       </FilterBar>
       <Card className="content-card">
         <Table<Agency>
@@ -63,22 +86,51 @@ export default function AgencyListPage() {
           scroll={{ x: 'max-content' }}
           locale={{ emptyText: 'No agencies or banks match the filters' }}
           columns={[
-            { title: 'Code', dataIndex: 'code', render: (code: string, agency) => <Link to={`/backoffice/agencies/${agency.id}`}>{code}</Link> },
+            {
+              title: 'Code',
+              dataIndex: 'code',
+              render: (code: string, agency) => (
+                <Link to={`/backoffice/agencies/${agency.id}`}>{code}</Link>
+              ),
+            },
             { title: 'Name', dataIndex: 'name' },
-            { title: 'Channel', dataIndex: 'channel', render: (channel: Channel) => CHANNEL_LABELS[channel] },
-            { title: 'Status', dataIndex: 'status', render: (status: string) => <StatusTag status={status} /> },
-            { title: 'Active agents', dataIndex: 'activeAgents', align: 'right', render: formatNumber },
+            {
+              title: 'Channel',
+              dataIndex: 'channel',
+              render: (channel: Channel) => CHANNEL_LABELS[channel],
+            },
+            {
+              title: 'Status',
+              dataIndex: 'status',
+              render: (status: string) => <StatusTag status={status} />,
+            },
+            {
+              title: 'Active agents',
+              dataIndex: 'activeAgents',
+              align: 'right',
+              render: formatNumber,
+            },
             {
               title: 'New business',
               dataIndex: 'issuanceBlocked',
-              render: (blocked: boolean) => (blocked ? <StatusTag status="SUSPENDED" label="Blocked" /> : <StatusTag status="ACTIVE" label="Permitted" />),
+              render: (blocked: boolean) =>
+                blocked ? (
+                  <StatusTag status="SUSPENDED" label="Blocked" />
+                ) : (
+                  <StatusTag status="ACTIVE" label="Permitted" />
+                ),
             },
             { title: 'Email', dataIndex: 'email', render: (email: string | null) => email ?? '–' },
             { title: 'Phone', dataIndex: 'phone', render: (phone: string | null) => phone ?? '–' },
           ]}
         />
       </Card>
-      {creating && <AgencyFormModal onClose={() => setCreating(false)} onSaved={(agency) => navigate(`/backoffice/agencies/${agency.id}`)} />}
+      {creating && (
+        <AgencyFormModal
+          onClose={() => setCreating(false)}
+          onSaved={(agency) => navigate(`/backoffice/agencies/${agency.id}`)}
+        />
+      )}
     </>
   );
 }

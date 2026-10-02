@@ -12,7 +12,8 @@ import { PolicyPayments } from './PolicyPayments';
 import { useCodes } from './useCodes';
 import { useSalesLinks } from './useSalesLinks';
 
-export type PolicyTabKey = 'overview' | 'documents' | 'payments' | 'history' | 'approvals' | 'claims';
+export type PolicyTabKey =
+  'overview' | 'documents' | 'payments' | 'history' | 'approvals' | 'claims';
 
 type PolicyClaim = PolicyDetail['claims'][number];
 
@@ -27,10 +28,18 @@ function PolicyClaims({ claims }: { claims: PolicyClaim[] }) {
       dataSource={claims}
       locale={{ emptyText: 'No claims notified on this policy' }}
       columns={[
-        { title: 'Claim no.', dataIndex: 'claimNo', render: (claimNo: string, claim) => <Link to={links.claim(claim.id)}>{claimNo}</Link> },
+        {
+          title: 'Claim no.',
+          dataIndex: 'claimNo',
+          render: (claimNo: string, claim) => <Link to={links.claim(claim.id)}>{claimNo}</Link>,
+        },
         { title: 'Type', dataIndex: 'claimType', render: claimTypes.label },
         { title: 'Event date', dataIndex: 'eventDate', render: formatDate },
-        { title: 'Status', dataIndex: 'status', render: (status: string) => <StatusTag status={status} /> },
+        {
+          title: 'Status',
+          dataIndex: 'status',
+          render: (status: string) => <StatusTag status={status} />,
+        },
       ]}
     />
   );
@@ -62,11 +71,30 @@ export function PolicyTabs({ policy, activeKey, onChange, uploadTypes, claimsAct
           {
             key: 'documents',
             label: count('Documents', policy.documents.length),
-            children: <DocumentPanel ownerType="POLICY" ownerId={policy.id} uploadTypes={uploadTypes} canUpload={uploadTypes !== undefined} />,
+            children: (
+              <DocumentPanel
+                ownerType="POLICY"
+                ownerId={policy.id}
+                uploadTypes={uploadTypes}
+                canUpload={uploadTypes !== undefined}
+              />
+            ),
           },
-          { key: 'payments', label: count('Payments & receipts', policy.allocations.length), children: <PolicyPayments policy={policy} /> },
-          { key: 'history', label: 'History', children: <PolicyEventsTimeline events={policy.events} /> },
-          { key: 'approvals', label: count('Approvals', policy.approvals.length), children: <ApprovalHistory approvals={policy.approvals} /> },
+          {
+            key: 'payments',
+            label: count('Payments & receipts', policy.allocations.length),
+            children: <PolicyPayments policy={policy} />,
+          },
+          {
+            key: 'history',
+            label: 'History',
+            children: <PolicyEventsTimeline events={policy.events} />,
+          },
+          {
+            key: 'approvals',
+            label: count('Approvals', policy.approvals.length),
+            children: <ApprovalHistory approvals={policy.approvals} />,
+          },
           {
             key: 'claims',
             label: count('Claims', policy.claims.length),

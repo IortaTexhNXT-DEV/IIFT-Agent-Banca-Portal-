@@ -19,7 +19,11 @@ export default function ClaimListPage() {
         breadcrumb={[{ title: 'Home', to: '/portal' }, { title: 'Claims' }]}
         extra={
           can(P.portalClaimsSubmit) && (
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/portal/claims/new')}>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => navigate('/portal/claims/new')}
+            >
               Notify claim
             </Button>
           )

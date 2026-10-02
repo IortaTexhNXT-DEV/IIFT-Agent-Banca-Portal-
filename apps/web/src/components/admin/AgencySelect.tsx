@@ -8,14 +8,19 @@ export function useAgencyOptions() {
 }
 
 /** Agency or bank picker, searchable by name or code. */
-export function AgencySelect(props: Omit<SelectProps<string>, 'options' | 'loading' | 'showSearch'>) {
+export function AgencySelect(
+  props: Omit<SelectProps<string>, 'options' | 'loading' | 'showSearch'>,
+) {
   const agencies = useAgencyOptions();
   return (
     <Select<string>
       {...props}
       showSearch={{ optionFilterProp: 'label' }}
       loading={agencies.isLoading}
-      options={(agencies.data ?? []).map((agency) => ({ value: agency.id, label: `${agency.name} (${agency.code})` }))}
+      options={(agencies.data ?? []).map((agency) => ({
+        value: agency.id,
+        label: `${agency.name} (${agency.code})`,
+      }))}
     />
   );
 }

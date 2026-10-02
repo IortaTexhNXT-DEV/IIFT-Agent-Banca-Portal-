@@ -4,7 +4,7 @@ import { Link } from 'react-router';
 import { useApiQuery, usePagedQuery } from '../../api/hooks';
 import type { AgencyOption } from '../../api/sales-types';
 import type { Money as MoneyValue, Payment, PaymentStatus } from '../../api/types';
-import { formatDate, formatDateTime, humanise } from '../../utils/format';
+import { formatDate, humanise } from '../../utils/format';
 import { FilterBar } from '../FilterBar';
 import { Money } from '../Money';
 import { StatusTag } from '../StatusTag';
@@ -37,8 +37,22 @@ export function PaymentList({ path, showAgency = false }: Props) {
   return (
     <>
       <FilterBar>
-        <Input.Search placeholder="Payment no. or bank reference" aria-label="Search payments" allowClear onSearch={(search) => set({ search: search.trim() || undefined })} className="filter-search" />
-        <Select placeholder="Status" aria-label="Status" allowClear options={PAYMENT_STATUS_OPTIONS} value={filters.status} onChange={(status) => set({ status })} className="filter-select" />
+        <Input.Search
+          placeholder="Payment no. or bank reference"
+          aria-label="Search payments"
+          allowClear
+          onSearch={(search) => set({ search: search.trim() || undefined })}
+          className="filter-search"
+        />
+        <Select
+          placeholder="Status"
+          aria-label="Status"
+          allowClear
+          options={PAYMENT_STATUS_OPTIONS}
+          value={filters.status}
+          onChange={(status) => set({ status })}
+          className="filter-select"
+        />
         {showAgency && (
           <Select
             placeholder="Agency / bank"
@@ -46,7 +60,10 @@ export function PaymentList({ path, showAgency = false }: Props) {
             allowClear
             showSearch={{ optionFilterProp: 'label' }}
             loading={agencies.isLoading}
-            options={(agencies.data ?? []).map((agency) => ({ value: agency.id, label: agency.name }))}
+            options={(agencies.data ?? []).map((agency) => ({
+              value: agency.id,
+              label: agency.name,
+            }))}
             value={filters.agencyId}
             onChange={(agencyId) => set({ agencyId })}
             className="filter-select filter-select--wide"
@@ -63,16 +80,36 @@ export function PaymentList({ path, showAgency = false }: Props) {
           scroll={{ x: 'max-content' }}
           locale={{ emptyText: 'No payments found' }}
           columns={[
-            { title: 'Payment no.', dataIndex: 'paymentNo', render: (paymentNo: string, payment) => <Link to={links.payment(payment.id)}>{paymentNo}</Link> },
+            {
+              title: 'Payment no.',
+              dataIndex: 'paymentNo',
+              render: (paymentNo: string, payment) => (
+                <Link to={links.payment(payment.id)}>{paymentNo}</Link>
+              ),
+            },
             ...(showAgency ? [{ title: 'Agency / bank', dataIndex: ['agency', 'name'] }] : []),
             { title: 'Payment date', dataIndex: 'paymentDate', render: formatDate },
             { title: 'Method', dataIndex: 'method', render: humanise },
             { title: 'Bank', dataIndex: 'bankName', render: (bank: string | null) => bank ?? '–' },
             { title: 'Reference', dataIndex: 'referenceNo' },
-            { title: 'Policies', key: 'policies', align: 'right', render: (_, payment) => payment.allocations.length },
-            { title: 'Amount', dataIndex: 'totalAmount', align: 'right', render: (value: MoneyValue) => <Money value={value} /> },
-            { title: 'Status', dataIndex: 'status', render: (status: string) => <StatusTag status={status} /> },
-            { title: 'Submitted', dataIndex: 'createdAt', render: formatDateTime },
+            {
+              title: 'Policies',
+              key: 'policies',
+              align: 'right',
+              render: (_, payment) => payment.allocations.length,
+            },
+            {
+              title: 'Amount',
+              dataIndex: 'totalAmount',
+              align: 'right',
+              render: (value: MoneyValue) => <Money value={value} />,
+            },
+            {
+              title: 'Status',
+              dataIndex: 'status',
+              render: (status: string) => <StatusTag status={status} />,
+            },
+            { title: 'Submitted', dataIndex: 'createdAt', render: formatDate },
           ]}
         />
       </Card>

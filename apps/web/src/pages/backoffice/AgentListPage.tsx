@@ -6,6 +6,7 @@ import { usePagedQuery } from '../../api/hooks';
 import type { AgentStatus, AgentType, AgentView, Channel } from '../../api/types';
 import { useAuth } from '../../auth/AuthContext';
 import { AgencySelect } from '../../components/admin/AgencySelect';
+import { CellText } from '../../components/admin/CellText';
 import { AGENT_STATUSES, AGENT_TYPE_LABELS, CHANNEL_LABELS } from '../../components/admin/agents';
 import { enumOptions } from '../../components/admin/useCodes';
 import { FilterBar } from '../../components/FilterBar';
@@ -23,15 +24,23 @@ interface Filters {
   agentType?: AgentType;
 }
 
-const TYPE_OPTIONS = Object.entries(AGENT_TYPE_LABELS).map(([value, label]) => ({ value: value as AgentType, label }));
-const CHANNEL_OPTIONS = Object.entries(CHANNEL_LABELS).map(([value, label]) => ({ value: value as Channel, label }));
+const TYPE_OPTIONS = Object.entries(AGENT_TYPE_LABELS).map(([value, label]) => ({
+  value: value as AgentType,
+  label,
+}));
+const CHANNEL_OPTIONS = Object.entries(CHANNEL_LABELS).map(([value, label]) => ({
+  value: value as Channel,
+  label,
+}));
 
 /** BO-05..07: search agents and bank officers by code, name, ID number, agency, channel, status and type. */
 export default function AgentListPage() {
   const { can } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [filters, setFilters] = useState<Filters>({ status: (searchParams.get('status') as AgentStatus | null) ?? undefined });
+  const [filters, setFilters] = useState<Filters>({
+    status: (searchParams.get('status') as AgentStatus | null) ?? undefined,
+  });
   const agents = usePagedQuery<AgentView>('/backoffice/agents', { ...filters });
   const update = (changes: Filters) => {
     setFilters((current) => ({ ...current, ...changes }));
@@ -46,19 +55,63 @@ export default function AgentListPage() {
         breadcrumb={[{ title: 'Dashboard', to: '/backoffice' }, { title: 'Agents & bankers' }]}
         extra={
           can(P.boAgentsManage) && (
-            <Button type="primary" icon={<UserAddOutlined />} onClick={() => navigate('/backoffice/agents/new')}>
+            <Button
+              type="primary"
+              icon={<UserAddOutlined />}
+              onClick={() => navigate('/backoffice/agents/new')}
+            >
               Register agent
             </Button>
           )
         }
       />
       <FilterBar>
-        <Input.Search allowClear placeholder="Agent code or name" aria-label="Search by code or name" style={{ width: 220 }} onSearch={(value) => update({ search: value.trim() || undefined })} />
-        <Input.Search allowClear placeholder="IC / passport no. (exact)" aria-label="Search by ID number" style={{ width: 220 }} onSearch={(value) => update({ idNumber: value.trim() || undefined })} />
-        <AgencySelect allowClear placeholder="All agencies and banks" aria-label="Agency or bank" style={{ width: 260 }} onChange={(agencyId) => update({ agencyId })} />
-        <Select allowClear placeholder="Channel" aria-label="Channel" style={{ width: 150 }} options={CHANNEL_OPTIONS} onChange={(channel?: Channel) => update({ channel })} />
-        <Select allowClear placeholder="Type" aria-label="Agent type" style={{ width: 150 }} options={TYPE_OPTIONS} onChange={(agentType?: AgentType) => update({ agentType })} />
-        <Select allowClear placeholder="Status" aria-label="Status" style={{ width: 150 }} value={filters.status} options={enumOptions(AGENT_STATUSES, humanise)} onChange={(status?: AgentStatus) => update({ status })} />
+        <Input.Search
+          allowClear
+          placeholder="Agent code or name"
+          aria-label="Search by code or name"
+          style={{ width: 190 }}
+          onSearch={(value) => update({ search: value.trim() || undefined })}
+        />
+        <Input.Search
+          allowClear
+          placeholder="IC / passport no. (exact)"
+          aria-label="Search by ID number"
+          style={{ width: 200 }}
+          onSearch={(value) => update({ idNumber: value.trim() || undefined })}
+        />
+        <AgencySelect
+          allowClear
+          placeholder="All agencies and banks"
+          aria-label="Agency or bank"
+          style={{ width: 220 }}
+          onChange={(agencyId) => update({ agencyId })}
+        />
+        <Select
+          allowClear
+          placeholder="Channel"
+          aria-label="Channel"
+          style={{ width: 130 }}
+          options={CHANNEL_OPTIONS}
+          onChange={(channel?: Channel) => update({ channel })}
+        />
+        <Select
+          allowClear
+          placeholder="Type"
+          aria-label="Agent type"
+          style={{ width: 130 }}
+          options={TYPE_OPTIONS}
+          onChange={(agentType?: AgentType) => update({ agentType })}
+        />
+        <Select
+          allowClear
+          placeholder="Status"
+          aria-label="Status"
+          style={{ width: 130 }}
+          value={filters.status}
+          options={enumOptions(AGENT_STATUSES, humanise)}
+          onChange={(status?: AgentStatus) => update({ status })}
+        />
       </FilterBar>
       <Card className="content-card">
         <Table<AgentView>
@@ -70,14 +123,41 @@ export default function AgentListPage() {
           scroll={{ x: 'max-content' }}
           locale={{ emptyText: 'No agents match the filters' }}
           columns={[
-            { title: 'Agent code', dataIndex: 'agentCode', render: (code: string, agent) => <Link to={`/backoffice/agents/${agent.id}`}>{code}</Link> },
+            {
+              title: 'Agent code',
+              dataIndex: 'agentCode',
+              render: (code: string, agent) => (
+                <Link to={`/backoffice/agents/${agent.id}`}>{code}</Link>
+              ),
+            },
             { title: 'Name', dataIndex: 'fullName' },
-            { title: 'Type', dataIndex: 'agentType', render: (type: AgentType) => AGENT_TYPE_LABELS[type] },
-            { title: 'Agency / bank', key: 'agency', render: (_: unknown, agent) => <Link to={`/backoffice/agencies/${agent.agency.id}`}>{agent.agency.name}</Link> },
-            { title: 'Reports to', key: 'parent', render: (_: unknown, agent) => agent.parent?.fullName ?? '–' },
-            { title: 'ID no.', dataIndex: 'idNumberMasked' },
-            { title: 'Status', dataIndex: 'status', render: (status: string) => <StatusTag status={status} /> },
-            { title: 'AML', dataIndex: 'amlStatus', render: (status: string) => <StatusTag status={status} /> },
+            {
+              title: 'Type',
+              dataIndex: 'agentType',
+              render: (type: AgentType) => AGENT_TYPE_LABELS[type],
+            },
+            {
+              title: 'Agency / bank',
+              key: 'agency',
+              render: (_: unknown, agent) => (
+                <Link to={`/backoffice/agencies/${agent.agency.id}`}>{agent.agency.code}</Link>
+              ),
+            },
+            {
+              title: 'Reports to',
+              key: 'parent',
+              render: (_: unknown, agent) => <CellText text={agent.parent?.fullName} width={170} />,
+            },
+            {
+              title: 'Status',
+              dataIndex: 'status',
+              render: (status: string) => <StatusTag status={status} />,
+            },
+            {
+              title: 'AML',
+              dataIndex: 'amlStatus',
+              render: (status: string) => <StatusTag status={status} />,
+            },
             { title: 'Licence expiry', dataIndex: 'licenceExpiry', render: formatDate },
           ]}
         />

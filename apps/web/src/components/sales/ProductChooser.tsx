@@ -35,7 +35,9 @@ export function ProductChooser({ products, value, onChange }: Props) {
                     </div>
                     <div className="muted">{product.description}</div>
                     <div className="choice-card__meta">
-                      {product.paymentBeforeIssuance ? 'Issued after payment' : 'Issued on acceptance, pay within the grace period'}
+                      {product.paymentBeforeIssuance
+                        ? 'Issued after payment'
+                        : 'Issued on acceptance, pay within the grace period'}
                       {product.allowRenewal ? ' · Renewable' : ''}
                     </div>
                   </div>

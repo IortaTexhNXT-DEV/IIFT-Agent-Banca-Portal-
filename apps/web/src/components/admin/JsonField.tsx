@@ -4,7 +4,9 @@ import '../../styles/admin.css';
 type Shape = 'object' | 'array';
 
 function matches(value: unknown, shape: Shape): boolean {
-  return shape === 'array' ? Array.isArray(value) : typeof value === 'object' && value !== null && !Array.isArray(value);
+  return shape === 'array'
+    ? Array.isArray(value)
+    : typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /** Pretty-printed JSON for editing. */
@@ -32,7 +34,9 @@ export function JsonField({ name, label, shape, extra, rows = 12 }: Props) {
         {
           validator: (_, text: string) => {
             try {
-              return matches(JSON.parse(text), shape) ? Promise.resolve() : Promise.reject(new Error(`Must be a JSON ${shape}`));
+              return matches(JSON.parse(text), shape)
+                ? Promise.resolve()
+                : Promise.reject(new Error(`Must be a JSON ${shape}`));
             } catch (error) {
               return Promise.reject(new Error(`Invalid JSON: ${(error as Error).message}`));
             }

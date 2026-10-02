@@ -267,7 +267,7 @@ def functional(w, figs):
            "until decided; only one pending request per record and type is allowed; and a decision fails with "
            "STALE_RECORD if another checker decided the same level first.")
     w.h2("Scheduled processing")
-    w.table(["Job", "Schedule (Brunei time)", "Lock", "Purpose", "Source"], JOBS, widths=[3.0, 3.4, 3.0, 5.2, 2.4],
+    w.table(["Job", "Schedule (Brunei time)", "Lock", "Purpose", "Source"], JOBS, widths=[2.7, 3.0, 2.7, 4.6, 4.0],
             font_size=7.5, caption="Scheduled jobs")
     w.para("Each job takes a PostgreSQL transaction-scoped advisory lock (pg_try_advisory_xact_lock) named after the "
            "job before it runs. Every API replica schedules the jobs, but only the replica that gets the lock does "
@@ -402,7 +402,7 @@ def data(w, figs, pm):
     w.para("The audit service writes one row per security or business event: actor, action, entity, before and after "
            "values, IP address, user agent and correlation id. It writes inside the caller's transaction, so an audit "
            "row exists exactly when the change exists. Passwords, hashes, encrypted identifiers, tokens and storage "
-           "keys are replaced with [REDACTED]. In the database, the trigger audit_log_no_update calls "
+           "keys are replaced with a fixed REDACTED marker. In the database, the trigger audit_log_no_update calls "
            "audit_log_block_mutation() before any UPDATE or DELETE and raises an exception, so the trail is "
            "append-only whichever client connects. Granting the application role only INSERT and SELECT on "
            "audit_log, with a separate migration owner role, is set up during implementation.")

@@ -20,7 +20,8 @@ const queryClient = new QueryClient({
       staleTime: 30_000,
       refetchOnWindowFocus: false,
       // Client errors (validation, permission, not found) will not succeed on retry.
-      retry: (failureCount, error) => !(error instanceof ApiError && error.status < 500) && failureCount < 2,
+      retry: (failureCount, error) =>
+        !(error instanceof ApiError && error.status < 500) && failureCount < 2,
     },
   },
 });

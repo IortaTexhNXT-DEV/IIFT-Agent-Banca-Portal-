@@ -4,7 +4,10 @@ import { useParams } from 'react-router';
 import { useApiQuery } from '../../api/hooks';
 import type { PolicyDetail } from '../../api/types';
 import { QueryState } from '../../components/QueryState';
-import { EmailDocumentsModal, hasIssuedDocuments } from '../../components/sales/EmailDocumentsModal';
+import {
+  EmailDocumentsModal,
+  hasIssuedDocuments,
+} from '../../components/sales/EmailDocumentsModal';
 import { PolicyPageHeader } from '../../components/sales/PolicyPageHeader';
 import { type PolicyTabKey, PolicyTabs } from '../../components/sales/PolicyTabs';
 import '../../styles/sales.css';
@@ -15,7 +18,14 @@ function PolicyView({ policy }: { policy: PolicyDetail }) {
 
   return (
     <>
-      <PolicyPageHeader policy={policy} actions={hasIssuedDocuments(policy) && <Button onClick={() => setEmailing(true)}>E-mail documents</Button>} />
+      <PolicyPageHeader
+        policy={policy}
+        actions={
+          hasIssuedDocuments(policy) && (
+            <Button onClick={() => setEmailing(true)}>E-mail documents</Button>
+          )
+        }
+      />
       <PolicyTabs policy={policy} activeKey={tab} onChange={setTab} />
       {emailing && <EmailDocumentsModal policy={policy} onClose={() => setEmailing(false)} />}
     </>

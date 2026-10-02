@@ -21,7 +21,10 @@ export default function PaymentDetailPage() {
             payment={data}
             actions={
               pending && (
-                <Button type="primary" onClick={() => navigate(`/backoffice/approvals/${pending.id}`)}>
+                <Button
+                  type="primary"
+                  onClick={() => navigate(`/backoffice/approvals/${pending.id}`)}
+                >
                   Open verification request {pending.requestNo}
                 </Button>
               )

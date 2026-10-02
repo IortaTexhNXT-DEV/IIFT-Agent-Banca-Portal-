@@ -15,8 +15,18 @@ export function ErrorAlert({ error, className }: { error: unknown; className?: s
             ))}
           </ul>
         )}
-        {apiError.correlationId && apiError.status >= 500 && <span className="muted">Reference: {apiError.correlationId}</span>}
+        {apiError.correlationId && apiError.status >= 500 && (
+          <span className="muted">Reference: {apiError.correlationId}</span>
+        )}
       </>
     ) : undefined;
-  return <Alert className={className} type="error" showIcon title={apiError?.message ?? 'Something went wrong. Please try again.'} description={description} />;
+  return (
+    <Alert
+      className={className}
+      type="error"
+      showIcon
+      title={apiError?.message ?? 'Something went wrong. Please try again.'}
+      description={description}
+    />
+  );
 }

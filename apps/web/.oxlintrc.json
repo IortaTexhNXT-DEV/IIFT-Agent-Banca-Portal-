@@ -16,7 +16,8 @@
     "react-perf/jsx-no-new-array-as-prop": "off",
     "react-perf/jsx-no-new-function-as-prop": "off",
     "react-perf/jsx-no-jsx-as-prop": "off",
-    "unicorn/no-array-sort": "off"
+    "unicorn/no-array-sort": "off",
+    "import/no-unassigned-import": ["warn", { "allow": ["**/*.css", "dayjs/locale/*", "@testing-library/jest-dom/vitest"] }]
   },
   "env": { "browser": true },
   "ignorePatterns": ["dist/**"]

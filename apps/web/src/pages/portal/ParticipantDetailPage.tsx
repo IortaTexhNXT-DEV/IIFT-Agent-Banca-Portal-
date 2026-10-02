@@ -22,7 +22,13 @@ export default function ParticipantDetailPage() {
   return (
     <QueryState query={participant}>
       {(data) => {
-        const match: ParticipantMatch = { id: data.id, participantNo: data.participantNo, fullName: data.fullName, idNumberMasked: data.idNumberMasked, amlStatus: data.amlStatus };
+        const match: ParticipantMatch = {
+          id: data.id,
+          participantNo: data.participantNo,
+          fullName: data.fullName,
+          idNumberMasked: data.idNumberMasked,
+          amlStatus: data.amlStatus,
+        };
         return (
           <>
             <ParticipantDetailView
@@ -32,14 +38,21 @@ export default function ParticipantDetailPage() {
                 <>
                   {canManage && <Button onClick={() => setUpdating(true)}>Request update</Button>}
                   {can(P.portalPoliciesQuote) && data.amlStatus !== 'REJECTED' && (
-                    <Button type="primary" onClick={() => navigate('/portal/quotations/new', { state: { participant: match } })}>
+                    <Button
+                      type="primary"
+                      onClick={() =>
+                        navigate('/portal/quotations/new', { state: { participant: match } })
+                      }
+                    >
                       New quotation
                     </Button>
                   )}
                 </>
               }
             />
-            {updating && <ParticipantUpdateModal participant={data} onClose={() => setUpdating(false)} />}
+            {updating && (
+              <ParticipantUpdateModal participant={data} onClose={() => setUpdating(false)} />
+            )}
           </>
         );
       }}

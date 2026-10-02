@@ -41,8 +41,18 @@ export function AgentProfile({ agent, parentLink, extra = [] }: Props) {
         </Flex>
       ),
     },
-    { key: 'agency', label: agent.agency.channel === 'BANCA' ? 'Bank' : 'Agency', children: `${agent.agency.name} (${agent.agency.code})` },
-    { key: 'parent', label: 'Reports to', children: agent.parent ? (parentLink?.(agent.parent) ?? `${agent.parent.fullName} (${agent.parent.agentCode})`) : '–' },
+    {
+      key: 'agency',
+      label: agent.agency.channel === 'BANCA' ? 'Bank' : 'Agency',
+      children: `${agent.agency.name} (${agent.agency.code})`,
+    },
+    {
+      key: 'parent',
+      label: 'Reports to',
+      children: agent.parent
+        ? (parentLink?.(agent.parent) ?? `${agent.parent.fullName} (${agent.parent.agentCode})`)
+        : '–',
+    },
     { key: 'branch', label: 'Branch', children: agent.branchName ?? '–' },
     { key: 'id', label: idTypeLabel(agent.idType), children: agent.idNumberMasked },
     { key: 'dob', label: 'Date of birth', children: formatDate(agent.dateOfBirth) },
@@ -50,9 +60,17 @@ export function AgentProfile({ agent, parentLink, extra = [] }: Props) {
     { key: 'mobile', label: 'Mobile', children: agent.mobile },
     { key: 'address', label: 'Address', children: agent.address ?? '–' },
     { key: 'licence', label: 'Licence no.', children: agent.licenceNo ?? '–' },
-    { key: 'licenceExpiry', label: 'Licence expiry', children: <LicenceExpiry value={agent.licenceExpiry} /> },
+    {
+      key: 'licenceExpiry',
+      label: 'Licence expiry',
+      children: <LicenceExpiry value={agent.licenceExpiry} />,
+    },
     { key: 'aml', label: 'AML status', children: <StatusTag status={agent.amlStatus} /> },
-    { key: 'limit', label: 'Authority limit', children: agent.authorityLimit === null ? 'No limit' : <Money value={agent.authorityLimit} /> },
+    {
+      key: 'limit',
+      label: 'Authority limit',
+      children: agent.authorityLimit === null ? 'No limit' : <Money value={agent.authorityLimit} />,
+    },
     { key: 'registered', label: 'Registered', children: formatDateTime(agent.createdAt) },
     { key: 'activated', label: 'Activated', children: formatDateTime(agent.activatedAt) },
     ...extra,

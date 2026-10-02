@@ -6,7 +6,12 @@ import { usePagedQuery } from '../../api/hooks';
 import type { PolicySummary } from '../../api/types';
 import { useAuth } from '../../auth/AuthContext';
 import { PageHeader } from '../../components/PageHeader';
-import { filtersFromUrl, type PolicyFilterValues, PolicyFilters, policyQuery } from '../../components/sales/PolicyFilters';
+import {
+  filtersFromUrl,
+  type PolicyFilterValues,
+  PolicyFilters,
+  policyQuery,
+} from '../../components/sales/PolicyFilters';
 import { PolicyTable } from '../../components/sales/PolicyTable';
 import { P } from '../../utils/permissions';
 import '../../styles/sales.css';
@@ -28,7 +33,11 @@ export default function PolicyListPage() {
         breadcrumb={[{ title: 'Home', to: '/portal' }, { title: 'Quotations & policies' }]}
         extra={
           can(P.portalPoliciesQuote) && (
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/portal/quotations/new')}>
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => navigate('/portal/quotations/new')}
+            >
               New quotation
             </Button>
           )
@@ -42,7 +51,12 @@ export default function PolicyListPage() {
         }}
       />
       <Card className="content-card" styles={{ body: { padding: 0 } }}>
-        <PolicyTable policies={policies.items} loading={policies.isFetching} pagination={policies.pagination} showAgent={agencyWide} />
+        <PolicyTable
+          policies={policies.items}
+          loading={policies.isFetching}
+          pagination={policies.pagination}
+          showAgent={agencyWide}
+        />
       </Card>
     </>
   );

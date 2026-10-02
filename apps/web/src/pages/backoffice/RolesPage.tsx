@@ -1,10 +1,25 @@
 import { PlusOutlined } from '@ant-design/icons';
-import { App, Button, Card, Col, Drawer, Flex, Form, Input, Popconfirm, Row, Select, Table, Tag } from 'antd';
+import {
+  App,
+  Button,
+  Card,
+  Col,
+  Drawer,
+  Flex,
+  Form,
+  Input,
+  Popconfirm,
+  Row,
+  Select,
+  Table,
+  Tag,
+} from 'antd';
 import { useState } from 'react';
 import { api } from '../../api/client';
 import { useApiMutation, useApiQuery } from '../../api/hooks';
 import type { PermissionDefinition, Role } from '../../api/admin-types';
 import type { Audience } from '../../api/types';
+import { CellText } from '../../components/admin/CellText';
 import { PermissionPicker } from '../../components/admin/PermissionPicker';
 import { ErrorAlert } from '../../components/ErrorAlert';
 import { PageHeader } from '../../components/PageHeader';
@@ -12,7 +27,10 @@ import { QueryState } from '../../components/QueryState';
 import { formatNumber } from '../../utils/format';
 
 const ROLES_PATH = '/backoffice/roles';
-const AUDIENCE_LABELS: Record<Audience, string> = { PORTAL: 'Agent & Banca Portal', BACKOFFICE: 'Back-office' };
+const AUDIENCE_LABELS: Record<Audience, string> = {
+  PORTAL: 'Agent & Banca Portal',
+  BACKOFFICE: 'Back-office',
+};
 const CODE_PATTERN = /^[A-Z][A-Z0-9_]{2,49}$/;
 
 interface RoleValues {
@@ -23,15 +41,33 @@ interface RoleValues {
   permissions: string[];
 }
 
-function RoleDrawer({ role, catalogue, onClose }: { role?: Role; catalogue: PermissionDefinition[]; onClose(): void }) {
+function RoleDrawer({
+  role,
+  catalogue,
+  onClose,
+}: {
+  role?: Role;
+  catalogue: PermissionDefinition[];
+  onClose(): void;
+}) {
   const [form] = Form.useForm<RoleValues>();
   const audience = Form.useWatch('audience', form) ?? role?.audience ?? 'BACKOFFICE';
   const save = useApiMutation(
     (values: RoleValues) => {
-      const body = { name: values.name.trim(), description: values.description?.trim() || undefined, permissions: values.permissions };
-      return role ? api.put<Role>(`${ROLES_PATH}/${role.id}`, body) : api.post<Role>(ROLES_PATH, { ...body, code: values.code, audience: values.audience });
+      const body = {
+        name: values.name.trim(),
+        description: values.description?.trim() || undefined,
+        permissions: values.permissions,
+      };
+      return role
+        ? api.put<Role>(`${ROLES_PATH}/${role.id}`, body)
+        : api.post<Role>(ROLES_PATH, { ...body, code: values.code, audience: values.audience });
     },
-    { success: role ? 'Role saved' : 'Role created', invalidate: [ROLES_PATH, '/backoffice/role-options'], onSuccess: onClose },
+    {
+      success: role ? 'Role saved' : 'Role created',
+      invalidate: [ROLES_PATH, '/backoffice/role-options'],
+      onSuccess: onClose,
+    },
   );
 
   return (
@@ -44,7 +80,7 @@ function RoleDrawer({ role, catalogue, onClose }: { role?: Role; catalogue: Perm
       extra={
         <Flex gap={8}>
           <Button onClick={onClose}>Cancel</Button>
-          <Button type="primary" loading={save.isPending} onClick={() => form.validateFields().then((values) => save.mutate(values))}>
+          <Button type="primary" loading={save.isPending} onClick={() => form.submit()}>
             Save
           </Button>
         </Flex>
@@ -53,27 +89,60 @@ function RoleDrawer({ role, catalogue, onClose }: { role?: Role; catalogue: Perm
       <ErrorAlert error={save.error} className="mb-16" />
       <Form
         form={form}
+        onFinish={(values) => save.mutate(values)}
         layout="vertical"
         requiredMark="optional"
-        initialValues={role ? { name: role.name, description: role.description ?? '', permissions: role.permissions } : { audience: 'BACKOFFICE', permissions: [] }}
+        initialValues={
+          role
+            ? {
+                name: role.name,
+                description: role.description ?? '',
+                permissions: role.permissions,
+              }
+            : { audience: 'BACKOFFICE', permissions: [] }
+        }
       >
         <Row gutter={16}>
           {!role && (
             <>
               <Col xs={24} md={12}>
-                <Form.Item name="code" label="Code" normalize={(value: string) => value.toUpperCase()} rules={[{ required: true, message: 'Enter a code' }, { pattern: CODE_PATTERN, message: 'Capital letters, digits and underscores, starting with a letter' }]}>
+                <Form.Item
+                  name="code"
+                  label="Code"
+                  normalize={(value: string) => value.toUpperCase()}
+                  rules={[
+                    { required: true, message: 'Enter a code' },
+                    {
+                      pattern: CODE_PATTERN,
+                      message: 'Capital letters, digits and underscores, starting with a letter',
+                    },
+                  ]}
+                >
                   <Input />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item name="audience" label="Used in" rules={[{ required: true }]}>
-                  <Select options={Object.entries(AUDIENCE_LABELS).map(([value, label]) => ({ value, label }))} onChange={() => form.setFieldValue('permissions', [])} />
+                  <Select
+                    options={Object.entries(AUDIENCE_LABELS).map(([value, label]) => ({
+                      value,
+                      label,
+                    }))}
+                    onChange={() => form.setFieldValue('permissions', [])}
+                  />
                 </Form.Item>
               </Col>
             </>
           )}
           <Col span={24}>
-            <Form.Item name="name" label="Name" rules={[{ required: true, whitespace: true, message: 'Enter the role name' }, { min: 2, max: 100 }]}>
+            <Form.Item
+              name="name"
+              label="Name"
+              rules={[
+                { required: true, whitespace: true, message: 'Enter the role name' },
+                { min: 2, max: 100 },
+              ]}
+            >
               <Input />
             </Form.Item>
           </Col>
@@ -84,7 +153,9 @@ function RoleDrawer({ role, catalogue, onClose }: { role?: Role; catalogue: Perm
           </Col>
         </Row>
         <Form.Item name="permissions" label="Permissions" rules={[{ type: 'array', max: 100 }]}>
-          <PermissionPicker permissions={catalogue.filter((permission) => permission.audience === audience)} />
+          <PermissionPicker
+            permissions={catalogue.filter((permission) => permission.audience === audience)}
+          />
         </Form.Item>
       </Form>
     </Drawer>
@@ -109,7 +180,12 @@ export default function RolesPage() {
         title="Roles & permissions"
         breadcrumb={[{ title: 'Dashboard', to: '/backoffice' }, { title: 'Roles & permissions' }]}
         extra={
-          <Button type="primary" icon={<PlusOutlined />} disabled={!catalogue.data} onClick={() => setEditing('new')}>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            disabled={!catalogue.data}
+            onClick={() => setEditing('new')}
+          >
             New role
           </Button>
         }
@@ -135,19 +211,44 @@ export default function RolesPage() {
                   ),
                 },
                 { title: 'Code', dataIndex: 'code' },
-                { title: 'Used in', dataIndex: 'audience', render: (audience: Audience) => AUDIENCE_LABELS[audience] },
-                { title: 'Description', dataIndex: 'description', width: 360, ellipsis: true },
-                { title: 'Permissions', dataIndex: 'permissions', align: 'right', render: (permissions: string[]) => formatNumber(permissions.length) },
+                {
+                  title: 'Used in',
+                  dataIndex: 'audience',
+                  render: (audience: Audience) => AUDIENCE_LABELS[audience],
+                },
+                {
+                  title: 'Description',
+                  dataIndex: 'description',
+                  render: (description: string | null) => (
+                    <CellText text={description} width={300} />
+                  ),
+                },
+                {
+                  title: 'Permissions',
+                  dataIndex: 'permissions',
+                  align: 'right',
+                  render: (permissions: string[]) => formatNumber(permissions.length),
+                },
                 { title: 'Users', dataIndex: 'userCount', align: 'right', render: formatNumber },
                 {
                   key: 'actions',
                   render: (_: unknown, role) => (
                     <Flex gap={4} className="table-actions">
-                      <Button size="small" type="link" disabled={!catalogue.data} onClick={() => setEditing(role)}>
+                      <Button
+                        size="small"
+                        type="link"
+                        disabled={!catalogue.data}
+                        onClick={() => setEditing(role)}
+                      >
                         Edit
                       </Button>
                       {!role.isSystem && role.userCount === 0 && (
-                        <Popconfirm title={`Delete the role ${role.name}?`} okText="Delete" okButtonProps={{ danger: true }} onConfirm={() => remove.mutate(role)}>
+                        <Popconfirm
+                          title={`Delete the role ${role.name}?`}
+                          okText="Delete"
+                          okButtonProps={{ danger: true }}
+                          onConfirm={() => remove.mutate(role)}
+                        >
                           <Button size="small" type="link" danger>
                             Delete
                           </Button>
@@ -161,7 +262,13 @@ export default function RolesPage() {
           )}
         </QueryState>
       </Card>
-      {editing && catalogue.data && <RoleDrawer role={editing === 'new' ? undefined : editing} catalogue={catalogue.data} onClose={() => setEditing(undefined)} />}
+      {editing && catalogue.data && (
+        <RoleDrawer
+          role={editing === 'new' ? undefined : editing}
+          catalogue={catalogue.data}
+          onClose={() => setEditing(undefined)}
+        />
+      )}
     </>
   );
 }

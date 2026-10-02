@@ -27,7 +27,9 @@ export default function LoginPage() {
     setError(undefined);
     try {
       const signedIn = await login(username.trim(), password);
-      navigate(signedIn.mustChangePassword ? '/change-password' : homePath(signedIn), { replace: true });
+      navigate(signedIn.mustChangePassword ? '/change-password' : homePath(signedIn), {
+        replace: true,
+      });
     } catch (caught) {
       setError(caught);
     } finally {
@@ -41,24 +43,46 @@ export default function LoginPage() {
         <div className="auth-page__product">SalesVerse 2.0</div>
         <div>
           <h1>Agent & Banca Portal and Back-office</h1>
-          <p>Quotation, issuance, payments, claims notification and servicing for Insurans Islam Family Takaful products, with approvals and records handled in one system.</p>
+          <p>
+            Quotation, issuance, payments, claims notification and servicing for Insurans Islam
+            Family Takaful products, with approvals and records handled in one system.
+          </p>
         </div>
-        <p>Insurans Islam Family Takaful Sendirian Berhad · A member of Insurans Islam TAIB Holding</p>
+        <p>
+          Insurans Islam Family Takaful Sendirian Berhad · A member of Insurans Islam TAIB Holding
+        </p>
       </section>
 
       <section className="auth-page__form">
         <img src="/iift-logo.png" alt="Insurans Islam Family Takaful" className="auth-page__logo" />
         <Typography.Title level={3}>Sign in</Typography.Title>
-        <Typography.Paragraph type="secondary">Use the username and password issued to you by IIFT.</Typography.Paragraph>
+        <Typography.Paragraph type="secondary">
+          Use the username and password issued to you by IIFT.
+        </Typography.Paragraph>
 
-        {sessionEnded && <Alert className="mb-16" type="info" showIcon title="Your session ended. Please sign in again." />}
+        {sessionEnded && (
+          <Alert
+            className="mb-16"
+            type="info"
+            showIcon
+            title="Your session ended. Please sign in again."
+          />
+        )}
         <ErrorAlert error={error} className="mb-16" />
 
         <Form<Credentials> layout="vertical" onFinish={submit} requiredMark={false} size="large">
-          <Form.Item name="username" label="Username" rules={[{ required: true, message: 'Enter your username' }]}>
-            <Input prefix={<UserOutlined />} autoComplete="username" autoFocus />
+          <Form.Item
+            name="username"
+            label="Username"
+            rules={[{ required: true, message: 'Enter your username' }]}
+          >
+            <Input prefix={<UserOutlined />} autoComplete="username" />
           </Form.Item>
-          <Form.Item name="password" label="Password" rules={[{ required: true, message: 'Enter your password' }]}>
+          <Form.Item
+            name="password"
+            label="Password"
+            rules={[{ required: true, message: 'Enter your password' }]}
+          >
             <Input.Password prefix={<LockOutlined />} autoComplete="current-password" />
           </Form.Item>
           <Button type="primary" htmlType="submit" block loading={submitting}>
@@ -67,8 +91,9 @@ export default function LoginPage() {
         </Form>
 
         <p className="auth-page__notice">
-          For authorised agents, bank officers and IIFT staff only. Sign-in attempts and activity are recorded. Accounts are locked after repeated failed attempts; contact the IIFT
-          support desk to unlock.
+          For authorised agents, bank officers and IIFT staff only. Sign-in attempts and activity
+          are recorded. Accounts are locked after repeated failed attempts; contact the IIFT support
+          desk to unlock.
         </p>
       </section>
     </div>

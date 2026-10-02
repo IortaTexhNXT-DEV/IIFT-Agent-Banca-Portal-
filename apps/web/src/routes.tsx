@@ -46,7 +46,12 @@ export const router = createBrowserRouter([
     path: '/portal',
     element: (
       <RequireAudience audience="PORTAL">
-        <AppShell basePath="/portal" moduleName="Agent & Banca Portal" menu={PORTAL_MENU} profilePath="/portal/profile" />
+        <AppShell
+          basePath="/portal"
+          moduleName="Agent & Banca Portal"
+          menu={PORTAL_MENU}
+          profilePath="/portal/profile"
+        />
       </RequireAudience>
     ),
     children: [
@@ -56,17 +61,29 @@ export const router = createBrowserRouter([
       { path: 'policies/:id', element: page(() => import('./pages/portal/PolicyDetailPage')) },
       { path: 'renewals', element: page(() => import('./pages/portal/RenewalsPage')) },
       { path: 'participants', element: page(() => import('./pages/portal/ParticipantListPage')) },
-      { path: 'participants/new', element: page(() => import('./pages/portal/ParticipantFormPage')) },
-      { path: 'participants/:id', element: page(() => import('./pages/portal/ParticipantDetailPage')) },
+      {
+        path: 'participants/new',
+        element: page(() => import('./pages/portal/ParticipantFormPage')),
+      },
+      {
+        path: 'participants/:id',
+        element: page(() => import('./pages/portal/ParticipantDetailPage')),
+      },
       { path: 'billing', element: page(() => import('./pages/portal/BillingPage')) },
-      { path: 'billing/payments/:id', element: page(() => import('./pages/portal/PaymentDetailPage')) },
+      {
+        path: 'billing/payments/:id',
+        element: page(() => import('./pages/portal/PaymentDetailPage')),
+      },
       { path: 'claims', element: page(() => import('./pages/portal/ClaimListPage')) },
       { path: 'claims/new', element: page(() => import('./pages/portal/ClaimFormPage')) },
       { path: 'claims/:id', element: page(() => import('./pages/portal/ClaimDetailPage')) },
       { path: 'requests', element: page(() => import('./pages/portal/RequestListPage')) },
       { path: 'requests/:id', element: page(() => import('./pages/portal/RequestDetailPage')) },
       { path: 'team', element: page(() => import('./pages/portal/TeamPage')) },
-      { path: 'team/register', element: page(() => import('./pages/portal/AgentRegistrationPage')) },
+      {
+        path: 'team/register',
+        element: page(() => import('./pages/portal/AgentRegistrationPage')),
+      },
       { path: 'team/:id', element: page(() => import('./pages/portal/TeamMemberPage')) },
       { path: 'hierarchy', element: <Navigate to="/portal/team" replace /> },
       { path: 'commission', element: page(() => import('./pages/portal/CommissionPage')) },
@@ -87,7 +104,10 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: page(() => import('./pages/backoffice/DashboardPage')) },
       { path: 'approvals', element: page(() => import('./pages/backoffice/ApprovalInboxPage')) },
-      { path: 'approvals/:id', element: page(() => import('./pages/backoffice/ApprovalDetailPage')) },
+      {
+        path: 'approvals/:id',
+        element: page(() => import('./pages/backoffice/ApprovalDetailPage')),
+      },
       { path: 'requests/:id', element: <BackofficeRequestRedirect /> },
       { path: 'agents', element: page(() => import('./pages/backoffice/AgentListPage')) },
       { path: 'agents/new', element: page(() => import('./pages/backoffice/AgentRegisterPage')) },
@@ -96,8 +116,14 @@ export const router = createBrowserRouter([
       { path: 'agencies/:id', element: page(() => import('./pages/backoffice/AgencyDetailPage')) },
       { path: 'policies', element: page(() => import('./pages/backoffice/PolicyListPage')) },
       { path: 'policies/:id', element: page(() => import('./pages/backoffice/PolicyDetailPage')) },
-      { path: 'participants', element: page(() => import('./pages/backoffice/ParticipantListPage')) },
-      { path: 'participants/:id', element: page(() => import('./pages/backoffice/ParticipantDetailPage')) },
+      {
+        path: 'participants',
+        element: page(() => import('./pages/backoffice/ParticipantListPage')),
+      },
+      {
+        path: 'participants/:id',
+        element: page(() => import('./pages/backoffice/ParticipantDetailPage')),
+      },
       { path: 'payments', element: page(() => import('./pages/backoffice/PaymentListPage')) },
       { path: 'payments/:id', element: page(() => import('./pages/backoffice/PaymentDetailPage')) },
       { path: 'claims', element: page(() => import('./pages/backoffice/ClaimListPage')) },

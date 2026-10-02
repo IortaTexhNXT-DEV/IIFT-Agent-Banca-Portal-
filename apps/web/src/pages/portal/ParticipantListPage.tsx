@@ -19,7 +19,11 @@ export default function ParticipantListPage() {
         breadcrumb={[{ title: 'Home', to: '/portal' }, { title: 'Participants' }]}
         extra={
           can(P.portalParticipantsManage) && (
-            <Button type="primary" icon={<UserAddOutlined />} onClick={() => navigate('/portal/participants/new')}>
+            <Button
+              type="primary"
+              icon={<UserAddOutlined />}
+              onClick={() => navigate('/portal/participants/new')}
+            >
               Register participant
             </Button>
           )

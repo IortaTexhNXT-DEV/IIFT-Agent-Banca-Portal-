@@ -19,12 +19,18 @@ interface StatusChange {
   resolution?: string;
 }
 
-function useStatusChange(issueId: string, options: { onSuccess?: () => void; onError?: (error: Error) => void } = {}) {
-  return useApiMutation((body: StatusChange) => api.put<Issue>(`/common/issues/${issueId}/status`, body), {
-    success: 'Issue status updated',
-    invalidate: INVALIDATE,
-    ...options,
-  });
+function useStatusChange(
+  issueId: string,
+  options: { onSuccess?: () => void; onError?: (error: Error) => void } = {},
+) {
+  return useApiMutation(
+    (body: StatusChange) => api.put<Issue>(`/common/issues/${issueId}/status`, body),
+    {
+      success: 'Issue status updated',
+      invalidate: INVALIDATE,
+      ...options,
+    },
+  );
 }
 
 /** Reporters confirm a resolution (close) or reopen the issue (AP-56). */
@@ -35,10 +41,19 @@ export function ReporterActions({ issue }: { issue: Issue }) {
   if (issue.status !== 'RESOLVED') return null;
   return (
     <>
-      <Popconfirm title="Reopen this issue?" description="Support will continue working on it." okText="Reopen" onConfirm={() => change.mutate({ status: 'IN_PROGRESS' })}>
+      <Popconfirm
+        title="Reopen this issue?"
+        description="Support will continue working on it."
+        okText="Reopen"
+        onConfirm={() => change.mutate({ status: 'IN_PROGRESS' })}
+      >
         <Button loading={pending('IN_PROGRESS')}>Reopen</Button>
       </Popconfirm>
-      <Popconfirm title="Confirm the issue is resolved and close it?" okText="Close issue" onConfirm={() => change.mutate({ status: 'CLOSED' })}>
+      <Popconfirm
+        title="Confirm the issue is resolved and close it?"
+        okText="Close issue"
+        onConfirm={() => change.mutate({ status: 'CLOSED' })}
+      >
         <Button type="primary" loading={pending('CLOSED')}>
           Confirm and close
         </Button>
@@ -69,16 +84,39 @@ export function StatusChangeButton({ issue }: { issue: Issue }) {
         okText="Update status"
         okButtonProps={{ loading: change.isPending }}
         onCancel={() => setOpen(false)}
-        onOk={() => form.validateFields().then((values) => change.mutate({ status: values.status, resolution: values.resolution?.trim() || undefined }))}
+        onOk={() => form.submit()}
         destroyOnHidden
       >
         <ErrorAlert error={change.error} className="mb-16" />
-        <Form form={form} layout="vertical" requiredMark="optional" preserve={false}>
-          <Form.Item name="status" label="New status" rules={[{ required: true, message: 'Choose the new status' }]}>
+        <Form
+          form={form}
+          onFinish={(values) =>
+            change.mutate({
+              status: values.status,
+              resolution: values.resolution?.trim() || undefined,
+            })
+          }
+          layout="vertical"
+          requiredMark="optional"
+          preserve={false}
+        >
+          <Form.Item
+            name="status"
+            label="New status"
+            rules={[{ required: true, message: 'Choose the new status' }]}
+          >
             <Select options={options} />
           </Form.Item>
           {status === 'RESOLVED' && (
-            <Form.Item name="resolution" label="Resolution" extra="Sent to the reporter" rules={[{ required: true, whitespace: true, message: 'Describe the resolution' }, { max: 2000 }]}>
+            <Form.Item
+              name="resolution"
+              label="Resolution"
+              extra="Sent to the reporter"
+              rules={[
+                { required: true, whitespace: true, message: 'Describe the resolution' },
+                { max: 2000 },
+              ]}
+            >
               <Input.TextArea rows={4} maxLength={2000} showCount />
             </Form.Item>
           )}
@@ -97,14 +135,25 @@ interface AssignmentValues {
 export function IssueManagement({ issue }: { issue: Issue }) {
   const [form] = Form.useForm<AssignmentValues>();
   const assignees = useApiQuery<Assignee[]>('/backoffice/issues/assignees');
-  const assign = useApiMutation((values: AssignmentValues) => api.put<Issue>(`/backoffice/issues/${issue.id}/assignment`, { assigneeId: values.assigneeId, team: values.team?.trim() || undefined }), {
-    success: 'Issue assigned',
-    invalidate: INVALIDATE,
-  });
-  const prioritise = useApiMutation((priority: IssuePriority) => api.put<Issue>(`/backoffice/issues/${issue.id}/priority`, { priority }), {
-    success: 'Priority changed and SLA targets recalculated',
-    invalidate: INVALIDATE,
-  });
+  const assign = useApiMutation(
+    (values: AssignmentValues) =>
+      api.put<Issue>(`/backoffice/issues/${issue.id}/assignment`, {
+        assigneeId: values.assigneeId,
+        team: values.team?.trim() || undefined,
+      }),
+    {
+      success: 'Issue assigned',
+      invalidate: INVALIDATE,
+    },
+  );
+  const prioritise = useApiMutation(
+    (priority: IssuePriority) =>
+      api.put<Issue>(`/backoffice/issues/${issue.id}/priority`, { priority }),
+    {
+      success: 'Priority changed and SLA targets recalculated',
+      invalidate: INVALIDATE,
+    },
+  );
   const [priority, setPriority] = useState<IssuePriority>(issue.priority);
 
   return (
@@ -112,16 +161,27 @@ export function IssueManagement({ issue }: { issue: Issue }) {
       <ErrorAlert error={assign.error ?? prioritise.error} className="mb-16" />
       <Form
         form={form}
+        name="issue-assignment"
         layout="vertical"
         requiredMark="optional"
-        initialValues={{ assigneeId: issue.assignedToId ?? undefined, team: issue.assignedTeam ?? '' }}
+        initialValues={{
+          assigneeId: issue.assignedToId ?? undefined,
+          team: issue.assignedTeam ?? '',
+        }}
         onFinish={(values) => assign.mutate(values)}
       >
-        <Form.Item name="assigneeId" label="Assigned to" rules={[{ required: true, message: 'Choose a support user' }]}>
+        <Form.Item
+          name="assigneeId"
+          label="Assigned to"
+          rules={[{ required: true, message: 'Choose a support user' }]}
+        >
           <Select
             showSearch={{ optionFilterProp: 'label' }}
             loading={assignees.isLoading}
-            options={(assignees.data ?? []).map((assignee) => ({ value: assignee.id, label: `${assignee.fullName} (${assignee.username})` }))}
+            options={(assignees.data ?? []).map((assignee) => ({
+              value: assignee.id,
+              label: `${assignee.fullName} (${assignee.username})`,
+            }))}
           />
         </Form.Item>
         <Form.Item name="team" label="Team" rules={[{ max: 50 }]}>
@@ -131,11 +191,23 @@ export function IssueManagement({ issue }: { issue: Issue }) {
           {issue.assignedToId ? 'Reassign' : 'Assign'}
         </Button>
       </Form>
-      <Form layout="vertical" className="manage-priority">
-        <Form.Item label="Priority" extra="Changing the priority recalculates the response and resolution targets">
-          <Select value={priority} options={enumOptions(ISSUE_PRIORITIES, humanise)} onChange={setPriority} />
+      <Form name="issue-priority" layout="vertical" className="manage-priority">
+        <Form.Item
+          label="Priority"
+          extra="Changing the priority recalculates the response and resolution targets"
+        >
+          <Select
+            value={priority}
+            options={enumOptions(ISSUE_PRIORITIES, humanise)}
+            onChange={setPriority}
+          />
         </Form.Item>
-        <Popconfirm title={`Change priority to ${humanise(priority).toLowerCase()}?`} okText="Change" disabled={priority === issue.priority} onConfirm={() => prioritise.mutate(priority)}>
+        <Popconfirm
+          title={`Change priority to ${humanise(priority).toLowerCase()}?`}
+          okText="Change"
+          disabled={priority === issue.priority}
+          onConfirm={() => prioritise.mutate(priority)}
+        >
           <Button block disabled={priority === issue.priority} loading={prioritise.isPending}>
             Change priority
           </Button>

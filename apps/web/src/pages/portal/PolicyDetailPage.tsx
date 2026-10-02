@@ -10,7 +10,10 @@ import { QueryState } from '../../components/QueryState';
 import { CancellationModal } from '../../components/sales/CancellationModal';
 import { CompletionChecklist, type DraftAction } from '../../components/sales/CompletionChecklist';
 import { CoverageDrawer } from '../../components/sales/CoverageDrawer';
-import { EmailDocumentsModal, hasIssuedDocuments } from '../../components/sales/EmailDocumentsModal';
+import {
+  EmailDocumentsModal,
+  hasIssuedDocuments,
+} from '../../components/sales/EmailDocumentsModal';
 import { EndorsementModal } from '../../components/sales/EndorsementModal';
 import { NomineesModal } from '../../components/sales/NomineesModal';
 import { PolicyPageHeader } from '../../components/sales/PolicyPageHeader';
@@ -37,7 +40,15 @@ const SUBMIT_OUTCOMES: Partial<Record<PolicySummary['status'], string>> = {
   ACTIVE: 'Policy issued',
 };
 
-function DialogFor({ dialog, policy, onClose }: { dialog: Dialog | null; policy: PolicyDetail; onClose(): void }) {
+function DialogFor({
+  dialog,
+  policy,
+  onClose,
+}: {
+  dialog: Dialog | null;
+  policy: PolicyDetail;
+  onClose(): void;
+}) {
   switch (dialog) {
     case 'coverage':
       return <CoverageDrawer policy={policy} onClose={onClose} />;
@@ -73,10 +84,17 @@ function PolicyView({ policy }: { policy: PolicyDetail }) {
 
   const submit = useApiMutation(() => api.post<PolicySummary>(`${path}/submit`), {
     invalidate,
-    onSuccess: (result) => message.success(SUBMIT_OUTCOMES[result.status] ?? 'Application submitted'),
+    onSuccess: (result) =>
+      message.success(SUBMIT_OUTCOMES[result.status] ?? 'Application submitted'),
   });
-  const discard = useApiMutation(() => api.post(`${path}/discard`), { success: 'Quotation discarded', invalidate });
-  const reopen = useApiMutation(() => api.post(`${path}/reopen`), { success: 'Quotation reopened for revision', invalidate });
+  const discard = useApiMutation(() => api.post(`${path}/discard`), {
+    success: 'Quotation discarded',
+    invalidate,
+  });
+  const reopen = useApiMutation(() => api.post(`${path}/reopen`), {
+    success: 'Quotation reopened for revision',
+    invalidate,
+  });
   const renew = useApiMutation(() => api.post<{ id: string }>(`${path}/renew`), {
     success: 'Renewal quotation created',
     invalidate,
@@ -87,10 +105,15 @@ function PolicyView({ policy }: { policy: PolicyDetail }) {
   const canQuote = can(P.portalPoliciesQuote);
   const canService = can(P.portalPoliciesService);
   const draft = status === 'DRAFT';
-  const discardable = ['DRAFT', 'PENDING_PAYMENT', 'REJECTED'].includes(status) && paymentStatus === 'UNPAID';
+  const discardable =
+    ['DRAFT', 'PENDING_PAYMENT', 'REJECTED'].includes(status) && paymentStatus === 'UNPAID';
   const blocked = draft && policy.agency.issuanceBlocked;
-  const awaitingPayment = ['PENDING_PAYMENT', 'ACTIVE'].includes(status) && paymentStatus === 'UNPAID' && Number(policy.outstandingAmount) > 0;
-  const claimable = ['ACTIVE', 'EXPIRED'].includes(status) && policy.policyNo !== null && can(P.portalClaimsSubmit);
+  const awaitingPayment =
+    ['PENDING_PAYMENT', 'ACTIVE'].includes(status) &&
+    paymentStatus === 'UNPAID' &&
+    Number(policy.outstandingAmount) > 0;
+  const claimable =
+    ['ACTIVE', 'EXPIRED'].includes(status) && policy.policyNo !== null && can(P.portalClaimsSubmit);
 
   const actions: ReactNode[] = [];
   if (awaitingPayment && can(P.portalBillingSubmit)) {
@@ -102,14 +125,25 @@ function PolicyView({ policy }: { policy: PolicyDetail }) {
   }
   if (status === 'REJECTED' && canQuote) {
     actions.push(
-      <Button key="reopen" type="primary" loading={reopen.isPending} onClick={() => reopen.mutate(undefined)}>
+      <Button
+        key="reopen"
+        type="primary"
+        loading={reopen.isPending}
+        onClick={() => reopen.mutate(undefined)}
+      >
         Reopen for revision
       </Button>,
     );
   }
   if (['ACTIVE', 'EXPIRED'].includes(status) && product.allowRenewal && canService) {
     actions.push(
-      <Popconfirm key="renew" title="Create a renewal quotation?" description="The cover, nominees and risk details are copied to a new quotation." okText="Create" onConfirm={() => renew.mutate(undefined)}>
+      <Popconfirm
+        key="renew"
+        title="Create a renewal quotation?"
+        description="The cover, nominees and risk details are copied to a new quotation."
+        okText="Create"
+        onConfirm={() => renew.mutate(undefined)}
+      >
         <Button loading={renew.isPending}>Renew</Button>
       </Popconfirm>,
     );
@@ -133,7 +167,14 @@ function PolicyView({ policy }: { policy: PolicyDetail }) {
   }
   if (discardable && canQuote) {
     actions.push(
-      <Popconfirm key="discard" title="Discard this quotation?" description="It is cancelled and cannot be submitted again." okText="Discard" okButtonProps={{ danger: true }} onConfirm={() => discard.mutate(undefined)}>
+      <Popconfirm
+        key="discard"
+        title="Discard this quotation?"
+        description="It is cancelled and cannot be submitted again."
+        okText="Discard"
+        okButtonProps={{ danger: true }}
+        onConfirm={() => discard.mutate(undefined)}
+      >
         <Button danger loading={discard.isPending}>
           Discard
         </Button>
@@ -154,9 +195,23 @@ function PolicyView({ policy }: { policy: PolicyDetail }) {
       <PolicyPageHeader policy={policy} actions={actions.length > 0 ? actions : undefined} />
       <ErrorAlert error={reopen.error ?? discard.error ?? renew.error} className="mb-16" />
 
-      {status === 'REJECTED' && <Alert className="mb-16" type="error" showIcon title="Rejected by IIFT" description={policy.rejectedReason ?? 'No reason was recorded.'} />}
+      {status === 'REJECTED' && (
+        <Alert
+          className="mb-16"
+          type="error"
+          showIcon
+          title="Rejected by IIFT"
+          description={policy.rejectedReason ?? 'No reason was recorded.'}
+        />
+      )}
       {status === 'PENDING_APPROVAL' && (
-        <Alert className="mb-16" type="info" showIcon title="Awaiting IIFT approval" description="The application was referred for underwriting. You are notified when a decision is made." />
+        <Alert
+          className="mb-16"
+          type="info"
+          showIcon
+          title="Awaiting IIFT approval"
+          description="The application was referred for underwriting. You are notified when a decision is made."
+        />
       )}
       {awaitingPayment && (
         <Alert
@@ -179,7 +234,8 @@ function PolicyView({ policy }: { policy: PolicyDetail }) {
           title="New business is blocked for your agency"
           description={
             <>
-              Submission is not possible until overdue contributions are paid. <Link to="/portal/billing">Go to billing</Link>
+              Submission is not possible until overdue contributions are paid.{' '}
+              <Link to="/portal/billing">Go to billing</Link>
             </>
           }
         />
@@ -193,7 +249,12 @@ function PolicyView({ policy }: { policy: PolicyDetail }) {
             onAction={handleDraftAction}
             submit={
               can(P.portalPoliciesSubmit) && (
-                <Button type="primary" disabled={blocked} loading={submit.isPending} onClick={() => submit.mutate(undefined)}>
+                <Button
+                  type="primary"
+                  disabled={blocked}
+                  loading={submit.isPending}
+                  onClick={() => submit.mutate(undefined)}
+                >
                   Submit application
                 </Button>
               )
@@ -207,8 +268,20 @@ function PolicyView({ policy }: { policy: PolicyDetail }) {
         policy={policy}
         activeKey={tab}
         onChange={setTab}
-        uploadTypes={draft && canQuote ? [...product.requiredDocuments, ...SIGNATURE_UPLOADS] : undefined}
-        claimsAction={claimable && <Button onClick={() => navigate(`/portal/claims/new?policyNo=${encodeURIComponent(policy.policyNo ?? '')}`)}>Notify claim</Button>}
+        uploadTypes={
+          draft && canQuote ? [...product.requiredDocuments, ...SIGNATURE_UPLOADS] : undefined
+        }
+        claimsAction={
+          claimable && (
+            <Button
+              onClick={() =>
+                navigate(`/portal/claims/new?policyNo=${encodeURIComponent(policy.policyNo ?? '')}`)
+              }
+            >
+              Notify claim
+            </Button>
+          )
+        }
       />
 
       <DialogFor dialog={dialog} policy={policy} onClose={() => setDialog(null)} />

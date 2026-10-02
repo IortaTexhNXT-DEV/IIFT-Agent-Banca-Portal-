@@ -6,7 +6,10 @@ import { StatusTag } from '../StatusTag';
 
 /** Key facts of a maker-checker request: type, maker, level reached and outcome. */
 export function RequestSummary({ request }: { request: ApprovalRequest }) {
-  const level = request.status === 'PENDING' ? `Level ${request.currentLevel} of ${request.totalLevels}` : `${request.totalLevels} level${request.totalLevels === 1 ? '' : 's'}`;
+  const level =
+    request.status === 'PENDING'
+      ? `Level ${request.currentLevel} of ${request.totalLevels}`
+      : `${request.totalLevels} level${request.totalLevels === 1 ? '' : 's'}`;
   return (
     <Descriptions
       size="small"
@@ -19,15 +22,32 @@ export function RequestSummary({ request }: { request: ApprovalRequest }) {
         { key: 'maker', label: 'Submitted by', children: request.makerName },
         { key: 'submitted', label: 'Submitted', children: formatDateTime(request.submittedAt) },
         { key: 'decided', label: 'Decided', children: formatDateTime(request.decidedAt) },
-        ...(request.amount !== null ? [{ key: 'amount', label: 'Amount', children: <Money value={request.amount} /> }] : []),
-        ...(request.finalRemarks ? [{ key: 'remarks', label: 'Decision remarks', children: request.finalRemarks, span: 'filled' as const }] : []),
+        ...(request.amount !== null
+          ? [{ key: 'amount', label: 'Amount', children: <Money value={request.amount} /> }]
+          : []),
+        ...(request.finalRemarks
+          ? [
+              {
+                key: 'remarks',
+                label: 'Decision remarks',
+                children: request.finalRemarks,
+                span: 'filled' as const,
+              },
+            ]
+          : []),
       ]}
     />
   );
 }
 
 /** AP-51: rejection reason, with a pointer to correct and resubmit from the record itself. */
-export function RejectionAlert({ request, resubmitHint }: { request: ApprovalRequest; resubmitHint?: string }) {
+export function RejectionAlert({
+  request,
+  resubmitHint,
+}: {
+  request: ApprovalRequest;
+  resubmitHint?: string;
+}) {
   if (request.status !== 'REJECTED') return null;
   return (
     <Alert

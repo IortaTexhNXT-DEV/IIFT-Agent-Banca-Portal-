@@ -1,5 +1,18 @@
 import { UploadOutlined } from '@ant-design/icons';
-import { Alert, Button, DatePicker, Flex, Form, Modal, Select, Table, Tag, Tooltip, Typography, Upload } from 'antd';
+import {
+  Alert,
+  Button,
+  DatePicker,
+  Flex,
+  Form,
+  Modal,
+  Select,
+  Table,
+  Tag,
+  Tooltip,
+  Typography,
+  Upload,
+} from 'antd';
 import type { UploadFile } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useState } from 'react';
@@ -9,6 +22,7 @@ import type { Channel, DocumentView } from '../../api/types';
 import { fileSize, formatDate, formatDateTime } from '../../utils/format';
 import { ErrorAlert } from '../ErrorAlert';
 import { StatusTag } from '../StatusTag';
+import { CellText } from './CellText';
 import { DocumentDownloadButton } from './DocumentDownloadButton';
 import { DocumentReviewActions } from './DocumentReviewActions';
 import { useCodes } from './useCodes';
@@ -33,7 +47,8 @@ interface Props {
 
 function ExpiryCell({ document }: { document: DocumentView }) {
   if (!document.expiryDate) return <span className="muted">–</span>;
-  const soon = !document.expired && dayjs(document.expiryDate).diff(dayjs(), 'day') <= EXPIRY_WARNING_DAYS;
+  const soon =
+    !document.expired && dayjs(document.expiryDate).diff(dayjs(), 'day') <= EXPIRY_WARNING_DAYS;
   return (
     <Flex gap={6} align="center">
       {formatDate(document.expiryDate)}
@@ -51,17 +66,34 @@ function ExpiryCell({ document }: { document: DocumentView }) {
  * AP-46/47, BO-11: documents of an agent or bank officer with status, validity and
  * expiry; optional upload (with expiry date) and verification.
  */
-export function AgentDocuments({ agentId, channel, canUpload = false, canReview = false, checkRequired = false, title }: Props) {
+export function AgentDocuments({
+  agentId,
+  channel,
+  canUpload = false,
+  canReview = false,
+  checkRequired = false,
+  title,
+}: Props) {
   const [uploading, setUploading] = useState(false);
-  const documents = useApiQuery<DocumentView[]>('/common/documents', { ownerType: 'AGENT', ownerId: agentId });
+  const documents = useApiQuery<DocumentView[]>('/common/documents', {
+    ownerType: 'AGENT',
+    ownerId: agentId,
+  });
   const types = useCodes('DOCUMENT_TYPE');
   const items = documents.data ?? [];
-  const missingRequired = checkRequired && !documents.isLoading && !items.some((doc) => doc.docType === REQUIRED_TYPE && doc.status !== 'REJECTED');
+  const missingRequired =
+    checkRequired &&
+    !documents.isLoading &&
+    !items.some((doc) => doc.docType === REQUIRED_TYPE && doc.status !== 'REJECTED');
 
   return (
     <>
       {(title || canUpload) && (
-        <Flex justify={title ? 'space-between' : 'flex-end'} align="center" className="section-title">
+        <Flex
+          justify={title ? 'space-between' : 'flex-end'}
+          align="center"
+          className="section-title"
+        >
           {title && <Typography.Title level={5}>{title}</Typography.Title>}
           {canUpload && (
             <Button icon={<UploadOutlined />} onClick={() => setUploading(true)}>
@@ -70,7 +102,14 @@ export function AgentDocuments({ agentId, channel, canUpload = false, canReview 
           )}
         </Flex>
       )}
-      {missingRequired && <Alert className="mb-16" type="warning" showIcon title={`${types.labelOf(REQUIRED_TYPE)} is required before IIFT can approve the registration`} />}
+      {missingRequired && (
+        <Alert
+          className="mb-16"
+          type="warning"
+          showIcon
+          title={`${types.labelOf(REQUIRED_TYPE)} is required before IIFT can approve the registration`}
+        />
+      )}
       <ErrorAlert error={documents.error} className="mb-16" />
       <Table<DocumentView>
         size="small"
@@ -82,7 +121,11 @@ export function AgentDocuments({ agentId, channel, canUpload = false, canReview 
         locale={{ emptyText: 'No documents yet' }}
         columns={[
           { title: 'Type', dataIndex: 'docType', render: types.labelOf },
-          { title: 'File', dataIndex: 'fileName', ellipsis: true },
+          {
+            title: 'File',
+            dataIndex: 'fileName',
+            render: (name: string) => <CellText text={name} width={280} />,
+          },
           { title: 'Size', dataIndex: 'sizeBytes', width: 80, render: fileSize },
           {
             title: 'Status',
@@ -96,7 +139,11 @@ export function AgentDocuments({ agentId, channel, canUpload = false, canReview 
               </Tooltip>
             ),
           },
-          { title: 'Expiry', dataIndex: 'expiryDate', render: (_: unknown, doc) => <ExpiryCell document={doc} /> },
+          {
+            title: 'Expiry',
+            dataIndex: 'expiryDate',
+            render: (_: unknown, doc) => <ExpiryCell document={doc} />,
+          },
           { title: 'Added', dataIndex: 'createdAt', width: 170, render: formatDateTime },
           {
             key: 'actions',
@@ -112,10 +159,12 @@ export function AgentDocuments({ agentId, channel, canUpload = false, canReview 
       {uploading && (
         <UploadDialog
           agentId={agentId}
-          options={(channel === 'BANCA' ? BANCA_DOCUMENT_TYPES : AGENT_DOCUMENT_TYPES).map((type) => ({
-            value: type,
-            label: `${types.labelOf(type)}${type === REQUIRED_TYPE ? ' (required)' : ''}`,
-          }))}
+          options={(channel === 'BANCA' ? BANCA_DOCUMENT_TYPES : AGENT_DOCUMENT_TYPES).map(
+            (type) => ({
+              value: type,
+              label: `${types.labelOf(type)}${type === REQUIRED_TYPE ? ' (required)' : ''}`,
+            }),
+          )}
           onClose={() => setUploading(false)}
         />
       )}
@@ -128,7 +177,15 @@ interface UploadValues {
   expiryDate?: Dayjs;
 }
 
-function UploadDialog({ agentId, options, onClose }: { agentId: string; options: { value: string; label: string }[]; onClose(): void }) {
+function UploadDialog({
+  agentId,
+  options,
+  onClose,
+}: {
+  agentId: string;
+  options: { value: string; label: string }[];
+  onClose(): void;
+}) {
   const [form] = Form.useForm<UploadValues>();
   const [files, setFiles] = useState<UploadFile[]>([]);
   const upload = useApiMutation(
@@ -141,7 +198,11 @@ function UploadDialog({ agentId, options, onClose }: { agentId: string; options:
       data.append('file', files[0].originFileObj as File);
       return api.upload<DocumentView>('/common/documents', data);
     },
-    { success: 'Document uploaded', invalidate: ['/common/documents', '/portal', '/backoffice'], onSuccess: onClose },
+    {
+      success: 'Document uploaded',
+      invalidate: ['/common/documents', '/portal', '/backoffice'],
+      onSuccess: onClose,
+    },
   );
 
   return (
@@ -151,19 +212,42 @@ function UploadDialog({ agentId, options, onClose }: { agentId: string; options:
       okText="Upload"
       onCancel={onClose}
       okButtonProps={{ disabled: files.length === 0, loading: upload.isPending }}
-      onOk={() => form.validateFields().then((values) => upload.mutate(values))}
+      onOk={() => form.submit()}
       destroyOnHidden
     >
       <ErrorAlert error={upload.error} className="mb-16" />
-      <Form form={form} layout="vertical" requiredMark="optional">
-        <Form.Item name="docType" label="Document type" rules={[{ required: true, message: 'Choose the document type' }]}>
+      <Form
+        form={form}
+        onFinish={(values) => upload.mutate(values)}
+        layout="vertical"
+        requiredMark="optional"
+      >
+        <Form.Item
+          name="docType"
+          label="Document type"
+          rules={[{ required: true, message: 'Choose the document type' }]}
+        >
           <Select options={options} />
         </Form.Item>
-        <Form.Item name="expiryDate" label="Valid until" extra="For licences, passports and other documents with an expiry date">
-          <DatePicker format="DD MMM YYYY" disabledDate={(date) => date.isBefore(dayjs(), 'day')} style={{ width: '100%' }} />
+        <Form.Item
+          name="expiryDate"
+          label="Valid until"
+          extra="For licences, passports and other documents with an expiry date"
+        >
+          <DatePicker
+            format="DD MMM YYYY"
+            disabledDate={(date) => date.isBefore(dayjs(), 'day')}
+            style={{ width: '100%' }}
+          />
         </Form.Item>
         <Form.Item label="File" extra="PDF, PNG or JPEG, up to 10 MB" required>
-          <Upload.Dragger accept={ACCEPT} maxCount={1} fileList={files} beforeUpload={() => false} onChange={({ fileList }) => setFiles(fileList.slice(-1))}>
+          <Upload.Dragger
+            accept={ACCEPT}
+            maxCount={1}
+            fileList={files}
+            beforeUpload={() => false}
+            onChange={({ fileList }) => setFiles(fileList.slice(-1))}
+          >
             <p className="ant-upload-text">Click or drag a file here</p>
           </Upload.Dragger>
         </Form.Item>

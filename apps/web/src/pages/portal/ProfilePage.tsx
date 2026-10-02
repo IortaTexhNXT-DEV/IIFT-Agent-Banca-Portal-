@@ -24,18 +24,24 @@ const CONTACT_FIELDS: ContactField[] = ['email', 'mobile', 'address', 'branchNam
 /** Only fields that differ from the current profile are sent for approval. */
 function changedFields(profile: AgentDetail, values: ContactValues): ContactValues {
   return Object.fromEntries(
-    CONTACT_FIELDS.map((field) => [field, values[field]?.trim() ?? ''] as const).filter(([field, value]) => value !== '' && value !== (profile[field] ?? '')),
+    CONTACT_FIELDS.map((field) => [field, values[field]?.trim() ?? ''] as const).filter(
+      ([field, value]) => value !== '' && value !== (profile[field] ?? ''),
+    ),
   );
 }
 
 function UpdateRequestModal({ profile, onClose }: { profile: AgentDetail; onClose(): void }) {
   const [form] = Form.useForm<ContactValues>();
   const [unchanged, setUnchanged] = useState(false);
-  const request = useApiMutation((changes: ContactValues) => api.post<ApprovalRequest>('/portal/profile/update-requests', changes), {
-    invalidate: ['/portal/profile', '/portal/requests'],
-    onSuccess: onClose,
-    success: 'Update request submitted for approval',
-  });
+  const request = useApiMutation(
+    (changes: ContactValues) =>
+      api.post<ApprovalRequest>('/portal/profile/update-requests', changes),
+    {
+      invalidate: ['/portal/profile', '/portal/requests'],
+      onSuccess: onClose,
+      success: 'Update request submitted for approval',
+    },
+  );
 
   const submit = (values: ContactValues) => {
     const changes = changedFields(profile, values);
@@ -50,14 +56,41 @@ function UpdateRequestModal({ profile, onClose }: { profile: AgentDetail; onClos
       okText="Submit for approval"
       okButtonProps={{ loading: request.isPending }}
       onCancel={onClose}
-      onOk={() => form.validateFields().then(submit)}
+      onOk={() => form.submit()}
       destroyOnHidden
     >
-      <Alert className="mb-16" type="info" showIcon title="Changes take effect once IIFT approves the request." />
-      {unchanged && <Alert className="mb-16" type="warning" showIcon title="Change at least one field before submitting." />}
+      <Alert
+        className="mb-16"
+        type="info"
+        showIcon
+        title="Changes take effect once IIFT approves the request."
+      />
+      {unchanged && (
+        <Alert
+          className="mb-16"
+          type="warning"
+          showIcon
+          title="Change at least one field before submitting."
+        />
+      )}
       <ErrorAlert error={request.error} className="mb-16" />
-      <Form form={form} layout="vertical" requiredMark="optional" initialValues={{ email: profile.email, mobile: profile.mobile, address: profile.address ?? '', branchName: profile.branchName ?? '' }}>
-        <Form.Item name="email" label="Email" rules={[{ type: 'email', message: 'Enter a valid email address' }, { max: 254 }]}>
+      <Form
+        form={form}
+        onFinish={submit}
+        layout="vertical"
+        requiredMark="optional"
+        initialValues={{
+          email: profile.email,
+          mobile: profile.mobile,
+          address: profile.address ?? '',
+          branchName: profile.branchName ?? '',
+        }}
+      >
+        <Form.Item
+          name="email"
+          label="Email"
+          rules={[{ type: 'email', message: 'Enter a valid email address' }, { max: 254 }]}
+        >
           <Input type="email" />
         </Form.Item>
         <Form.Item name="mobile" label="Mobile" rules={[mobileRule]}>
@@ -83,7 +116,9 @@ export default function ProfilePage() {
   return (
     <QueryState query={profile}>
       {(data) => {
-        const pendingUpdate = data.approvals.find((approval) => approval.type === 'AGENT_PROFILE_UPDATE' && approval.status === 'PENDING');
+        const pendingUpdate = data.approvals.find(
+          (approval) => approval.type === 'AGENT_PROFILE_UPDATE' && approval.status === 'PENDING',
+        );
         return (
           <>
             <PageHeader
@@ -92,7 +127,11 @@ export default function ProfilePage() {
               breadcrumb={[{ title: 'Dashboard', to: '/portal' }, { title: 'My profile' }]}
               extra={
                 can(P.portalProfileUpdate) && (
-                  <Button icon={<EditOutlined />} disabled={Boolean(pendingUpdate)} onClick={() => setEditing(true)}>
+                  <Button
+                    icon={<EditOutlined />}
+                    disabled={Boolean(pendingUpdate)}
+                    onClick={() => setEditing(true)}
+                  >
                     Request profile update
                   </Button>
                 )
@@ -105,7 +144,11 @@ export default function ProfilePage() {
                 showIcon
                 title={
                   <>
-                    Update request <Link to={`/portal/requests/${pendingUpdate.id}`}>{pendingUpdate.requestNo}</Link> is awaiting IIFT approval.
+                    Update request{' '}
+                    <Link to={`/portal/requests/${pendingUpdate.id}`}>
+                      {pendingUpdate.requestNo}
+                    </Link>{' '}
+                    is awaiting IIFT approval.
                   </>
                 }
               />
@@ -114,13 +157,26 @@ export default function ProfilePage() {
               <AgentProfile
                 agent={data}
                 extra={[
-                  { key: 'username', label: 'Portal user name', children: data.user?.username ?? '–' },
-                  { key: 'lastLogin', label: 'Last sign-in', children: formatDateTime(data.user?.lastLoginAt) },
+                  {
+                    key: 'username',
+                    label: 'Portal user name',
+                    children: data.user?.username ?? '–',
+                  },
+                  {
+                    key: 'lastLogin',
+                    label: 'Last sign-in',
+                    children: formatDateTime(data.user?.lastLoginAt),
+                  },
                 ]}
               />
             </Card>
             <Card className="content-card">
-              <AgentDocuments agentId={data.id} channel={data.agency.channel} canUpload={can(P.portalProfileUpdate)} title="My documents" />
+              <AgentDocuments
+                agentId={data.id}
+                channel={data.agency.channel}
+                canUpload={can(P.portalProfileUpdate)}
+                title="My documents"
+              />
             </Card>
             <Card title="Change requests" className="content-card">
               <ApprovalHistory approvals={data.approvals} />

@@ -2,7 +2,16 @@
  * Response shapes used by the distribution, control, operations and administration
  * screens that are not already covered by api/types.ts.
  */
-import type { AgentType, ApprovalAction, ApprovalRequest, Audience, Channel, IsoDate, Money, UserType } from './types';
+import type {
+  AgentType,
+  ApprovalAction,
+  ApprovalRequest,
+  Audience,
+  Channel,
+  IsoDate,
+  Money,
+  UserType,
+} from './types';
 
 export interface AgencyOption {
   id: string;
@@ -240,7 +249,8 @@ export interface ConfigParameter {
 
 export type ExportFormat = 'XLSX' | 'CSV' | 'PDF';
 export type ReportFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY';
-export type SchedulePeriod = 'PREVIOUS_DAY' | 'PREVIOUS_7_DAYS' | 'PREVIOUS_MONTH' | 'MONTH_TO_DATE';
+export type SchedulePeriod =
+  'PREVIOUS_DAY' | 'PREVIOUS_7_DAYS' | 'PREVIOUS_MONTH' | 'MONTH_TO_DATE';
 
 export interface ReportSchedule {
   id: string;

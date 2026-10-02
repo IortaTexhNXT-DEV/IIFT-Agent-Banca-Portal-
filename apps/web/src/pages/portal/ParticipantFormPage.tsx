@@ -12,7 +12,9 @@ export default function ParticipantFormPage() {
 
   const created = (participant: Participant) => {
     if (participant.amlStatus === 'FLAGGED') {
-      message.warning(`${participant.participantNo} registered and referred to Compliance for AML review`);
+      message.warning(
+        `${participant.participantNo} registered and referred to Compliance for AML review`,
+      );
     } else {
       message.success(`${participant.participantNo} registered`);
     }
@@ -24,7 +26,11 @@ export default function ParticipantFormPage() {
       <PageHeader
         title="Register participant"
         subtitle="Each participant has one profile shared across agencies, identified by IC, passport or business registration number"
-        breadcrumb={[{ title: 'Home', to: '/portal' }, { title: 'Participants', to: '/portal/participants' }, { title: 'Register' }]}
+        breadcrumb={[
+          { title: 'Home', to: '/portal' },
+          { title: 'Participants', to: '/portal/participants' },
+          { title: 'Register' },
+        ]}
       />
       <Card className="content-card">
         <ParticipantRegistrationForm
@@ -36,7 +42,13 @@ export default function ParticipantFormPage() {
               <Button size="small" onClick={() => navigate(`/portal/participants/${match.id}`)}>
                 Open record
               </Button>
-              <Button size="small" type="primary" onClick={() => navigate('/portal/quotations/new', { state: { participant: match } })}>
+              <Button
+                size="small"
+                type="primary"
+                onClick={() =>
+                  navigate('/portal/quotations/new', { state: { participant: match } })
+                }
+              >
                 New quotation
               </Button>
             </Flex>

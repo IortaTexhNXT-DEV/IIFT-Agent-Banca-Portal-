@@ -1,4 +1,10 @@
-import { keepPreviousData, useMutation, type UseMutationOptions, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  type UseMutationOptions,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { App } from 'antd';
 import { useState } from 'react';
 import { api, ApiError } from './client';
@@ -7,7 +13,11 @@ import type { Page } from './types';
 type Params = Record<string, string | number | boolean | undefined | null>;
 
 /** GET with caching; the key is derived from the path and parameters. */
-export function useApiQuery<T>(path: string | null, params?: Params, options: { refetchInterval?: number } = {}) {
+export function useApiQuery<T>(
+  path: string | null,
+  params?: Params,
+  options: { refetchInterval?: number } = {},
+) {
   return useQuery({
     queryKey: [path, params],
     queryFn: () => api.get<T>(path!, params),
@@ -49,7 +59,10 @@ export function usePagedQuery<T>(path: string, filters: Params = {}, pageSize = 
  */
 export function useApiMutation<TVariables, TResult = unknown>(
   mutationFn: (variables: TVariables) => Promise<TResult>,
-  options: { success?: string; invalidate?: string[] } & Omit<UseMutationOptions<TResult, ApiError, TVariables>, 'mutationFn'> = {},
+  options: { success?: string; invalidate?: string[] } & Omit<
+    UseMutationOptions<TResult, ApiError, TVariables>,
+    'mutationFn'
+  > = {},
 ) {
   const { message } = App.useApp();
   const queryClient = useQueryClient();
@@ -62,7 +75,11 @@ export function useApiMutation<TVariables, TResult = unknown>(
       if (invalidate) {
         await Promise.all(
           invalidate.map((prefix) =>
-            queryClient.invalidateQueries({ predicate: (query) => typeof query.queryKey[0] === 'string' && (query.queryKey[0] as string).startsWith(prefix) }),
+            queryClient.invalidateQueries({
+              predicate: (query) =>
+                typeof query.queryKey[0] === 'string' &&
+                (query.queryKey[0] as string).startsWith(prefix),
+            }),
           ),
         );
       }

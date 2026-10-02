@@ -1,7 +1,10 @@
 import dayjs from 'dayjs';
 import type { Money } from '../api/types';
 
-const moneyFormat = new Intl.NumberFormat('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const moneyFormat = new Intl.NumberFormat('en-GB', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 const integerFormat = new Intl.NumberFormat('en-GB');
 
 /** B$ 1,234.50 */

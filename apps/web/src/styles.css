@@ -391,6 +391,7 @@ a {
 }
 
 .action-list__item {
+  color: inherit;
   display: flex;
   align-items: flex-start;
   gap: 12px;
@@ -399,7 +400,7 @@ a {
   border-radius: 6px;
 }
 
-.action-list__item:last-child {
+.action-list li:last-child .action-list__item {
   border-bottom: none;
 }
 

@@ -18,9 +18,16 @@ export default function NotificationsPage() {
   const navigate = useNavigate();
   const audience = user?.audience ?? 'PORTAL';
   const [unreadOnly, setUnreadOnly] = useState(false);
-  const notifications = usePagedQuery<NotificationItem>('/common/notifications', { unreadOnly: unreadOnly || undefined });
-  const markRead = useApiMutation((id: string) => api.post(`/common/notifications/${id}/read`), { invalidate: INVALIDATE });
-  const markAllRead = useApiMutation(() => api.post('/common/notifications/read-all'), { success: 'All notifications marked as read', invalidate: INVALIDATE });
+  const notifications = usePagedQuery<NotificationItem>('/common/notifications', {
+    unreadOnly: unreadOnly || undefined,
+  });
+  const markRead = useApiMutation((id: string) => api.post(`/common/notifications/${id}/read`), {
+    invalidate: INVALIDATE,
+  });
+  const markAllRead = useApiMutation(() => api.post('/common/notifications/read-all'), {
+    success: 'All notifications marked as read',
+    invalidate: INVALIDATE,
+  });
 
   const open = (item: NotificationItem) => {
     if (!item.readAt) markRead.mutate(item.id);
@@ -33,7 +40,11 @@ export default function NotificationsPage() {
         title="Notifications"
         breadcrumb={[{ title: 'Dashboard', to: basePathFor(audience) }, { title: 'Notifications' }]}
         extra={
-          <Button icon={<CheckOutlined />} loading={markAllRead.isPending} onClick={() => markAllRead.mutate(undefined)}>
+          <Button
+            icon={<CheckOutlined />}
+            loading={markAllRead.isPending}
+            onClick={() => markAllRead.mutate(undefined)}
+          >
             Mark all as read
           </Button>
         }
@@ -65,7 +76,12 @@ export default function NotificationsPage() {
           pagination={notifications.pagination}
           locale={{ emptyText: unreadOnly ? 'No unread notifications' : 'No notifications yet' }}
           columns={[
-            { key: 'unread', width: 28, render: (_: unknown, item) => (item.readAt ? null : <Badge status="processing" aria-label="Unread" />) },
+            {
+              key: 'unread',
+              width: 28,
+              render: (_: unknown, item) =>
+                item.readAt ? null : <Badge status="processing" aria-label="Unread" />,
+            },
             {
               key: 'message',
               render: (_: unknown, item) => (
@@ -81,7 +97,12 @@ export default function NotificationsPage() {
                 </div>
               ),
             },
-            { key: 'type', dataIndex: 'eventType', width: 200, render: (type: string) => <span className="muted">{humanise(type)}</span> },
+            {
+              key: 'type',
+              dataIndex: 'eventType',
+              width: 200,
+              render: (type: string) => <span className="muted">{humanise(type)}</span>,
+            },
             { key: 'received', dataIndex: 'createdAt', width: 170, render: formatDateTime },
             {
               key: 'actions',
@@ -89,7 +110,12 @@ export default function NotificationsPage() {
               render: (_: unknown, item) =>
                 !item.readAt && (
                   <Tooltip title="Mark as read">
-                    <Button type="text" icon={<CheckOutlined />} aria-label={`Mark "${item.subject}" as read`} onClick={() => markRead.mutate(item.id)} />
+                    <Button
+                      type="text"
+                      icon={<CheckOutlined />}
+                      aria-label={`Mark "${item.subject}" as read`}
+                      onClick={() => markRead.mutate(item.id)}
+                    />
                   </Tooltip>
                 ),
             },

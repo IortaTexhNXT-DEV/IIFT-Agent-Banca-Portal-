@@ -35,7 +35,11 @@ export function AgencySummary({ agency }: { agency: Agency }) {
         {
           key: 'issuance',
           label: 'New business',
-          children: agency.issuanceBlocked ? <StatusTag status="SUSPENDED" label="Blocked" /> : <StatusTag status="ACTIVE" label="Permitted" />,
+          children: agency.issuanceBlocked ? (
+            <StatusTag status="SUSPENDED" label="Blocked" />
+          ) : (
+            <StatusTag status="ACTIVE" label="Permitted" />
+          ),
         },
         { key: 'email', label: 'Email', children: agency.email ?? '–' },
         { key: 'phone', label: 'Phone', children: agency.phone ?? '–' },
@@ -56,8 +60,16 @@ export function AgencySummary({ agency }: { agency: Agency }) {
               </Flex>
             ),
         },
-        { key: 'outstandingPolicies', label: 'Policies awaiting payment', children: formatNumber(agency.outstandingPolicies ?? 0) },
-        { key: 'outstandingAmount', label: 'Outstanding contribution', children: <Money value={agency.outstandingAmount ?? 0} /> },
+        {
+          key: 'outstandingPolicies',
+          label: 'Policies awaiting payment',
+          children: formatNumber(agency.outstandingPolicies ?? 0),
+        },
+        {
+          key: 'outstandingAmount',
+          label: 'Outstanding contribution',
+          children: <Money value={agency.outstandingAmount ?? 0} />,
+        },
       ]}
     />
   );

@@ -15,10 +15,19 @@ export function NomineesTable({ nominees }: { nominees: Nominee[] }) {
       locale={{ emptyText: 'No nominees recorded' }}
       columns={[
         { title: 'Name', dataIndex: 'fullName' },
-        { title: 'IC / passport', dataIndex: 'idNumberMasked', render: (value: string | null) => value ?? '–' },
+        {
+          title: 'ID',
+          dataIndex: 'idNumberMasked',
+          render: (value: string | null) => value ?? '–',
+        },
         { title: 'Relationship', dataIndex: 'relationship', render: relationships.label },
         { title: 'Role', dataIndex: 'role', render: humanise },
-        { title: 'Share', dataIndex: 'sharePercent', align: 'right', render: (value: string) => `${Number(value)}%` },
+        {
+          title: 'Share',
+          dataIndex: 'sharePercent',
+          align: 'right',
+          render: (value: string) => `${Number(value)}%`,
+        },
       ]}
     />
   );

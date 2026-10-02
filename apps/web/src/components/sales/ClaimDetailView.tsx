@@ -34,7 +34,11 @@ export function ClaimDetailView({ claim, actions, uploadTypes }: Props) {
           </Flex>
         }
         subtitle={`${claimTypes.label(claim.claimType)} · ${policy.participant.fullName}`}
-        breadcrumb={[{ title: 'Home', to: home }, { title: 'Claims', to: `${home}/claims` }, { title: claim.claimNo }]}
+        breadcrumb={[
+          { title: 'Home', to: home },
+          { title: 'Claims', to: `${home}/claims` },
+          { title: claim.claimNo },
+        ]}
         extra={actions}
       />
       <Row gutter={[16, 0]}>
@@ -46,7 +50,11 @@ export function ClaimDetailView({ claim, actions, uploadTypes }: Props) {
               items={[
                 { key: 'type', label: 'Claim type', children: claimTypes.label(claim.claimType) },
                 { key: 'event', label: 'Event date', children: formatDate(claim.eventDate) },
-                { key: 'amount', label: 'Amount claimed', children: <Money value={claim.claimedAmount} /> },
+                {
+                  key: 'amount',
+                  label: 'Amount claimed',
+                  children: <Money value={claim.claimedAmount} />,
+                },
                 { key: 'notified', label: 'Notified', children: formatDateTime(claim.createdAt) },
                 { key: 'description', label: 'Description', children: claim.description, span: 2 },
                 { key: 'remarks', label: 'IIFT remarks', children: claim.remarks ?? '–', span: 2 },
@@ -60,11 +68,27 @@ export function ClaimDetailView({ claim, actions, uploadTypes }: Props) {
               size="small"
               column={1}
               items={[
-                { key: 'policy', label: 'Policy no.', children: <Link to={links.policy(policy.id)}>{policy.policyNo}</Link> },
+                {
+                  key: 'policy',
+                  label: 'Policy no.',
+                  children: <Link to={links.policy(policy.id)}>{policy.policyNo}</Link>,
+                },
                 { key: 'product', label: 'Product', children: policy.product.name },
-                { key: 'participant', label: 'Participant', children: `${policy.participant.fullName} (${policy.participant.participantNo})` },
-                { key: 'cover', label: 'Period of cover', children: `${formatDate(policy.startDate)} to ${formatDate(policy.endDate)}` },
-                { key: 'agent', label: 'Agent', children: `${policy.agent.fullName} (${policy.agent.agentCode})` },
+                {
+                  key: 'participant',
+                  label: 'Participant',
+                  children: `${policy.participant.fullName} (${policy.participant.participantNo})`,
+                },
+                {
+                  key: 'cover',
+                  label: 'Period of cover',
+                  children: `${formatDate(policy.startDate)} to ${formatDate(policy.endDate)}`,
+                },
+                {
+                  key: 'agent',
+                  label: 'Agent',
+                  children: `${policy.agent.fullName} (${policy.agent.agentCode})`,
+                },
                 { key: 'agency', label: 'Agency / bank', children: policy.agency.name },
               ]}
             />
@@ -72,7 +96,13 @@ export function ClaimDetailView({ claim, actions, uploadTypes }: Props) {
         </Col>
       </Row>
       <Card className="content-card">
-        <DocumentPanel ownerType="CLAIM" ownerId={claim.id} uploadTypes={uploadTypes} canUpload={uploadTypes !== undefined} title="Supporting documents" />
+        <DocumentPanel
+          ownerType="CLAIM"
+          ownerId={claim.id}
+          uploadTypes={uploadTypes}
+          canUpload={uploadTypes !== undefined}
+          title="Supporting documents"
+        />
       </Card>
     </>
   );

@@ -3,9 +3,18 @@ import { useParams } from 'react-router';
 import { useApiQuery } from '../../api/hooks';
 import type { Issue } from '../../api/types';
 import { useAuth } from '../../auth/AuthContext';
-import { IssueManagement, ReporterActions, StatusChangeButton } from '../../components/admin/IssueActions';
+import {
+  IssueManagement,
+  ReporterActions,
+  StatusChangeButton,
+} from '../../components/admin/IssueActions';
 import { IssueComments } from '../../components/admin/IssueComments';
-import { isIssueOpen, issueUploadTypes, SlaBreachedTag, SlaDue } from '../../components/admin/issues';
+import {
+  isIssueOpen,
+  issueUploadTypes,
+  SlaBreachedTag,
+  SlaDue,
+} from '../../components/admin/issues';
 import { basePathFor } from '../../components/admin/links';
 import { useCodes } from '../../components/admin/useCodes';
 import { DocumentPanel } from '../../components/DocumentPanel';
@@ -26,10 +35,28 @@ function IssueFacts({ issue, categoryLabel }: { issue: Issue; categoryLabel: str
         { key: 'priority', label: 'Priority', children: <StatusTag status={issue.priority} /> },
         { key: 'reporter', label: 'Reported by', children: issue.reportedByName },
         { key: 'reported', label: 'Reported', children: formatDateTime(issue.createdAt) },
-        { key: 'assignee', label: 'Assigned to', children: issue.assignedToName ? `${issue.assignedToName}${issue.assignedTeam ? ` · ${issue.assignedTeam}` : ''}` : 'Unassigned' },
-        { key: 'responded', label: 'First response', children: formatDateTime(issue.firstRespondedAt) },
-        { key: 'responseDue', label: 'Response due', children: <SlaDue due={issue.responseDueAt} metAt={issue.firstRespondedAt} open={open} /> },
-        { key: 'resolutionDue', label: 'Resolution due', children: <SlaDue due={issue.resolutionDueAt} metAt={issue.resolvedAt} open={open} /> },
+        {
+          key: 'assignee',
+          label: 'Assigned to',
+          children: issue.assignedToName
+            ? `${issue.assignedToName}${issue.assignedTeam ? ` · ${issue.assignedTeam}` : ''}`
+            : 'Unassigned',
+        },
+        {
+          key: 'responded',
+          label: 'First response',
+          children: formatDateTime(issue.firstRespondedAt),
+        },
+        {
+          key: 'responseDue',
+          label: 'Response due',
+          children: <SlaDue due={issue.responseDueAt} metAt={issue.firstRespondedAt} open={open} />,
+        },
+        {
+          key: 'resolutionDue',
+          label: 'Resolution due',
+          children: <SlaDue due={issue.resolutionDueAt} metAt={issue.resolvedAt} open={open} />,
+        },
       ]}
     />
   );
@@ -58,21 +85,45 @@ export default function IssueDetailPage() {
               </Flex>
             }
             subtitle={data.title}
-            breadcrumb={[{ title: manager ? 'Issues' : 'Support', to: `${base}/issues` }, { title: data.issueNo }]}
+            breadcrumb={[
+              { title: manager ? 'Issues' : 'Support', to: `${base}/issues` },
+              { title: data.issueNo },
+            ]}
             extra={manager ? <StatusChangeButton issue={data} /> : <ReporterActions issue={data} />}
           />
           {data.status === 'RESOLVED' && !manager && (
-            <Alert className="mb-16" type="success" showIcon title="Support has resolved this issue" description="Confirm and close it if the problem is fixed, or reopen it if it is not." />
+            <Alert
+              className="mb-16"
+              type="success"
+              showIcon
+              title="Support has resolved this issue"
+              description="Confirm and close it if the problem is fixed, or reopen it if it is not."
+            />
           )}
           <Row gutter={16}>
             <Col xs={24} xl={manager ? 16 : 24}>
               <Card title="Details" className="content-card">
-                <Typography.Paragraph className="issue-description">{data.description}</Typography.Paragraph>
+                <Typography.Paragraph className="issue-description">
+                  {data.description}
+                </Typography.Paragraph>
                 <IssueFacts issue={data} categoryLabel={categories.labelOf(data.category)} />
-                {data.resolution && <Alert className="issue-resolution" type="success" title="Resolution" description={data.resolution} />}
+                {data.resolution && (
+                  <Alert
+                    className="issue-resolution"
+                    type="success"
+                    title="Resolution"
+                    description={data.resolution}
+                  />
+                )}
               </Card>
               <Card className="content-card">
-                <DocumentPanel ownerType="ISSUE" ownerId={data.id} canUpload={data.status !== 'CLOSED'} uploadTypes={issueUploadTypes(documentTypes.labelOf)} title="Attachments" />
+                <DocumentPanel
+                  ownerType="ISSUE"
+                  ownerId={data.id}
+                  canUpload={data.status !== 'CLOSED'}
+                  uploadTypes={issueUploadTypes(documentTypes.labelOf)}
+                  title="Attachments"
+                />
               </Card>
               <Card title="Conversation" className="content-card">
                 <IssueComments issue={data} canAddInternal={manager} />

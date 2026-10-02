@@ -1,4 +1,16 @@
-import { Checkbox, Col, DatePicker, Form, type FormInstance, Input, InputNumber, Radio, Row, Switch, Typography } from 'antd';
+import {
+  Checkbox,
+  Col,
+  DatePicker,
+  Form,
+  type FormInstance,
+  Input,
+  InputNumber,
+  Radio,
+  Row,
+  Switch,
+  Typography,
+} from 'antd';
 import type { Rule } from 'antd/es/form';
 import dayjs, { type Dayjs } from 'dayjs';
 import type { QuoteOptions } from '../../api/sales-types';
@@ -31,7 +43,9 @@ export function toQuoteOptions(product: Product, values: CoverageValues): QuoteO
   for (const field of product.config.riskFields ?? []) {
     const value = values.riskDetails?.[field.key];
     if (!hasValue(value)) continue;
-    riskDetails[field.key] = dayjs.isDayjs(value) ? value.format(ISO_DATE) : (value as string | number | boolean);
+    riskDetails[field.key] = dayjs.isDayjs(value)
+      ? value.format(ISO_DATE)
+      : (value as string | number | boolean);
   }
   const options: QuoteOptions = { riskDetails, startDate: values.startDate?.format(ISO_DATE) };
   if (product.ratingEngine === 'FIXED_PLAN') {
@@ -52,7 +66,9 @@ export function isCoverageComplete(product: Product, values: CoverageValues | un
     if (!values.planCode || !values.termMonths) return false;
     if ((config.coverageTypes?.length ?? 0) > 0 && !values.coverageType) return false;
   }
-  return (config.riskFields ?? []).filter(isRequired).every((field) => hasValue(values.riskDetails?.[field.key]));
+  return (config.riskFields ?? [])
+    .filter(isRequired)
+    .every((field) => hasValue(values.riskDetails?.[field.key]));
 }
 
 /** Starting values for a new quotation: first term, and booleans answered "no" until confirmed. */
@@ -76,7 +92,8 @@ export function coverageFromPolicy(policy: PolicyDetail): CoverageValues {
   const riskDetails: Record<string, RiskValue> = {};
   for (const field of policy.product.config.riskFields ?? []) {
     const value = policy.riskDetails[field.key];
-    riskDetails[field.key] = field.type === 'date' && typeof value === 'string' ? dayjs(value) : value;
+    riskDetails[field.key] =
+      field.type === 'date' && typeof value === 'string' ? dayjs(value) : value;
   }
   return {
     planCode: policy.planCode ?? undefined,
@@ -93,22 +110,38 @@ function PlanOption({ plan, terms }: { plan: ProductPlan; terms: number[] }) {
     <div className="choice-card__body">
       <div className="choice-card__title">{plan.name}</div>
       <div>Sum covered {formatMoney(plan.sumCovered)}</div>
-      <div className="muted">{terms.map((term) => `${formatMoney(plan.contributions[String(term)])} / ${formatTerm(term)}`).join(' · ')}</div>
-      {plan.additionalCover && <div className="muted">Additional cover +{formatMoney(plan.additionalCover.amount)}</div>}
+      <div className="muted">
+        {terms
+          .map((term) => `${formatMoney(plan.contributions[String(term)])} / ${formatTerm(term)}`)
+          .join(' · ')}
+      </div>
+      {plan.additionalCover && (
+        <div className="muted">Additional cover +{formatMoney(plan.additionalCover.amount)}</div>
+      )}
     </div>
   );
 }
 
 function RiskFieldInput({ field }: { field: RiskField }) {
   const name = ['riskDetails', field.key];
-  const rules: Rule[] = isRequired(field) && !field.mustBeTrue ? [{ required: true, message: `${field.label} is required` }] : [];
+  const rules: Rule[] =
+    isRequired(field) && !field.mustBeTrue
+      ? [{ required: true, message: `${field.label} is required` }]
+      : [];
 
   if (field.type === 'boolean' && field.mustBeTrue) {
     return (
       <Form.Item
         name={name}
         valuePropName="checked"
-        rules={[{ validator: (_, value: boolean) => (value ? Promise.resolve() : Promise.reject(new Error(`Eligibility: ${field.label} must be confirmed`))) }]}
+        rules={[
+          {
+            validator: (_, value: boolean) =>
+              value
+                ? Promise.resolve()
+                : Promise.reject(new Error(`Eligibility: ${field.label} must be confirmed`)),
+          },
+        ]}
         extra="Required for eligibility"
       >
         <Checkbox>{field.label}</Checkbox>
@@ -118,13 +151,25 @@ function RiskFieldInput({ field }: { field: RiskField }) {
   if (field.type === 'boolean') {
     return (
       <Form.Item name={name} label={field.label} rules={rules}>
-        <Radio.Group options={[{ value: true, label: 'Yes' }, { value: false, label: 'No' }]} />
+        <Radio.Group
+          options={[
+            { value: true, label: 'Yes' },
+            { value: false, label: 'No' },
+          ]}
+        />
       </Form.Item>
     );
   }
   if (field.type === 'number') {
     return (
-      <Form.Item name={name} label={field.label} rules={[...rules, { type: 'number', min: field.min, max: field.max, message: rangeMessage(field) }]}>
+      <Form.Item
+        name={name}
+        label={field.label}
+        rules={[
+          ...rules,
+          { type: 'number', min: field.min, max: field.max, message: rangeMessage(field) },
+        ]}
+      >
         <InputNumber className="full-width" min={field.min} max={field.max} />
       </Form.Item>
     );
@@ -137,14 +182,19 @@ function RiskFieldInput({ field }: { field: RiskField }) {
     );
   }
   return (
-    <Form.Item name={name} label={field.label} rules={[...rules, { whitespace: true, message: `${field.label} is required` }]}>
+    <Form.Item
+      name={name}
+      label={field.label}
+      rules={[...rules, { whitespace: true, message: `${field.label} is required` }]}
+    >
       <Input maxLength={200} />
     </Form.Item>
   );
 }
 
 function rangeMessage(field: RiskField): string {
-  if (field.min !== undefined && field.max !== undefined) return `Enter a value between ${field.min} and ${field.max}`;
+  if (field.min !== undefined && field.max !== undefined)
+    return `Enter a value between ${field.min} and ${field.max}`;
   if (field.min !== undefined) return `Enter at least ${field.min}`;
   return `Enter at most ${field.max}`;
 }
@@ -172,7 +222,11 @@ export function CoverageForm({ product, form, initialValues }: Props) {
     <Form form={form} layout="vertical" requiredMark="optional" initialValues={initialValues}>
       {product.ratingEngine === 'FIXED_PLAN' && (
         <>
-          <Form.Item name="planCode" label="Plan" rules={[{ required: true, message: 'Choose a plan' }]}>
+          <Form.Item
+            name="planCode"
+            label="Plan"
+            rules={[{ required: true, message: 'Choose a plan' }]}
+          >
             <Radio.Group className="choice-cards">
               {plans.map((plan) => (
                 <Radio key={plan.code} value={plan.code} className="choice-card">
@@ -183,20 +237,39 @@ export function CoverageForm({ product, form, initialValues }: Props) {
           </Form.Item>
           <Row gutter={16}>
             <Col xs={24} md={12}>
-              <Form.Item name="termMonths" label="Coverage period" rules={[{ required: true, message: 'Choose the coverage period' }]}>
-                <Radio.Group optionType="button" options={terms.map((term) => ({ value: term, label: formatTerm(term) }))} />
+              <Form.Item
+                name="termMonths"
+                label="Coverage period"
+                rules={[{ required: true, message: 'Choose the coverage period' }]}
+              >
+                <Radio.Group
+                  optionType="button"
+                  options={terms.map((term) => ({ value: term, label: formatTerm(term) }))}
+                />
               </Form.Item>
             </Col>
             {coverageTypes.length > 0 && (
               <Col xs={24} md={12}>
-                <Form.Item name="coverageType" label="Coverage type" rules={[{ required: true, message: 'Choose the coverage type' }]}>
-                  <Radio.Group optionType="button" options={coverageTypes.map((type) => ({ value: type.code, label: type.name }))} />
+                <Form.Item
+                  name="coverageType"
+                  label="Coverage type"
+                  rules={[{ required: true, message: 'Choose the coverage type' }]}
+                >
+                  <Radio.Group
+                    optionType="button"
+                    options={coverageTypes.map((type) => ({ value: type.code, label: type.name }))}
+                  />
                 </Form.Item>
               </Col>
             )}
           </Row>
           {selectedPlan?.additionalCover && (
-            <Form.Item name="additionalCover" label="Additional cover" valuePropName="checked" extra={`${selectedPlan.additionalCover.name}, +${formatMoney(selectedPlan.additionalCover.amount)}`}>
+            <Form.Item
+              name="additionalCover"
+              label="Additional cover"
+              valuePropName="checked"
+              extra={`${selectedPlan.additionalCover.name}, +${formatMoney(selectedPlan.additionalCover.amount)}`}
+            >
               <Switch checkedChildren="Included" unCheckedChildren="Not included" />
             </Form.Item>
           )}
@@ -220,8 +293,16 @@ export function CoverageForm({ product, form, initialValues }: Props) {
 
       <Row gutter={16}>
         <Col xs={24} md={12}>
-          <Form.Item name="startDate" label="Cover start date" extra="Leave empty to start cover on the date of issue">
-            <DatePicker className="full-width" format="DD MMM YYYY" disabledDate={(date) => date.isBefore(dayjs(), 'day')} />
+          <Form.Item
+            name="startDate"
+            label="Cover start date"
+            extra="Leave empty to start cover on the date of issue"
+          >
+            <DatePicker
+              className="full-width"
+              format="DD MMM YYYY"
+              disabledDate={(date) => date.isBefore(dayjs(), 'day')}
+            />
           </Form.Item>
         </Col>
       </Row>

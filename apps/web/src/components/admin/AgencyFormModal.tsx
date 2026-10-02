@@ -25,8 +25,19 @@ export function AgencyFormModal({ agency, onClose, onSaved }: Props) {
   const editing = Boolean(agency);
   const save = useApiMutation(
     (values: AgencyInput) => {
-      const body = { ...values, registrationNo: optional(values.registrationNo), email: optional(values.email), phone: optional(values.phone), address: optional(values.address) };
-      return agency ? api.put<Agency>(`/backoffice/agencies/${agency.id}`, body) : api.post<Agency>('/backoffice/agencies', { ...body, code: values.code?.trim().toUpperCase() });
+      const body = {
+        ...values,
+        registrationNo: optional(values.registrationNo),
+        email: optional(values.email),
+        phone: optional(values.phone),
+        address: optional(values.address),
+      };
+      return agency
+        ? api.put<Agency>(`/backoffice/agencies/${agency.id}`, body)
+        : api.post<Agency>('/backoffice/agencies', {
+            ...body,
+            code: values.code?.trim().toUpperCase(),
+          });
     },
     {
       success: editing ? 'Agency details saved' : 'Agency created',
@@ -45,18 +56,26 @@ export function AgencyFormModal({ agency, onClose, onSaved }: Props) {
       okText={editing ? 'Save' : 'Create'}
       okButtonProps={{ loading: save.isPending }}
       onCancel={onClose}
-      onOk={() => form.validateFields().then((values) => save.mutate(values))}
+      onOk={() => form.submit()}
       destroyOnHidden
       width={680}
     >
       <ErrorAlert error={save.error} className="mb-16" />
       <Form
         form={form}
+        onFinish={(values) => save.mutate(values)}
         layout="vertical"
         requiredMark="optional"
         initialValues={
           agency
-            ? { name: agency.name, registrationNo: agency.registrationNo ?? '', email: agency.email ?? '', phone: agency.phone ?? '', address: agency.address ?? '', status: agency.status }
+            ? {
+                name: agency.name,
+                registrationNo: agency.registrationNo ?? '',
+                email: agency.email ?? '',
+                phone: agency.phone ?? '',
+                address: agency.address ?? '',
+                status: agency.status,
+              }
             : { channel: 'AGENCY' }
         }
       >
@@ -64,19 +83,43 @@ export function AgencyFormModal({ agency, onClose, onSaved }: Props) {
           {!editing && (
             <>
               <Col xs={24} md={12}>
-                <Form.Item name="code" label="Code" extra="Capital letters, digits and hyphens, e.g. AGY-KB" rules={[{ required: true, message: 'Enter a code' }, { pattern: CODE_PATTERN, message: '2 to 20 capital letters, digits or hyphens' }]} normalize={(value: string) => value.toUpperCase()}>
+                <Form.Item
+                  name="code"
+                  label="Code"
+                  extra="Capital letters, digits and hyphens, e.g. AGY-KB"
+                  rules={[
+                    { required: true, message: 'Enter a code' },
+                    {
+                      pattern: CODE_PATTERN,
+                      message: '2 to 20 capital letters, digits or hyphens',
+                    },
+                  ]}
+                  normalize={(value: string) => value.toUpperCase()}
+                >
                   <Input />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item name="channel" label="Channel" rules={[{ required: true }]}>
-                  <Select options={Object.entries(CHANNEL_LABELS).map(([value, label]) => ({ value, label }))} />
+                  <Select
+                    options={Object.entries(CHANNEL_LABELS).map(([value, label]) => ({
+                      value,
+                      label,
+                    }))}
+                  />
                 </Form.Item>
               </Col>
             </>
           )}
           <Col xs={24} md={editing ? 16 : 24}>
-            <Form.Item name="name" label="Name" rules={[{ required: true, whitespace: true, message: 'Enter the name' }, { min: 2, max: 150 }]}>
+            <Form.Item
+              name="name"
+              label="Name"
+              rules={[
+                { required: true, whitespace: true, message: 'Enter the name' },
+                { min: 2, max: 150 },
+              ]}
+            >
               <Input />
             </Form.Item>
           </Col>
@@ -98,7 +141,11 @@ export function AgencyFormModal({ agency, onClose, onSaved }: Props) {
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
-            <Form.Item name="email" label="Email" rules={[{ type: 'email', message: 'Enter a valid email address' }]}>
+            <Form.Item
+              name="email"
+              label="Email"
+              rules={[{ type: 'email', message: 'Enter a valid email address' }]}
+            >
               <Input type="email" />
             </Form.Item>
           </Col>

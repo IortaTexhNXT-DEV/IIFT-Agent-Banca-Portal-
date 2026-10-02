@@ -29,7 +29,11 @@ export function basePathFor(audience: Audience): '/portal' | '/backoffice' {
 }
 
 /** Screen showing a record, or null when the audience has no page for that type. */
-export function recordPath(audience: Audience, entityType: string | null | undefined, id: string | null | undefined): string | null {
+export function recordPath(
+  audience: Audience,
+  entityType: string | null | undefined,
+  id: string | null | undefined,
+): string | null {
   const segment = entityType ? RECORD_ROUTES[audience][entityType.toLowerCase()] : undefined;
   return segment && id ? `${basePathFor(audience)}/${segment}/${id}` : null;
 }

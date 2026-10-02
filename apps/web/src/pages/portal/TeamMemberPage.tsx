@@ -13,6 +13,10 @@ import { QueryState } from '../../components/QueryState';
 import { StatusTag } from '../../components/StatusTag';
 import { P } from '../../utils/permissions';
 
+const parentLink = (parent: { id: string; agentCode: string; fullName: string }) => (
+  <Link to={`/portal/team/${parent.id}`}>{`${parent.fullName} (${parent.agentCode})`}</Link>
+);
+
 /** AP-09/46/47: a team member's profile, documents, reporting line and approval history. */
 export default function TeamMemberPage() {
   const { id = '' } = useParams();
@@ -31,10 +35,13 @@ export default function TeamMemberPage() {
               </Flex>
             }
             subtitle={`${data.agentCode} · ${AGENT_TYPE_LABELS[data.agentType]} · ${data.agency.name}`}
-            breadcrumb={[{ title: 'Team & hierarchy', to: '/portal/team' }, { title: data.agentCode }]}
+            breadcrumb={[
+              { title: 'Team & hierarchy', to: '/portal/team' },
+              { title: data.agentCode },
+            ]}
           />
           <Card title="Profile" className="content-card">
-            <AgentProfile agent={data} parentLink={(parent) => <Link to={`/portal/team/${parent.id}`}>{`${parent.fullName} (${parent.agentCode})`}</Link>} />
+            <AgentProfile agent={data} parentLink={parentLink} />
           </Card>
           <Card className="content-card">
             <Tabs
@@ -52,8 +59,21 @@ export default function TeamMemberPage() {
                     />
                   ),
                 },
-                { key: 'team', label: `Reporting agents (${data.subAgents.length})`, children: <SubAgentTable agents={data.subAgents} memberPath={(agentId) => `/portal/team/${agentId}`} /> },
-                { key: 'approvals', label: 'Approval history', children: <ApprovalHistory approvals={data.approvals} /> },
+                {
+                  key: 'team',
+                  label: `Reporting agents (${data.subAgents.length})`,
+                  children: (
+                    <SubAgentTable
+                      agents={data.subAgents}
+                      memberPath={(agentId) => `/portal/team/${agentId}`}
+                    />
+                  ),
+                },
+                {
+                  key: 'approvals',
+                  label: 'Approval history',
+                  children: <ApprovalHistory approvals={data.approvals} />,
+                },
               ]}
             />
           </Card>

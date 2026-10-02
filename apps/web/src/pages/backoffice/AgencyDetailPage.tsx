@@ -28,12 +28,34 @@ function AgencyAgents({ agencyId }: { agencyId: string }) {
       scroll={{ x: 'max-content' }}
       locale={{ emptyText: 'No agents registered' }}
       columns={[
-        { title: 'Agent code', dataIndex: 'agentCode', render: (code: string, agent) => <Link to={`/backoffice/agents/${agent.id}`}>{code}</Link> },
+        {
+          title: 'Agent code',
+          dataIndex: 'agentCode',
+          render: (code: string, agent) => (
+            <Link to={`/backoffice/agents/${agent.id}`}>{code}</Link>
+          ),
+        },
         { title: 'Name', dataIndex: 'fullName' },
-        { title: 'Type', dataIndex: 'agentType', render: (type: AgentView['agentType']) => AGENT_TYPE_LABELS[type] },
-        { title: 'Reports to', key: 'parent', render: (_: unknown, agent) => agent.parent?.fullName ?? '–' },
-        { title: 'Status', dataIndex: 'status', render: (status: string) => <StatusTag status={status} /> },
-        { title: 'AML', dataIndex: 'amlStatus', render: (status: string) => <StatusTag status={status} /> },
+        {
+          title: 'Type',
+          dataIndex: 'agentType',
+          render: (type: AgentView['agentType']) => AGENT_TYPE_LABELS[type],
+        },
+        {
+          title: 'Reports to',
+          key: 'parent',
+          render: (_: unknown, agent) => agent.parent?.fullName ?? '–',
+        },
+        {
+          title: 'Status',
+          dataIndex: 'status',
+          render: (status: string) => <StatusTag status={status} />,
+        },
+        {
+          title: 'AML',
+          dataIndex: 'amlStatus',
+          render: (status: string) => <StatusTag status={status} />,
+        },
         { title: 'Licence expiry', dataIndex: 'licenceExpiry', render: formatDate },
       ]}
     />
@@ -46,11 +68,14 @@ export default function AgencyDetailPage() {
   const { can } = useAuth();
   const agency = useApiQuery<Agency>(`/backoffice/agencies/${id}`);
   const [dialog, setDialog] = useState<'edit' | 'lift'>();
-  const liftBlock = useApiMutation((reason: string) => api.post<Agency>(`/backoffice/agencies/${id}/lift-block`, { reason }), {
-    success: 'Issuance block lifted',
-    invalidate: ['/backoffice/agencies', '/backoffice/dashboard'],
-    onSuccess: () => setDialog(undefined),
-  });
+  const liftBlock = useApiMutation(
+    (reason: string) => api.post<Agency>(`/backoffice/agencies/${id}/lift-block`, { reason }),
+    {
+      success: 'Issuance block lifted',
+      invalidate: ['/backoffice/agencies', '/backoffice/dashboard'],
+      onSuccess: () => setDialog(undefined),
+    },
+  );
 
   return (
     <QueryState query={agency}>
@@ -64,7 +89,10 @@ export default function AgencyDetailPage() {
               </Flex>
             }
             subtitle={data.code}
-            breadcrumb={[{ title: 'Agencies & banks', to: '/backoffice/agencies' }, { title: data.code }]}
+            breadcrumb={[
+              { title: 'Agencies & banks', to: '/backoffice/agencies' },
+              { title: data.code },
+            ]}
             extra={
               can(P.boAgenciesManage) && (
                 <>
@@ -87,7 +115,9 @@ export default function AgencyDetailPage() {
           <Card title="Agents and bank officers" className="content-card">
             <AgencyAgents agencyId={data.id} />
           </Card>
-          {dialog === 'edit' && <AgencyFormModal agency={data} onClose={() => setDialog(undefined)} />}
+          {dialog === 'edit' && (
+            <AgencyFormModal agency={data} onClose={() => setDialog(undefined)} />
+          )}
           {dialog === 'lift' && (
             <RemarksModal
               title={`Lift issuance block – ${data.code}`}

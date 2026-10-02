@@ -34,24 +34,57 @@ function TileRow({ tiles }: { tiles: Tile[] }) {
         .filter((tile) => tile.visible)
         .map((tile) => (
           <Col key={tile.key} xs={12} md={8} xl={6}>
-            <StatCard label={tile.label} value={tile.value} hint={tile.hint} to={tile.to} tone={tile.tone} />
+            <StatCard
+              label={tile.label}
+              value={tile.value}
+              hint={tile.hint}
+              to={tile.to}
+              tone={tile.tone}
+            />
           </Col>
         ))}
     </Row>
   );
 }
 
+const warnIf = (count: number) => (count > 0 ? 'warning' : 'default');
+
 /** BO-21: work waiting for the signed-in user, each tile linking to its queue. */
 function PendingTiles({ pending }: { pending: Pending }) {
   const { can } = useAuth();
-  const warnIf = (count: number) => (count > 0 ? 'warning' : 'default');
   return (
     <TileRow
       tiles={[
-        { key: 'approvals', visible: APPROVE_PERMISSIONS.some(can), label: 'Awaiting my approval', value: pending.myApprovals, to: '/backoffice/approvals', tone: warnIf(pending.myApprovals) },
-        { key: 'agents', visible: can(P.boAgentsView), label: 'Agent registrations pending', value: pending.pendingAgents, to: '/backoffice/agents?status=PENDING' },
-        { key: 'aml', visible: can(P.boAmlReview), label: 'AML cases to review', value: pending.amlReview, to: '/backoffice/aml', tone: warnIf(pending.amlReview) },
-        { key: 'documents', visible: can(P.boDocumentsVerify), label: 'Documents to verify', value: pending.documentsToVerify, to: '/backoffice/documents' },
+        {
+          key: 'approvals',
+          visible: APPROVE_PERMISSIONS.some(can),
+          label: 'Awaiting my approval',
+          value: pending.myApprovals,
+          to: '/backoffice/approvals',
+          tone: warnIf(pending.myApprovals),
+        },
+        {
+          key: 'agents',
+          visible: can(P.boAgentsView),
+          label: 'Agent registrations pending',
+          value: pending.pendingAgents,
+          to: '/backoffice/agents?status=PENDING',
+        },
+        {
+          key: 'aml',
+          visible: can(P.boAmlReview),
+          label: 'AML cases to review',
+          value: pending.amlReview,
+          to: '/backoffice/aml',
+          tone: warnIf(pending.amlReview),
+        },
+        {
+          key: 'documents',
+          visible: can(P.boDocumentsVerify),
+          label: 'Documents to verify',
+          value: pending.documentsToVerify,
+          to: '/backoffice/documents',
+        },
         {
           key: 'payments',
           visible: can(P.boPaymentsView),
@@ -60,14 +93,22 @@ function PendingTiles({ pending }: { pending: Pending }) {
           hint: <Money value={pending.paymentsPendingAmount} />,
           to: '/backoffice/payments?status=PENDING_VERIFICATION',
         },
-        { key: 'claims', visible: can(P.boClaimsManage), label: 'Open claims', value: pending.claimsOpen, to: '/backoffice/claims' },
+        {
+          key: 'claims',
+          visible: can(P.boClaimsManage),
+          label: 'Open claims',
+          value: pending.claimsOpen,
+          to: '/backoffice/claims',
+        },
         {
           key: 'issues',
           visible: can(P.boIssuesManage),
           label: 'Open issues',
           value: pending.issuesOpen,
-          hint: pending.issuesBreached > 0 ? `${pending.issuesBreached} past SLA` : 'All within SLA',
-          to: pending.issuesBreached > 0 ? '/backoffice/issues?breached=true' : '/backoffice/issues',
+          hint:
+            pending.issuesBreached > 0 ? `${pending.issuesBreached} past SLA` : 'All within SLA',
+          to:
+            pending.issuesBreached > 0 ? '/backoffice/issues?breached=true' : '/backoffice/issues',
           tone: pending.issuesBreached > 0 ? 'danger' : 'default',
         },
         {
@@ -88,9 +129,30 @@ function KpiTiles({ kpis }: { kpis: Kpis }) {
   return (
     <TileRow
       tiles={[
-        { key: 'mtd', visible: true, label: 'Policies issued this month', value: formatNumber(kpis.policiesMtd), hint: <Money value={kpis.contributionMtd} />, to: '/backoffice/policies' },
-        { key: 'ytd', visible: true, label: 'Policies issued this year', value: formatNumber(kpis.policiesYtd), hint: <Money value={kpis.contributionYtd} />, to: '/backoffice/policies' },
-        { key: 'agents', visible: true, label: 'Active agents and officers', value: formatNumber(kpis.activeAgents), hint: `${formatNumber(kpis.activeAgencies)} active agencies and banks`, to: '/backoffice/agents?status=ACTIVE' },
+        {
+          key: 'mtd',
+          visible: true,
+          label: 'Policies issued this month',
+          value: formatNumber(kpis.policiesMtd),
+          hint: <Money value={kpis.contributionMtd} />,
+          to: '/backoffice/policies',
+        },
+        {
+          key: 'ytd',
+          visible: true,
+          label: 'Policies issued this year',
+          value: formatNumber(kpis.policiesYtd),
+          hint: <Money value={kpis.contributionYtd} />,
+          to: '/backoffice/policies',
+        },
+        {
+          key: 'agents',
+          visible: true,
+          label: 'Active agents and officers',
+          value: formatNumber(kpis.activeAgents),
+          hint: `${formatNumber(kpis.activeAgencies)} active agencies and banks`,
+          to: '/backoffice/agents?status=ACTIVE',
+        },
         {
           key: 'outstanding',
           visible: true,
@@ -115,10 +177,25 @@ function ChannelSplit({ rows }: { rows: NonNullable<BackofficeDashboard['byChann
       dataSource={rows}
       locale={{ emptyText: 'No policies issued this year' }}
       columns={[
-        { title: 'Channel', dataIndex: 'channel', render: (channel: Channel) => CHANNEL_LABELS[channel] },
+        {
+          title: 'Channel',
+          dataIndex: 'channel',
+          render: (channel: Channel) => CHANNEL_LABELS[channel],
+        },
         { title: 'Policies', dataIndex: 'policies', align: 'right', render: formatNumber },
-        { title: 'Contribution', dataIndex: 'contribution', align: 'right', render: (value: string) => <Money value={value} /> },
-        { title: 'Share', key: 'share', align: 'right', render: (_: unknown, row) => (total > 0 ? `${Math.round((Number(row.contribution) / total) * 100)}%` : '–') },
+        {
+          title: 'Contribution',
+          dataIndex: 'contribution',
+          align: 'right',
+          render: (value: string) => <Money value={value} />,
+        },
+        {
+          title: 'Share',
+          key: 'share',
+          align: 'right',
+          render: (_: unknown, row) =>
+            total > 0 ? `${Math.round((Number(row.contribution) / total) * 100)}%` : '–',
+        },
       ]}
     />
   );
@@ -128,12 +205,12 @@ function ManagementPanels({ dashboard }: { dashboard: BackofficeDashboard }) {
   return (
     <>
       <Row gutter={16}>
-        <Col xs={24} xl={14}>
+        <Col xs={24} xl={13}>
           <Card title="Production – last 12 months" className="content-card">
             <ProductionTrend points={dashboard.trend ?? []} />
           </Card>
         </Col>
-        <Col xs={24} xl={10}>
+        <Col xs={24} xl={11}>
           <Card title="Production by product – year to date" className="content-card">
             <Table
               size="small"
@@ -143,8 +220,20 @@ function ManagementPanels({ dashboard }: { dashboard: BackofficeDashboard }) {
               columns={[
                 { title: 'Code', dataIndex: 'code', width: 80 },
                 { title: 'Product', dataIndex: 'name', ellipsis: true },
-                { title: 'Policies', dataIndex: 'policies', align: 'right', width: 90, render: formatNumber },
-                { title: 'Contribution', dataIndex: 'contribution', align: 'right', width: 140, render: (value: string) => <Money value={value} /> },
+                {
+                  title: 'Policies',
+                  dataIndex: 'policies',
+                  align: 'right',
+                  width: 80,
+                  render: formatNumber,
+                },
+                {
+                  title: 'Contribution',
+                  dataIndex: 'contribution',
+                  align: 'right',
+                  width: 130,
+                  render: (value: string) => <Money value={value} />,
+                },
               ]}
             />
           </Card>
@@ -161,9 +250,21 @@ function ManagementPanels({ dashboard }: { dashboard: BackofficeDashboard }) {
           dataSource={dashboard.blockedAgencies ?? []}
           locale={{ emptyText: 'No agency or bank is blocked' }}
           columns={[
-            { title: 'Code', dataIndex: 'code', width: 120, render: (code: string, row) => <Link to={`/backoffice/agencies/${row.id}`}>{code}</Link> },
+            {
+              title: 'Code',
+              dataIndex: 'code',
+              width: 120,
+              render: (code: string, row) => (
+                <Link to={`/backoffice/agencies/${row.id}`}>{code}</Link>
+              ),
+            },
             { title: 'Name', dataIndex: 'name' },
-            { title: 'Blocked since', dataIndex: 'issuanceBlockedAt', width: 180, render: formatDateTime },
+            {
+              title: 'Blocked since',
+              dataIndex: 'issuanceBlockedAt',
+              width: 180,
+              render: formatDateTime,
+            },
             { title: 'Reason', dataIndex: 'issuanceBlockReason', ellipsis: true },
           ]}
         />
@@ -187,8 +288,16 @@ export default function DashboardPage() {
             {APPROVE_PERMISSIONS.some(can) && (
               <Row gutter={16}>
                 <Col xs={24} xl={17}>
-                  <Card title="Awaiting my approval" extra={<Link to="/backoffice/approvals">Open inbox</Link>} className="content-card">
-                    <ApprovalTable items={data.pending.myApprovalItems} compact emptyText="Nothing is waiting for your approval" />
+                  <Card
+                    title="Awaiting my approval"
+                    extra={<Link to="/backoffice/approvals">Open inbox</Link>}
+                    className="content-card"
+                  >
+                    <ApprovalTable
+                      items={data.pending.myApprovalItems}
+                      compact
+                      emptyText="Nothing is waiting for your approval"
+                    />
                   </Card>
                 </Col>
                 <Col xs={24} xl={7}>
@@ -199,7 +308,9 @@ export default function DashboardPage() {
                       pagination={false}
                       showHeader={false}
                       locale={{ emptyText: 'No pending requests' }}
-                      dataSource={Object.entries(data.pending.pendingByType).map(([type, count]) => ({ type, count }))}
+                      dataSource={Object.entries(data.pending.pendingByType).map(
+                        ([type, count]) => ({ type, count }),
+                      )}
                       columns={[
                         { dataIndex: 'type', render: humanise },
                         { dataIndex: 'count', align: 'right', width: 60 },

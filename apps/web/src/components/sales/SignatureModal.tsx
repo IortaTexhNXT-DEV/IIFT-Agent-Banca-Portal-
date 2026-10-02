@@ -11,17 +11,30 @@ export type Signer = 'PARTICIPANT' | 'AGENT';
 const DECLARATIONS: Record<Signer, string> = {
   PARTICIPANT:
     'I declare that the information given in this application is true and complete, and I agree to participate in the takaful scheme on the terms of the product disclosure sheet.',
-  AGENT: 'I confirm that I explained the product, its benefits and exclusions to the participant and witnessed the participant’s signature.',
+  AGENT:
+    'I confirm that I explained the product, its benefits and exclusions to the participant and witnessed the participant’s signature.',
 };
 
 /** AP-62: on-screen signature of the participant or agent, stored against the application. */
-export function SignatureModal({ policy, signer, onClose }: { policy: PolicyDetail; signer: Signer; onClose(): void }) {
+export function SignatureModal({
+  policy,
+  signer,
+  onClose,
+}: {
+  policy: PolicyDetail;
+  signer: Signer;
+  onClose(): void;
+}) {
   const [signature, setSignature] = useState<string | null>(null);
-  const capture = useApiMutation((imageDataUrl: string) => api.post(`/portal/policies/${policy.id}/signatures`, { signer, imageDataUrl }), {
-    success: 'Signature recorded',
-    invalidate: ['/portal/policies', '/common/documents'],
-    onSuccess: onClose,
-  });
+  const capture = useApiMutation(
+    (imageDataUrl: string) =>
+      api.post(`/portal/policies/${policy.id}/signatures`, { signer, imageDataUrl }),
+    {
+      success: 'Signature recorded',
+      invalidate: ['/portal/policies', '/common/documents'],
+      onSuccess: onClose,
+    },
+  );
   const name = signer === 'PARTICIPANT' ? policy.participant.fullName : policy.agent.fullName;
 
   return (

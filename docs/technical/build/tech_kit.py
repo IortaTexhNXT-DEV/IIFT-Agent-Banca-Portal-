@@ -209,8 +209,7 @@ class TechnicalWriter(ProposalWriter):
         self.h3("Document pack")
         rows = []
         for reference, title, deliverable in PACK:
-            status = "This document" if reference == info.reference else (
-                "Delivered during implementation" if reference in ("IIFT-SV2-CSQ", "IIFT-SV2-SAR") else "Issued")
+            status = "This document" if reference == info.reference else "Issued"
             rows.append([reference, f"{PRODUCT} {title}", deliverable, status])
         self.table(["Reference", "Document", "RFP deliverable", "Status"], rows, widths=[3.2, 7.2, 3.6, 3.0])
         related = list(info.related) + list(extra_related or [])

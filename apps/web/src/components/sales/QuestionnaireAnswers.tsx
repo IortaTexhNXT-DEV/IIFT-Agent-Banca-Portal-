@@ -7,12 +7,22 @@ interface Row extends Question {
 }
 
 /** Health / risk declarations as answered on the application (AP-19). */
-export function QuestionnaireAnswers({ questions, answers }: { questions: Question[]; answers: PolicyDetail['questionnaire'] }) {
+export function QuestionnaireAnswers({
+  questions,
+  answers,
+}: {
+  questions: Question[];
+  answers: PolicyDetail['questionnaire'];
+}) {
   if (questions.length === 0) {
-    return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="This product has no declarations" />;
+    return (
+      <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="This product has no declarations" />
+    );
   }
   if (!answers) {
-    return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Declarations not answered yet" />;
+    return (
+      <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Declarations not answered yet" />
+    );
   }
   const rows: Row[] = questions.map((question) => {
     const answer = answers.find((candidate) => candidate.code === question.code);
@@ -26,8 +36,18 @@ export function QuestionnaireAnswers({ questions, answers }: { questions: Questi
       dataSource={rows}
       columns={[
         { title: 'Declaration', dataIndex: 'text' },
-        { title: 'Answer', dataIndex: 'answer', width: 90, render: (answer: boolean | undefined) => (answer === undefined ? '–' : answer ? 'Yes' : 'No') },
-        { title: 'Details', dataIndex: 'details', render: (details: string | undefined) => details ?? '–' },
+        {
+          title: 'Answer',
+          dataIndex: 'answer',
+          width: 90,
+          render: (answer: boolean | undefined) =>
+            answer === undefined ? '–' : answer ? 'Yes' : 'No',
+        },
+        {
+          title: 'Details',
+          dataIndex: 'details',
+          render: (details: string | undefined) => details ?? '–',
+        },
       ]}
     />
   );

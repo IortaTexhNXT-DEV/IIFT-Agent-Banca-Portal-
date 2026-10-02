@@ -5,6 +5,7 @@ import { api, download } from '../../api/client';
 import { useApiMutation, usePagedQuery } from '../../api/hooks';
 import type { EodRun } from '../../api/admin-types';
 import { BusinessDateModal } from '../../components/admin/BusinessDateModal';
+import { CellText } from '../../components/admin/CellText';
 import { Money } from '../../components/Money';
 import { PageHeader } from '../../components/PageHeader';
 import { StatusTag } from '../../components/StatusTag';
@@ -14,7 +15,16 @@ function FileButton({ documentId, label }: { documentId: string | null; label: s
   const { message } = App.useApp();
   if (!documentId) return null;
   return (
-    <Button size="small" icon={<DownloadOutlined />} onClick={() => download(`/common/documents/${documentId}/content`).catch((error: Error) => message.error(error.message))}>
+    <Button
+      size="small"
+      type="link"
+      icon={<DownloadOutlined />}
+      onClick={() =>
+        download(`/common/documents/${documentId}/content`).catch((error: Error) =>
+          message.error(error.message),
+        )
+      }
+    >
       {label}
     </Button>
   );
@@ -26,14 +36,18 @@ export default function EodPage() {
   const [running, setRunning] = useState(false);
   const runs = usePagedQuery<EodRun>('/backoffice/eod');
   // A failed batch is still recorded as a run, so the outcome is read from the result.
-  const run = useApiMutation((businessDate: string) => api.post<EodRun>('/backoffice/eod', { businessDate }), {
-    invalidate: ['/backoffice/eod', '/backoffice/integration'],
-    onSuccess: (result) => {
-      setRunning(false);
-      if (result.status === 'FAILED') message.error(`End of day failed: ${result.errorMessage ?? 'see the run details'}`);
-      else message.success(`End of day completed for ${formatDate(result.businessDate)}`);
+  const run = useApiMutation(
+    (businessDate: string) => api.post<EodRun>('/backoffice/eod', { businessDate }),
+    {
+      invalidate: ['/backoffice/eod', '/backoffice/integration'],
+      onSuccess: (result) => {
+        setRunning(false);
+        if (result.status === 'FAILED')
+          message.error(`End of day failed: ${result.errorMessage ?? 'see the run details'}`);
+        else message.success(`End of day completed for ${formatDate(result.businessDate)}`);
+      },
     },
-  });
+  );
 
   return (
     <>
@@ -69,18 +83,41 @@ export default function EodPage() {
                 </Tooltip>
               ),
             },
-            { title: 'Policies issued', dataIndex: 'policiesIssued', align: 'right', render: formatNumber },
-            { title: 'Contribution', dataIndex: 'totalContribution', align: 'right', render: (value: string) => <Money value={value} /> },
-            { title: 'Receipts issued', dataIndex: 'receiptsIssued', align: 'right', render: formatNumber },
-            { title: 'Receipts total', dataIndex: 'totalReceipts', align: 'right', render: (value: string) => <Money value={value} /> },
-            { title: 'Started', dataIndex: 'startedAt', render: formatDateTime },
-            { title: 'Finished', dataIndex: 'finishedAt', render: formatDateTime },
-            { title: 'Run by', dataIndex: 'triggeredBy' },
+            {
+              title: 'Policies',
+              dataIndex: 'policiesIssued',
+              align: 'right',
+              render: formatNumber,
+            },
+            {
+              title: 'Contribution',
+              dataIndex: 'totalContribution',
+              align: 'right',
+              render: (value: string) => <Money value={value} />,
+            },
+            {
+              title: 'Receipts',
+              dataIndex: 'receiptsIssued',
+              align: 'right',
+              render: formatNumber,
+            },
+            {
+              title: 'Receipts total',
+              dataIndex: 'totalReceipts',
+              align: 'right',
+              render: (value: string) => <Money value={value} />,
+            },
+            { title: 'Completed', dataIndex: 'finishedAt', render: formatDateTime },
+            {
+              title: 'Run by',
+              dataIndex: 'triggeredBy',
+              render: (name: string) => <CellText text={name} width={160} />,
+            },
             {
               title: 'Files',
               key: 'files',
               render: (_: unknown, row) => (
-                <Flex gap={6}>
+                <Flex gap={0}>
                   <FileButton documentId={row.reportDocumentId} label="EOD report" />
                   <FileButton documentId={row.finFileDocumentId} label="FIN file" />
                 </Flex>
@@ -95,7 +132,8 @@ export default function EodPage() {
           okText="Run"
           description={
             <Typography.Text type="secondary">
-              Totals the policies issued and receipts of the day, produces the EOD report and queues the FIN posting. Running a date again replaces its report and FIN file.
+              Totals the policies issued and receipts of the day, produces the EOD report and queues
+              the FIN posting. Running a date again replaces its report and FIN file.
             </Typography.Text>
           }
           pending={run.isPending}

@@ -24,7 +24,11 @@ export function CancellationModal({ policy, onClose }: { policy: PolicyDetail; o
         remarks: values.remarks.trim(),
         effectiveDate: values.effectiveDate.format(ISO_DATE),
       }),
-    { success: 'Cancellation request submitted for approval', invalidate: ['/portal/policies', '/portal/requests'], onSuccess: onClose },
+    {
+      success: 'Cancellation request submitted for approval',
+      invalidate: ['/portal/policies', '/portal/requests'],
+      onSuccess: onClose,
+    },
   );
   const coverStart = policy.startDate ? dayjs(policy.startDate) : null;
 
@@ -40,12 +44,29 @@ export function CancellationModal({ policy, onClose }: { policy: PolicyDetail; o
       pending={request.isPending}
       error={request.error}
     >
-      <Alert className="mb-16" type="warning" showIcon title="The policy stays in force until IIFT approves the cancellation." />
-      <Form.Item name="reasonCode" label="Reason" rules={[{ required: true, message: 'Choose the reason' }]}>
+      <Alert
+        className="mb-16"
+        type="warning"
+        showIcon
+        title="The policy stays in force until IIFT approves the cancellation."
+      />
+      <Form.Item
+        name="reasonCode"
+        label="Reason"
+        rules={[{ required: true, message: 'Choose the reason' }]}
+      >
         <Select options={reasons.options} loading={reasons.loading} />
       </Form.Item>
-      <Form.Item name="effectiveDate" label="Effective date" rules={[{ required: true, message: 'Choose the effective date' }]}>
-        <DatePicker className="full-width" format="DD MMM YYYY" disabledDate={(date) => (coverStart ? date.isBefore(coverStart, 'day') : false)} />
+      <Form.Item
+        name="effectiveDate"
+        label="Effective date"
+        rules={[{ required: true, message: 'Choose the effective date' }]}
+      >
+        <DatePicker
+          className="full-width"
+          format="DD MMM YYYY"
+          disabledDate={(date) => (coverStart ? date.isBefore(coverStart, 'day') : false)}
+        />
       </Form.Item>
       <Form.Item
         name="remarks"

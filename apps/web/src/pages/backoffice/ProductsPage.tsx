@@ -25,8 +25,16 @@ interface ProductValues {
 
 const SWITCHES: { name: keyof ProductValues; label: string; extra: string }[] = [
   { name: 'active', label: 'Offered for sale', extra: 'Inactive products cannot be quoted' },
-  { name: 'paymentBeforeIssuance', label: 'Payment before issuance', extra: 'Otherwise the policy is issued first, with a grace period to pay' },
-  { name: 'allowRenewal', label: 'Renewal allowed', extra: 'Expiring policies are offered for renewal' },
+  {
+    name: 'paymentBeforeIssuance',
+    label: 'Payment before issuance',
+    extra: 'Otherwise the policy is issued first, with a grace period to pay',
+  },
+  {
+    name: 'allowRenewal',
+    label: 'Renewal allowed',
+    extra: 'Expiring policies are offered for renewal',
+  },
 ];
 
 function ProductDrawer({ product, onClose }: { product: Product; onClose(): void }) {
@@ -43,7 +51,11 @@ function ProductDrawer({ product, onClose }: { product: Product; onClose(): void
         requiredDocuments: JSON.parse(values.requiredDocuments) as unknown,
         questionnaire: JSON.parse(values.questionnaire) as unknown,
       }),
-    { success: `${product.name} saved`, invalidate: [PATH, '/common/products'], onSuccess: onClose },
+    {
+      success: `${product.name} saved`,
+      invalidate: [PATH, '/common/products'],
+      onSuccess: onClose,
+    },
   );
 
   return (
@@ -56,7 +68,7 @@ function ProductDrawer({ product, onClose }: { product: Product; onClose(): void
       extra={
         <Flex gap={8}>
           <Button onClick={onClose}>Cancel</Button>
-          <Button type="primary" loading={save.isPending} onClick={() => form.validateFields().then((values) => save.mutate(values))}>
+          <Button type="primary" loading={save.isPending} onClick={() => form.submit()}>
             Save
           </Button>
         </Flex>
@@ -65,6 +77,7 @@ function ProductDrawer({ product, onClose }: { product: Product; onClose(): void
       <ErrorAlert error={save.error} className="mb-16" />
       <Form
         form={form}
+        onFinish={(values) => save.mutate(values)}
         layout="vertical"
         requiredMark="optional"
         initialValues={{
@@ -78,16 +91,35 @@ function ProductDrawer({ product, onClose }: { product: Product; onClose(): void
           questionnaire: toJsonText(product.questionnaire),
         }}
       >
-        <Form.Item name="name" label="Name" rules={[{ required: true, whitespace: true }, { min: 3, max: 150 }]}>
+        <Form.Item
+          name="name"
+          label="Name"
+          rules={[
+            { required: true, whitespace: true },
+            { min: 3, max: 150 },
+          ]}
+        >
           <Input />
         </Form.Item>
-        <Form.Item name="description" label="Description" rules={[{ required: true, whitespace: true }, { min: 3, max: 1000 }]}>
+        <Form.Item
+          name="description"
+          label="Description"
+          rules={[
+            { required: true, whitespace: true },
+            { min: 3, max: 1000 },
+          ]}
+        >
           <Input.TextArea rows={3} maxLength={1000} showCount />
         </Form.Item>
         <Row gutter={16}>
           {SWITCHES.map((item) => (
             <Col key={item.name} xs={24} md={8}>
-              <Form.Item name={item.name} label={item.label} extra={item.extra} valuePropName="checked">
+              <Form.Item
+                name={item.name}
+                label={item.label}
+                extra={item.extra}
+                valuePropName="checked"
+              >
                 <Switch />
               </Form.Item>
             </Col>
@@ -99,19 +131,41 @@ function ProductDrawer({ product, onClose }: { product: Product; onClose(): void
               key: 'config',
               label: 'Rating configuration',
               forceRender: true,
-              children: <JsonField name="config" label="Configuration" shape="object" rows={20} extra={`Plans, terms, rates and risk fields read by the ${humanise(product.ratingEngine).toLowerCase()} rating engine`} />,
+              children: (
+                <JsonField
+                  name="config"
+                  label="Configuration"
+                  shape="object"
+                  rows={20}
+                  extra={`Plans, terms, rates and risk fields read by the ${humanise(product.ratingEngine).toLowerCase()} rating engine`}
+                />
+              ),
             },
             {
               key: 'documents',
               label: 'Required documents',
               forceRender: true,
-              children: <JsonField name="requiredDocuments" label="Required documents" shape="array" extra='Each entry: { "docType": "IC_COPY", "label": "IC copy", "mandatory": true }' />,
+              children: (
+                <JsonField
+                  name="requiredDocuments"
+                  label="Required documents"
+                  shape="array"
+                  extra='Each entry: { "docType": "IC_COPY", "label": "IC copy", "mandatory": true }'
+                />
+              ),
             },
             {
               key: 'questionnaire',
               label: 'Questionnaire',
               forceRender: true,
-              children: <JsonField name="questionnaire" label="Questionnaire" shape="array" extra='Each entry: { "code": "Q1", "text": "…", "referIfYes": true }' />,
+              children: (
+                <JsonField
+                  name="questionnaire"
+                  label="Questionnaire"
+                  shape="array"
+                  extra='Each entry: { "code": "Q1", "text": "…", "referIfYes": true }'
+                />
+              ),
             },
           ]}
         />
@@ -146,10 +200,30 @@ export default function ProductsPage() {
                 { title: 'Name', dataIndex: 'name' },
                 { title: 'Line of business', dataIndex: 'lineOfBusiness' },
                 { title: 'Rating engine', dataIndex: 'ratingEngine', render: humanise },
-                { title: 'Payment', dataIndex: 'paymentBeforeIssuance', render: (before: boolean) => (before ? 'Before issuance' : 'After issuance (grace)') },
-                { title: 'Renewal', dataIndex: 'allowRenewal', render: (allowed: boolean) => (allowed ? 'Allowed' : 'Not allowed') },
-                { title: 'Documents', dataIndex: 'requiredDocuments', align: 'right', render: (documents: Product['requiredDocuments']) => documents.length },
-                { title: 'Status', dataIndex: 'active', render: (active: boolean) => <StatusTag status={active ? 'ACTIVE' : 'INACTIVE'} /> },
+                {
+                  title: 'Payment',
+                  dataIndex: 'paymentBeforeIssuance',
+                  render: (before: boolean) =>
+                    before ? 'Before issuance' : 'After issuance (grace)',
+                },
+                {
+                  title: 'Renewal',
+                  dataIndex: 'allowRenewal',
+                  render: (allowed: boolean) => (allowed ? 'Allowed' : 'Not allowed'),
+                },
+                {
+                  title: 'Documents',
+                  dataIndex: 'requiredDocuments',
+                  align: 'right',
+                  render: (documents: Product['requiredDocuments']) => documents.length,
+                },
+                {
+                  title: 'Status',
+                  dataIndex: 'active',
+                  render: (active: boolean) => (
+                    <StatusTag status={active ? 'ACTIVE' : 'INACTIVE'} />
+                  ),
+                },
                 {
                   key: 'actions',
                   render: (_: unknown, product) => (

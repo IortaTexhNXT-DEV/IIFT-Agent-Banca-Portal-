@@ -34,9 +34,17 @@ export interface AuthResponse {
   csrfToken: string;
 }
 
-export type PolicyStatus = 'DRAFT' | 'PENDING_APPROVAL' | 'PENDING_PAYMENT' | 'ACTIVE' | 'REJECTED' | 'EXPIRED' | 'CANCELLED';
+export type PolicyStatus =
+  | 'DRAFT'
+  | 'PENDING_APPROVAL'
+  | 'PENDING_PAYMENT'
+  | 'ACTIVE'
+  | 'REJECTED'
+  | 'EXPIRED'
+  | 'CANCELLED';
 export type PolicyPaymentStatus = 'UNPAID' | 'PENDING_VERIFICATION' | 'PAID';
-export type AgentStatus = 'PENDING' | 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'TERMINATED' | 'REJECTED';
+export type AgentStatus =
+  'PENDING' | 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'TERMINATED' | 'REJECTED';
 export type AgentType = 'MAIN_AGENT' | 'SUB_AGENT' | 'BANKER';
 export type Channel = 'AGENCY' | 'BANCA';
 export type AmlStatus = 'NOT_SCREENED' | 'CLEAR' | 'FLAGGED' | 'REJECTED';
@@ -55,7 +63,8 @@ export type PaymentMethod = 'BANK_TRANSFER' | 'CHEQUE' | 'CASH_DEPOSIT' | 'ONLIN
 export type ClaimStatus = 'SUBMITTED' | 'UNDER_REVIEW' | 'ACKNOWLEDGED' | 'REJECTED' | 'CLOSED';
 export type IssuePriority = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
 export type IssueStatus = 'OPEN' | 'ASSIGNED' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
-export type DocumentOwnerType = 'AGENT' | 'AGENCY' | 'PARTICIPANT' | 'POLICY' | 'PAYMENT' | 'CLAIM' | 'ISSUE' | 'REPORT';
+export type DocumentOwnerType =
+  'AGENT' | 'AGENCY' | 'PARTICIPANT' | 'POLICY' | 'PAYMENT' | 'CLAIM' | 'ISSUE' | 'REPORT';
 export type DocumentStatus = 'UPLOADED' | 'VERIFIED' | 'REJECTED';
 export type NomineeRole = 'NOMINEE' | 'BENEFICIARY' | 'EXECUTOR';
 
@@ -259,11 +268,19 @@ export interface Participant {
   version: number;
 }
 
-export interface PolicyDetail extends Omit<PolicySummary, 'product' | 'participant' | 'agent' | 'agency'> {
+export interface PolicyDetail extends Omit<
+  PolicySummary,
+  'product' | 'participant' | 'agent' | 'agency'
+> {
   planCode: string | null;
   coverageType: string | null;
   termMonths: number;
-  contributionBreakdown: { lines: { label: string; amount: string }[]; tabarru: string; wakalahFee: string; commissionRate: number };
+  contributionBreakdown: {
+    lines: { label: string; amount: string }[];
+    tabarru: string;
+    wakalahFee: string;
+    commissionRate: number;
+  };
   riskDetails: Record<string, string | number | boolean>;
   questionnaire: { code: string; answer: boolean; details?: string }[] | null;
   referralReasons: string[];
@@ -279,10 +296,40 @@ export interface PolicyDetail extends Omit<PolicySummary, 'product' | 'participa
   agency: { id: string; code: string; name: string; issuanceBlocked: boolean };
   nominees: Nominee[];
   events: PolicyEvent[];
-  allocations: { id: string; amount: Money; payment: { id: string; paymentNo: string; status: PaymentStatus; paymentDate: IsoDate; method: PaymentMethod; referenceNo: string } }[];
-  receipts: { id: string; receiptNo: string; amount: Money; issuedAt: IsoDate; documentId: string | null }[];
-  claims: { id: string; claimNo: string; claimType: string; status: ClaimStatus; eventDate: IsoDate }[];
-  signatures: { id: string; recipientName: string; recipientEmail: string; expiresAt: IsoDate; signedAt: IsoDate | null; createdAt: IsoDate }[];
+  allocations: {
+    id: string;
+    amount: Money;
+    payment: {
+      id: string;
+      paymentNo: string;
+      status: PaymentStatus;
+      paymentDate: IsoDate;
+      method: PaymentMethod;
+      referenceNo: string;
+    };
+  }[];
+  receipts: {
+    id: string;
+    receiptNo: string;
+    amount: Money;
+    issuedAt: IsoDate;
+    documentId: string | null;
+  }[];
+  claims: {
+    id: string;
+    claimNo: string;
+    claimType: string;
+    status: ClaimStatus;
+    eventDate: IsoDate;
+  }[];
+  signatures: {
+    id: string;
+    recipientName: string;
+    recipientEmail: string;
+    expiresAt: IsoDate;
+    signedAt: IsoDate | null;
+    createdAt: IsoDate;
+  }[];
   renewalOf: { id: string; policyNo: string | null } | null;
   documents: DocumentView[];
   approvals: ApprovalRequest[];
@@ -312,13 +359,26 @@ export interface AgentView {
   activatedAt: IsoDate | null;
   createdAt: IsoDate;
   version: number;
-  agency: { id: string; code: string; name: string; channel: Channel; status: string; issuanceBlocked: boolean };
+  agency: {
+    id: string;
+    code: string;
+    name: string;
+    channel: Channel;
+    status: string;
+    issuanceBlocked: boolean;
+  };
   parent: { id: string; agentCode: string; fullName: string } | null;
   user: { id: string; username: string; status: string; lastLoginAt: IsoDate | null } | null;
 }
 
 export interface AgentDetail extends AgentView {
-  subAgents: { id: string; agentCode: string; fullName: string; status: AgentStatus; agentType: AgentType }[];
+  subAgents: {
+    id: string;
+    agentCode: string;
+    fullName: string;
+    status: AgentStatus;
+    agentType: AgentType;
+  }[];
   documents: DocumentView[];
   approvals: ApprovalRequest[];
   screenings?: AmlScreening[];
@@ -361,7 +421,13 @@ export interface AmlScreening {
   subjectName: string;
   provider: string;
   score: number;
-  matches: { listName: string; name: string; score: number; reference?: string | null; reason: string }[];
+  matches: {
+    listName: string;
+    name: string;
+    score: number;
+    reference?: string | null;
+    reason: string;
+  }[];
   status: 'AUTO_CLEARED' | 'PENDING_REVIEW' | 'CLEARED' | 'CONFIRMED_MATCH';
   reviewedAt: IsoDate | null;
   reviewRemarks: string | null;
@@ -383,8 +449,24 @@ export interface Payment {
   rejectionReason: string | null;
   createdAt: IsoDate;
   agency: { id: string; code: string; name: string };
-  allocations: { id: string; amount: Money; policy: { id: string; policyNo: string | null; quotationNo: string; participant: { fullName: string } } }[];
-  receipts: { id: string; receiptNo: string; policyId: string; amount: Money; issuedAt: IsoDate; documentId: string | null }[];
+  allocations: {
+    id: string;
+    amount: Money;
+    policy: {
+      id: string;
+      policyNo: string | null;
+      quotationNo: string;
+      participant: { fullName: string };
+    };
+  }[];
+  receipts: {
+    id: string;
+    receiptNo: string;
+    policyId: string;
+    amount: Money;
+    issuedAt: IsoDate;
+    documentId: string | null;
+  }[];
   documents?: DocumentView[];
   approvals?: ApprovalRequest[];
 }
@@ -463,7 +545,13 @@ export interface Issue {
   slaBreached: boolean;
   resolution: string | null;
   createdAt: IsoDate;
-  comments?: { id: string; authorName: string; body: string; internal: boolean; createdAt: IsoDate }[];
+  comments?: {
+    id: string;
+    authorName: string;
+    body: string;
+    internal: boolean;
+    createdAt: IsoDate;
+  }[];
   documents?: DocumentView[];
 }
 
@@ -485,7 +573,12 @@ export interface ReportDefinition {
   filters: ('dateRange' | 'product' | 'agency' | 'agent' | 'status')[];
   statusOptions?: string[];
   dateLabel?: string;
-  columns: { key: string; header: string; type: 'text' | 'number' | 'money' | 'date' | 'datetime'; width?: number }[];
+  columns: {
+    key: string;
+    header: string;
+    type: 'text' | 'number' | 'money' | 'date' | 'datetime';
+    width?: number;
+  }[];
 }
 
 export interface ReportPreview {
@@ -507,7 +600,13 @@ export interface PortalDashboard {
     agentType: AgentType;
     status: AgentStatus;
     reportsTo: string | null;
-    agency: { name: string; code: string; channel: Channel; issuanceBlocked: boolean; issuanceBlockReason: string | null };
+    agency: {
+      name: string;
+      code: string;
+      channel: Channel;
+      issuanceBlocked: boolean;
+      issuanceBlockReason: string | null;
+    };
   };
   counts: {
     draft: number;
@@ -525,7 +624,15 @@ export interface PortalDashboard {
   };
   pendingActions: { type: string; title: string; detail: string; link: string }[];
   monthly: MonthlyPoint[];
-  recentActivity: { id: string; action: string; remarks: string | null; actorName: string | null; createdAt: IsoDate; policyId: string; reference: string }[];
+  recentActivity: {
+    id: string;
+    action: string;
+    remarks: string | null;
+    actorName: string | null;
+    createdAt: IsoDate;
+    policyId: string;
+    reference: string;
+  }[];
 }
 
 export interface BackofficeDashboard {
@@ -554,7 +661,13 @@ export interface BackofficeDashboard {
     overdueAmount: Money;
     overdueCount: number;
   };
-  blockedAgencies?: { id: string; code: string; name: string; issuanceBlockedAt: IsoDate | null; issuanceBlockReason: string | null }[];
+  blockedAgencies?: {
+    id: string;
+    code: string;
+    name: string;
+    issuanceBlockedAt: IsoDate | null;
+    issuanceBlockReason: string | null;
+  }[];
   trend?: MonthlyPoint[];
   byProduct?: { code: string; name: string; policies: number; contribution: Money }[];
   byChannel?: { channel: Channel; policies: number; contribution: Money }[];

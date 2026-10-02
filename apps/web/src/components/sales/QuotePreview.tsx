@@ -25,13 +25,24 @@ function useDebounced<T>(value: T, delay: number): T {
  * Indicative quote (AP-18/19): recalculated by the rating engine shortly after the agent
  * stops typing, once every input the engine needs has a value.
  */
-export function useIndicativeQuote(product: Product, participantId: string, values: CoverageValues | undefined) {
+export function useIndicativeQuote(
+  product: Product,
+  participantId: string,
+  values: CoverageValues | undefined,
+) {
   const complete = isCoverageComplete(product, values);
-  const request: QuoteRequest | null = complete && values ? { productId: product.id, participantId, ...toQuoteOptions(product, values) } : null;
+  const request: QuoteRequest | null =
+    complete && values
+      ? { productId: product.id, participantId, ...toQuoteOptions(product, values) }
+      : null;
   const debounced = useDebounced(request === null ? null : JSON.stringify(request), DEBOUNCE_MS);
   const query = useQuery({
     queryKey: ['/portal/policies/calculate', debounced],
-    queryFn: () => api.post<QuoteResult>('/portal/policies/calculate', JSON.parse(debounced ?? '{}') as QuoteRequest),
+    queryFn: () =>
+      api.post<QuoteResult>(
+        '/portal/policies/calculate',
+        JSON.parse(debounced ?? '{}') as QuoteRequest,
+      ),
     enabled: debounced !== null && request !== null,
     placeholderData: keepPreviousData,
   });
@@ -44,7 +55,12 @@ type IndicativeQuote = ReturnType<typeof useIndicativeQuote>;
 export function QuotePreview({ quote }: { quote: IndicativeQuote }) {
   const { complete, query } = quote;
   if (!complete) {
-    return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Complete the coverage details to see the indicative contribution" />;
+    return (
+      <Empty
+        image={Empty.PRESENTED_IMAGE_SIMPLE}
+        description="Complete the coverage details to see the indicative contribution"
+      />
+    );
   }
   if (query.error instanceof ApiError && query.error.status === 422) {
     return (
@@ -76,12 +92,25 @@ export function QuotePreview({ quote }: { quote: IndicativeQuote }) {
         column={1}
         className="mb-16"
         items={[
-          { key: 'sum', label: 'Sum covered', children: <Money value={result.sumCovered} strong /> },
+          {
+            key: 'sum',
+            label: 'Sum covered',
+            children: <Money value={result.sumCovered} strong />,
+          },
           { key: 'term', label: 'Term', children: formatTerm(result.termMonths) },
-          { key: 'contribution', label: 'Contribution', children: <Money value={result.contribution} strong /> },
+          {
+            key: 'contribution',
+            label: 'Contribution',
+            children: <Money value={result.contribution} strong />,
+          },
         ]}
       />
-      <ContributionBreakdown lines={result.lines} contribution={result.contribution} tabarru={result.tabarru} wakalahFee={result.wakalahFee} />
+      <ContributionBreakdown
+        lines={result.lines}
+        contribution={result.contribution}
+        tabarru={result.tabarru}
+        wakalahFee={result.wakalahFee}
+      />
       {result.referralReasons.length > 0 && (
         <Alert
           className="mt-16"

@@ -27,11 +27,18 @@ interface Values {
 function ClaimStatusModal({ claim, onClose }: { claim: Claim; onClose(): void }) {
   const [form] = Form.useForm<Values>();
   const options = NEXT_STATUSES[claim.status];
-  const update = useApiMutation((values: Values) => api.put<Claim>(`/backoffice/claims/${claim.id}/status`, { status: values.status, remarks: values.remarks.trim() }), {
-    success: 'Claim status updated; the agent has been notified',
-    invalidate: ['/backoffice/claims', '/backoffice/dashboard'],
-    onSuccess: onClose,
-  });
+  const update = useApiMutation(
+    (values: Values) =>
+      api.put<Claim>(`/backoffice/claims/${claim.id}/status`, {
+        status: values.status,
+        remarks: values.remarks.trim(),
+      }),
+    {
+      success: 'Claim status updated; the agent has been notified',
+      invalidate: ['/backoffice/claims', '/backoffice/dashboard'],
+      onSuccess: onClose,
+    },
+  );
 
   return (
     <FormModal<Values>
@@ -45,7 +52,10 @@ function ClaimStatusModal({ claim, onClose }: { claim: Claim; onClose(): void })
       error={update.error}
     >
       <Form.Item name="status" label="New status" rules={[{ required: true }]}>
-        <Radio.Group optionType="button" options={options.map((status) => ({ value: status, label: humanise(status) }))} />
+        <Radio.Group
+          optionType="button"
+          options={options.map((status) => ({ value: status, label: humanise(status) }))}
+        />
       </Form.Item>
       <Form.Item
         name="remarks"

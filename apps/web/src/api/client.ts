@@ -44,7 +44,11 @@ function url(path: string, query?: Query): string {
   return `${BASE}${path}${search ? `?${search}` : ''}`;
 }
 
-async function request<T>(method: string, path: string, options: { query?: Query; body?: unknown; form?: FormData } = {}): Promise<T> {
+async function request<T>(
+  method: string,
+  path: string,
+  options: { query?: Query; body?: unknown; form?: FormData } = {},
+): Promise<T> {
   const headers: Record<string, string> = { accept: 'application/json' };
   if (method !== 'GET' && csrfToken) headers['x-csrf-token'] = csrfToken;
   let body: BodyInit | undefined;
@@ -55,7 +59,12 @@ async function request<T>(method: string, path: string, options: { query?: Query
     body = JSON.stringify(options.body);
   }
 
-  const response = await fetch(url(path, options.query), { method, headers, body, credentials: 'same-origin' });
+  const response = await fetch(url(path, options.query), {
+    method,
+    headers,
+    body,
+    credentials: 'same-origin',
+  });
   if (response.status === 204) {
     return undefined as T;
   }
@@ -89,8 +98,15 @@ export const api = {
 export async function download(path: string, query?: Query): Promise<void> {
   const response = await fetch(url(path, query), { credentials: 'same-origin' });
   if (!response.ok) {
-    const payload = (await response.json().catch(() => ({}))) as { code?: string; message?: string };
-    throw new ApiError(response.status, payload.code ?? 'DOWNLOAD_FAILED', payload.message ?? 'Download failed');
+    const payload = (await response.json().catch(() => ({}))) as {
+      code?: string;
+      message?: string;
+    };
+    throw new ApiError(
+      response.status,
+      payload.code ?? 'DOWNLOAD_FAILED',
+      payload.message ?? 'Download failed',
+    );
   }
   const disposition = response.headers.get('content-disposition') ?? '';
   const fileName = /filename="([^"]+)"/.exec(disposition)?.[1] ?? 'download';

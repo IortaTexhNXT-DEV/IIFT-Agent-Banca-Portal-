@@ -1,14 +1,21 @@
-import { Button, Card, Select, Table, Tag, Typography } from 'antd';
+import { Button, Card, Select, Table, Tag } from 'antd';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { api } from '../../api/client';
 import { useApiMutation, usePagedQuery } from '../../api/hooks';
-import type { IntegrationLogEntry, IntegrationSystem, OutboxMessage, OutboxStatus, ReconciliationRun } from '../../api/admin-types';
+import type {
+  IntegrationLogEntry,
+  IntegrationSystem,
+  OutboxMessage,
+  OutboxStatus,
+  ReconciliationRun,
+} from '../../api/admin-types';
 import { formatDate, formatDateTime, formatNumber, humanise } from '../../utils/format';
 import { ErrorAlert } from '../ErrorAlert';
 import { FilterBar } from '../FilterBar';
 import { Money } from '../Money';
 import { StatusTag } from '../StatusTag';
+import { CellText } from './CellText';
 import { recordPath } from './links';
 import { enumOptions } from './useCodes';
 import '../../styles/admin.css';
@@ -21,23 +28,41 @@ export const SYSTEM_LABELS: Record<IntegrationSystem, string> = {
   SMS: 'SMS gateway',
   DIRECTORY: 'Directory',
 };
-const SYSTEM_OPTIONS = Object.entries(SYSTEM_LABELS).map(([value, label]) => ({ value: value as IntegrationSystem, label }));
+const SYSTEM_OPTIONS = Object.entries(SYSTEM_LABELS).map(([value, label]) => ({
+  value: value as IntegrationSystem,
+  label,
+}));
 const OUTBOX_STATUSES: OutboxStatus[] = ['PENDING', 'SENT', 'FAILED', 'DEAD'];
 const RETRYABLE: OutboxStatus[] = ['FAILED', 'DEAD'];
 const systemLabel = (system: IntegrationSystem) => SYSTEM_LABELS[system];
+const renderPayload = (message: OutboxMessage) => (
+  <pre className="json-block">{JSON.stringify(message.payload, null, 2)}</pre>
+);
 
 function SystemFilter({ onChange }: { onChange(system?: IntegrationSystem): void }) {
-  return <Select allowClear placeholder="All systems" aria-label="System" style={{ width: 180 }} options={SYSTEM_OPTIONS} onChange={onChange} />;
+  return (
+    <Select
+      allowClear
+      placeholder="All systems"
+      aria-label="System"
+      style={{ width: 180 }}
+      options={SYSTEM_OPTIONS}
+      onChange={onChange}
+    />
+  );
 }
 
 /** INT-13/14: outbound message queue with retry of failed and dead-lettered messages. */
 export function OutboxTable() {
   const [filters, setFilters] = useState<{ system?: IntegrationSystem; status?: OutboxStatus }>({});
   const messages = usePagedQuery<OutboxMessage>('/backoffice/integration/outbox', { ...filters });
-  const retry = useApiMutation((id: string) => api.post<OutboxMessage>(`/backoffice/integration/outbox/${id}/retry`), {
-    success: 'Message queued for delivery',
-    invalidate: ['/backoffice/integration', '/backoffice/dashboard'],
-  });
+  const retry = useApiMutation(
+    (id: string) => api.post<OutboxMessage>(`/backoffice/integration/outbox/${id}/retry`),
+    {
+      success: 'Message queued for delivery',
+      invalidate: ['/backoffice/integration', '/backoffice/dashboard'],
+    },
+  );
   const update = (changes: typeof filters) => {
     setFilters((current) => ({ ...current, ...changes }));
     messages.resetPage();
@@ -47,7 +72,14 @@ export function OutboxTable() {
     <>
       <FilterBar>
         <SystemFilter onChange={(system) => update({ system })} />
-        <Select allowClear placeholder="All statuses" aria-label="Status" style={{ width: 160 }} options={enumOptions(OUTBOX_STATUSES, humanise)} onChange={(status?: OutboxStatus) => update({ status })} />
+        <Select
+          allowClear
+          placeholder="All statuses"
+          aria-label="Status"
+          style={{ width: 160 }}
+          options={enumOptions(OUTBOX_STATUSES, humanise)}
+          onChange={(status?: OutboxStatus) => update({ status })}
+        />
       </FilterBar>
       <ErrorAlert error={retry.error} className="mb-16" />
       <Card className="content-card">
@@ -59,7 +91,7 @@ export function OutboxTable() {
           pagination={messages.pagination}
           scroll={{ x: 'max-content' }}
           locale={{ emptyText: 'No messages match the filters' }}
-          expandable={{ expandedRowRender: (row) => <pre className="json-block">{JSON.stringify(row.payload, null, 2)}</pre> }}
+          expandable={{ expandedRowRender: renderPayload }}
           columns={[
             { title: 'Created', dataIndex: 'createdAt', render: formatDateTime },
             { title: 'System', dataIndex: 'system', render: systemLabel },
@@ -69,19 +101,40 @@ export function OutboxTable() {
               key: 'aggregate',
               render: (_: unknown, row) => {
                 const path = recordPath('BACKOFFICE', row.aggregateType, row.aggregateId);
-                return path ? <Link to={path}>{row.aggregateType}</Link> : (row.aggregateType ?? '–');
+                return path ? (
+                  <Link to={path}>{row.aggregateType}</Link>
+                ) : (
+                  (row.aggregateType ?? '–')
+                );
               },
             },
-            { title: 'Status', dataIndex: 'status', render: (status: string) => <StatusTag status={status} /> },
+            {
+              title: 'Status',
+              dataIndex: 'status',
+              render: (status: string) => <StatusTag status={status} />,
+            },
             { title: 'Attempts', dataIndex: 'attempts', align: 'right' },
-            { title: 'Next attempt', dataIndex: 'nextAttemptAt', render: (value: string, row) => (row.status === 'PENDING' || row.status === 'FAILED' ? formatDateTime(value) : '–') },
+            {
+              title: 'Next attempt',
+              dataIndex: 'nextAttemptAt',
+              render: (value: string, row) =>
+                row.status === 'PENDING' || row.status === 'FAILED' ? formatDateTime(value) : '–',
+            },
             { title: 'Delivered', dataIndex: 'processedAt', render: formatDateTime },
-            { title: 'Last error', dataIndex: 'lastError', width: 260, ellipsis: true, render: (error: string | null) => (error ? <Typography.Text type="danger">{error}</Typography.Text> : '–') },
+            {
+              title: 'Last error',
+              dataIndex: 'lastError',
+              render: (error: string | null) => <CellText text={error} width={260} type="danger" />,
+            },
             {
               key: 'actions',
               render: (_: unknown, row) =>
                 RETRYABLE.includes(row.status) && (
-                  <Button size="small" loading={retry.isPending && retry.variables === row.id} onClick={() => retry.mutate(row.id)}>
+                  <Button
+                    size="small"
+                    loading={retry.isPending && retry.variables === row.id}
+                    onClick={() => retry.mutate(row.id)}
+                  >
                     Retry
                   </Button>
                 ),
@@ -115,7 +168,9 @@ export function IntegrationLogTable() {
             { value: 'true', label: 'Successful' },
             { value: 'false', label: 'Failed' },
           ]}
-          onChange={(value?: string) => update({ success: value === undefined ? undefined : value === 'true' })}
+          onChange={(value?: string) =>
+            update({ success: value === undefined ? undefined : value === 'true' })
+          }
         />
       </FilterBar>
       <Card className="content-card">
@@ -141,10 +196,27 @@ export function IntegrationLogTable() {
                 </Tag>
               ),
             },
-            { title: 'Duration', dataIndex: 'durationMs', align: 'right', render: (ms: number) => `${formatNumber(ms)} ms` },
-            { title: 'Reference', dataIndex: 'reference', render: (value: string | null) => value ?? '–' },
-            { title: 'Request', dataIndex: 'requestSummary', width: 240, ellipsis: true, render: (value: string | null) => value ?? '–' },
-            { title: 'Error', dataIndex: 'errorMessage', width: 240, ellipsis: true, render: (value: string | null) => (value ? <Typography.Text type="danger">{value}</Typography.Text> : '–') },
+            {
+              title: 'Duration',
+              dataIndex: 'durationMs',
+              align: 'right',
+              render: (ms: number) => `${formatNumber(ms)} ms`,
+            },
+            {
+              title: 'Reference',
+              dataIndex: 'reference',
+              render: (value: string | null) => value ?? '–',
+            },
+            {
+              title: 'Request',
+              dataIndex: 'requestSummary',
+              render: (value: string | null) => <CellText text={value} width={240} />,
+            },
+            {
+              title: 'Error',
+              dataIndex: 'errorMessage',
+              render: (value: string | null) => <CellText text={value} width={240} type="danger" />,
+            },
           ]}
         />
       </Card>
@@ -168,16 +240,36 @@ export function ReconciliationTable() {
         columns={[
           { title: 'Business date', dataIndex: 'businessDate', render: formatDate },
           { title: 'System', dataIndex: 'system', render: systemLabel },
-          { title: 'Status', dataIndex: 'status', render: (status: string) => <StatusTag status={status} /> },
-          { title: 'Receipts', key: 'count', align: 'right', render: (_: unknown, row) => `${formatNumber(row.matchedCount)} of ${formatNumber(row.expectedCount)}` },
-          { title: 'Expected amount', dataIndex: 'expectedAmount', align: 'right', render: (value: string) => <Money value={value} /> },
-          { title: 'Matched amount', dataIndex: 'matchedAmount', align: 'right', render: (value: string) => <Money value={value} /> },
+          {
+            title: 'Status',
+            dataIndex: 'status',
+            render: (status: string) => <StatusTag status={status} />,
+          },
+          {
+            title: 'Receipts',
+            key: 'count',
+            align: 'right',
+            render: (_: unknown, row) =>
+              `${formatNumber(row.matchedCount)} of ${formatNumber(row.expectedCount)}`,
+          },
+          {
+            title: 'Expected amount',
+            dataIndex: 'expectedAmount',
+            align: 'right',
+            render: (value: string) => <Money value={value} />,
+          },
+          {
+            title: 'Matched amount',
+            dataIndex: 'matchedAmount',
+            align: 'right',
+            render: (value: string) => <Money value={value} />,
+          },
           {
             title: 'Unmatched receipts',
             key: 'unmatched',
-            width: 260,
-            ellipsis: true,
-            render: (_: unknown, row) => (row.details?.unmatchedReceipts?.length ? row.details.unmatchedReceipts.join(', ') : '–'),
+            render: (_: unknown, row) => (
+              <CellText text={row.details?.unmatchedReceipts?.join(', ')} width={260} />
+            ),
           },
           { title: 'Run at', dataIndex: 'createdAt', render: formatDateTime },
         ]}

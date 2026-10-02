@@ -3,7 +3,12 @@ import type { ApprovalRequest } from '../api/types';
 import { formatDateTime, humanise } from '../utils/format';
 import { StatusTag } from './StatusTag';
 
-const ACTION_COLOURS: Record<string, string> = { SUBMIT: 'blue', APPROVE: 'green', REJECT: 'red', WITHDRAW: 'gray' };
+const ACTION_COLOURS: Record<string, string> = {
+  SUBMIT: 'blue',
+  APPROVE: 'green',
+  REJECT: 'red',
+  WITHDRAW: 'gray',
+};
 
 /** Maker-checker history (AP-61): every request with each level's decision and remarks. */
 export function ApprovalHistory({ approvals }: { approvals: ApprovalRequest[] }) {

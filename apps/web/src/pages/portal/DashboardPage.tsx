@@ -155,24 +155,22 @@ export default function DashboardPage() {
                 ) : (
                   <ul className="action-list">
                     {pendingActions.map((action) => (
-                      <li
-                        key={`${action.type}-${action.link}`}
-                        className="action-list__item clickable-row"
-                        onClick={() => navigate(action.link)}
-                      >
-                        <ExclamationCircleOutlined
-                          style={{
-                            color: action.type === 'DRAFT' ? brand.muted : brand.orange,
-                            marginTop: 4,
-                          }}
-                        />
-                        <div className="action-list__body">
-                          <div className="action-list__title">{action.title}</div>
-                          <Typography.Text type="secondary" ellipsis>
-                            {action.detail}
-                          </Typography.Text>
-                        </div>
-                        <RightOutlined className="muted" />
+                      <li key={`${action.type}-${action.link}`}>
+                        <Link to={action.link} className="action-list__item clickable-row">
+                          <ExclamationCircleOutlined
+                            style={{
+                              color: action.type === 'DRAFT' ? brand.muted : brand.orange,
+                              marginTop: 4,
+                            }}
+                          />
+                          <div className="action-list__body">
+                            <div className="action-list__title">{action.title}</div>
+                            <Typography.Text type="secondary" ellipsis>
+                              {action.detail}
+                            </Typography.Text>
+                          </div>
+                          <RightOutlined className="muted" />
+                        </Link>
                       </li>
                     ))}
                   </ul>

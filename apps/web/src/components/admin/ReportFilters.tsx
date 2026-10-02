@@ -33,8 +33,15 @@ export function toReportQuery(values: ReportFilterValues): ReportQuery {
 function AgentFilter({ agencyId }: { agencyId?: string }) {
   const { user, can } = useAuth();
   const backoffice = user?.audience === 'BACKOFFICE';
-  const path = backoffice ? '/backoffice/agents' : can(P.portalHierarchyView) ? '/portal/agents' : null;
-  const agents = useApiQuery<Page<AgentView>>(path, { agencyId: backoffice ? agencyId : undefined, pageSize: 100 });
+  const path = backoffice
+    ? '/backoffice/agents'
+    : can(P.portalHierarchyView)
+      ? '/portal/agents'
+      : null;
+  const agents = useApiQuery<Page<AgentView>>(path, {
+    agencyId: backoffice ? agencyId : undefined,
+    pageSize: 100,
+  });
   return (
     <Form.Item name="agentId" label="Agent / bank officer">
       <Select
@@ -42,14 +49,23 @@ function AgentFilter({ agencyId }: { agencyId?: string }) {
         placeholder="All agents"
         showSearch={{ optionFilterProp: 'label' }}
         loading={agents.isLoading}
-        options={(agents.data?.items ?? []).map((agent) => ({ value: agent.id, label: `${agent.fullName} (${agent.agentCode})` }))}
+        options={(agents.data?.items ?? []).map((agent) => ({
+          value: agent.id,
+          label: `${agent.fullName} (${agent.agentCode})`,
+        }))}
       />
     </Form.Item>
   );
 }
 
 /** BO-23: filters offered by the selected report (period, product, agency, agent, status). */
-export function ReportFilters({ report, form }: { report: ReportDefinition; form: FormInstance<ReportFilterValues> }) {
+export function ReportFilters({
+  report,
+  form,
+}: {
+  report: ReportDefinition;
+  form: FormInstance<ReportFilterValues>;
+}) {
   const { user } = useAuth();
   const backoffice = user?.audience === 'BACKOFFICE';
   const has = (filter: ReportDefinition['filters'][number]) => report.filters.includes(filter);
@@ -62,21 +78,37 @@ export function ReportFilters({ report, form }: { report: ReportDefinition; form
         {has('dateRange') && (
           <Col xs={24} md={12} xl={8}>
             <Form.Item name="period" label={report.dateLabel ?? 'Period'}>
-              <DatePicker.RangePicker format="DD MMM YYYY" allowEmpty={[true, true]} style={{ width: '100%' }} />
+              <DatePicker.RangePicker
+                format="DD MMM YYYY"
+                allowEmpty={[true, true]}
+                style={{ width: '100%' }}
+              />
             </Form.Item>
           </Col>
         )}
         {has('product') && (
           <Col xs={24} md={12} xl={8}>
             <Form.Item name="productId" label="Product">
-              <Select allowClear placeholder="All products" loading={products.isLoading} options={(products.data ?? []).map((product) => ({ value: product.id, label: product.name }))} />
+              <Select
+                allowClear
+                placeholder="All products"
+                loading={products.isLoading}
+                options={(products.data ?? []).map((product) => ({
+                  value: product.id,
+                  label: product.name,
+                }))}
+              />
             </Form.Item>
           </Col>
         )}
         {backoffice && has('agency') && (
           <Col xs={24} md={12} xl={8}>
             <Form.Item name="agencyId" label="Agency / bank">
-              <AgencySelect allowClear placeholder="All agencies and banks" onChange={() => form.setFieldValue('agentId', undefined)} />
+              <AgencySelect
+                allowClear
+                placeholder="All agencies and banks"
+                onChange={() => form.setFieldValue('agentId', undefined)}
+              />
             </Form.Item>
           </Col>
         )}
@@ -88,7 +120,11 @@ export function ReportFilters({ report, form }: { report: ReportDefinition; form
         {has('status') && report.statusOptions && (
           <Col xs={24} md={12} xl={8}>
             <Form.Item name="status" label="Status">
-              <Select allowClear placeholder="All statuses" options={enumOptions(report.statusOptions, humanise)} />
+              <Select
+                allowClear
+                placeholder="All statuses"
+                options={enumOptions(report.statusOptions, humanise)}
+              />
             </Form.Item>
           </Col>
         )}

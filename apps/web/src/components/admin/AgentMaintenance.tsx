@@ -29,7 +29,8 @@ interface UpdateValues {
 }
 
 const day = (value: string | null) => (value ? dayjs(value) : undefined);
-const numberOrNull = (value: string | number | null | undefined) => (value === null || value === undefined ? null : Number(value));
+const numberOrNull = (value: string | number | null | undefined) =>
+  value === null || value === undefined ? null : Number(value);
 
 /** Only fields that differ from the current profile are submitted for approval. */
 function changes(agent: AgentDetail, values: UpdateValues): AgentUpdateInput {
@@ -59,7 +60,11 @@ function changes(agent: AgentDetail, values: UpdateValues): AgentUpdateInput {
   };
   const keys = Object.keys(next) as (keyof AgentUpdateInput)[];
   // Optional text fields cannot be blanked through the API, so an emptied field is not a change.
-  return Object.fromEntries(keys.filter((key) => next[key] !== current[key] && next[key] !== undefined).map((key) => [key, next[key]]));
+  return Object.fromEntries(
+    keys
+      .filter((key) => next[key] !== current[key] && next[key] !== undefined)
+      .map((key) => [key, next[key]]),
+  );
 }
 
 /** BO-05/08: request a change to an agent's profile, reporting line or authority limit. */
@@ -67,11 +72,15 @@ export function AgentUpdateModal({ agent, onClose }: { agent: AgentDetail; onClo
   const [form] = Form.useForm<UpdateValues>();
   const [unchanged, setUnchanged] = useState(false);
   const parentType = PARENT_TYPE[agent.agentType];
-  const request = useApiMutation((input: AgentUpdateInput) => api.post<ApprovalRequest>(`/backoffice/agents/${agent.id}/update-requests`, input), {
-    success: 'Profile update submitted for approval',
-    invalidate: INVALIDATE,
-    onSuccess: onClose,
-  });
+  const request = useApiMutation(
+    (input: AgentUpdateInput) =>
+      api.post<ApprovalRequest>(`/backoffice/agents/${agent.id}/update-requests`, input),
+    {
+      success: 'Profile update submitted for approval',
+      invalidate: INVALIDATE,
+      onSuccess: onClose,
+    },
+  );
   const submit = (values: UpdateValues) => {
     const input = changes(agent, values);
     setUnchanged(Object.keys(input).length === 0);
@@ -85,15 +94,28 @@ export function AgentUpdateModal({ agent, onClose }: { agent: AgentDetail; onClo
       okText="Submit for approval"
       okButtonProps={{ loading: request.isPending }}
       onCancel={onClose}
-      onOk={() => form.validateFields().then(submit)}
+      onOk={() => form.submit()}
       destroyOnHidden
       width={760}
     >
-      <Alert className="mb-16" type="info" showIcon title="Changes are applied once a checker approves the request." />
-      {unchanged && <Alert className="mb-16" type="warning" showIcon title="Change at least one field before submitting." />}
+      <Alert
+        className="mb-16"
+        type="info"
+        showIcon
+        title="Changes are applied once a checker approves the request."
+      />
+      {unchanged && (
+        <Alert
+          className="mb-16"
+          type="warning"
+          showIcon
+          title="Change at least one field before submitting."
+        />
+      )}
       <ErrorAlert error={request.error} className="mb-16" />
       <Form
         form={form}
+        onFinish={submit}
         layout="vertical"
         requiredMark="optional"
         initialValues={{
@@ -111,17 +133,35 @@ export function AgentUpdateModal({ agent, onClose }: { agent: AgentDetail; onClo
       >
         <Row gutter={16}>
           <Col xs={24} md={12}>
-            <Form.Item name="fullName" label="Full name" rules={[{ required: true, whitespace: true }, { min: 2, max: 150 }]}>
+            <Form.Item
+              name="fullName"
+              label="Full name"
+              rules={[
+                { required: true, whitespace: true },
+                { min: 2, max: 150 },
+              ]}
+            >
               <Input />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
             <Form.Item name="dateOfBirth" label="Date of birth">
-              <DatePicker format="DD MMM YYYY" style={{ width: '100%' }} disabledDate={(date) => date.isAfter(dayjs(), 'day')} />
+              <DatePicker
+                format="DD MMM YYYY"
+                style={{ width: '100%' }}
+                disabledDate={(date) => date.isAfter(dayjs(), 'day')}
+              />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
-            <Form.Item name="email" label="Email" rules={[{ required: true }, { type: 'email', message: 'Enter a valid email address' }]}>
+            <Form.Item
+              name="email"
+              label="Email"
+              rules={[
+                { required: true },
+                { type: 'email', message: 'Enter a valid email address' },
+              ]}
+            >
               <Input type="email" />
             </Form.Item>
           </Col>
@@ -151,14 +191,32 @@ export function AgentUpdateModal({ agent, onClose }: { agent: AgentDetail; onClo
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
-            <Form.Item name="authorityLimit" label="Authority limit" extra="Leave empty for no limit">
+            <Form.Item
+              name="authorityLimit"
+              label="Authority limit"
+              extra="Leave empty for no limit"
+            >
               <MoneyInput />
             </Form.Item>
           </Col>
           {parentType && (
             <Col xs={24} md={12}>
-              <Form.Item name="parentAgentId" label="Reports to" rules={[{ required: agent.agentType === 'SUB_AGENT', message: 'A sub-agent must report to a main agent' }]}>
-                <ParentAgentSelect allowClear={agent.agentType === 'BANKER'} agencyId={agent.agencyId} agentType={agent.agentType} excludeId={agent.id} />
+              <Form.Item
+                name="parentAgentId"
+                label="Reports to"
+                rules={[
+                  {
+                    required: agent.agentType === 'SUB_AGENT',
+                    message: 'A sub-agent must report to a main agent',
+                  },
+                ]}
+              >
+                <ParentAgentSelect
+                  allowClear={agent.agentType === 'BANKER'}
+                  agencyId={agent.agencyId}
+                  agentType={agent.agentType}
+                  excludeId={agent.id}
+                />
               </Form.Item>
             </Col>
           )}
@@ -176,11 +234,18 @@ interface StatusValues {
 /** BO-07: activate, deactivate, suspend or terminate an agent, subject to approval. */
 export function AgentStatusModal({ agent, onClose }: { agent: AgentDetail; onClose(): void }) {
   const [form] = Form.useForm<StatusValues>();
-  const request = useApiMutation((values: StatusValues) => api.post<ApprovalRequest>(`/backoffice/agents/${agent.id}/status-requests`, { ...values, reason: values.reason.trim() }), {
-    success: 'Status change submitted for approval',
-    invalidate: INVALIDATE,
-    onSuccess: onClose,
-  });
+  const request = useApiMutation(
+    (values: StatusValues) =>
+      api.post<ApprovalRequest>(`/backoffice/agents/${agent.id}/status-requests`, {
+        ...values,
+        reason: values.reason.trim(),
+      }),
+    {
+      success: 'Status change submitted for approval',
+      invalidate: INVALIDATE,
+      onSuccess: onClose,
+    },
+  );
 
   return (
     <Modal
@@ -189,16 +254,37 @@ export function AgentStatusModal({ agent, onClose }: { agent: AgentDetail; onClo
       okText="Submit for approval"
       okButtonProps={{ loading: request.isPending }}
       onCancel={onClose}
-      onOk={() => form.validateFields().then((values) => request.mutate(values))}
+      onOk={() => form.submit()}
       destroyOnHidden
     >
-      <Alert className="mb-16" type="info" showIcon title={`Current status: ${humanise(agent.status)}. The change takes effect once a checker approves it.`} />
+      <Alert
+        className="mb-16"
+        type="info"
+        showIcon
+        title={`Current status: ${humanise(agent.status)}. The change takes effect once a checker approves it.`}
+      />
       <ErrorAlert error={request.error} className="mb-16" />
-      <Form form={form} layout="vertical" requiredMark="optional">
-        <Form.Item name="status" label="New status" rules={[{ required: true, message: 'Choose the new status' }]}>
+      <Form
+        form={form}
+        onFinish={(values) => request.mutate(values)}
+        layout="vertical"
+        requiredMark="optional"
+      >
+        <Form.Item
+          name="status"
+          label="New status"
+          rules={[{ required: true, message: 'Choose the new status' }]}
+        >
           <Select options={enumOptions(STATUS_TRANSITIONS[agent.status], humanise)} />
         </Form.Item>
-        <Form.Item name="reason" label="Reason" rules={[{ required: true, whitespace: true, message: 'Give the reason' }, { min: 3, max: 300 }]}>
+        <Form.Item
+          name="reason"
+          label="Reason"
+          rules={[
+            { required: true, whitespace: true, message: 'Give the reason' },
+            { min: 3, max: 300 },
+          ]}
+        >
           <Input.TextArea rows={3} maxLength={300} showCount />
         </Form.Item>
       </Form>

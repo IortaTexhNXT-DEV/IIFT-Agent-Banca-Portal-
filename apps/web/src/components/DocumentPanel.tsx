@@ -24,10 +24,18 @@ const ACCEPT = '.pdf,.png,.jpg,.jpeg';
  * Lists the documents attached to a record, with download and (optionally) upload.
  * Files are validated by the server (type by content, size, malware scan).
  */
-export function DocumentPanel({ ownerType, ownerId, uploadTypes, canUpload = false, title = 'Documents' }: Props) {
+export function DocumentPanel({
+  ownerType,
+  ownerId,
+  uploadTypes,
+  canUpload = false,
+  title = 'Documents',
+}: Props) {
   const [open, setOpen] = useState(false);
   const documents = useApiQuery<DocumentView[]>('/common/documents', { ownerType, ownerId });
-  const codes = useApiQuery<CodeItem[]>(uploadTypes ? null : '/common/codes', { category: 'DOCUMENT_TYPE' });
+  const codes = useApiQuery<CodeItem[]>(uploadTypes ? null : '/common/codes', {
+    category: 'DOCUMENT_TYPE',
+  });
   const labels = new Map((codes.data ?? []).map((code) => [code.code, code.label]));
   uploadTypes?.forEach((type) => labels.set(type.docType, type.label));
 
@@ -49,14 +57,26 @@ export function DocumentPanel({ ownerType, ownerId, uploadTypes, canUpload = fal
         pagination={false}
         locale={{ emptyText: 'No documents yet' }}
         columns={[
-          { title: 'Type', dataIndex: 'docType', render: (type: string) => labels.get(type) ?? type },
+          {
+            title: 'Type',
+            dataIndex: 'docType',
+            render: (type: string) => labels.get(type) ?? type,
+          },
           { title: 'File', dataIndex: 'fileName', ellipsis: true },
           { title: 'Size', dataIndex: 'sizeBytes', width: 90, render: fileSize },
           {
             title: 'Status',
             dataIndex: 'status',
             width: 120,
-            render: (_: unknown, doc) => (doc.expired ? <StatusTag status="EXPIRED" /> : <StatusTag status={doc.systemGenerated ? 'COMPLETED' : doc.status} label={doc.systemGenerated ? 'Issued' : undefined} />),
+            render: (_: unknown, doc) =>
+              doc.expired ? (
+                <StatusTag status="EXPIRED" />
+              ) : (
+                <StatusTag
+                  status={doc.systemGenerated ? 'COMPLETED' : doc.status}
+                  label={doc.systemGenerated ? 'Issued' : undefined}
+                />
+              ),
           },
           { title: 'Added', dataIndex: 'createdAt', width: 170, render: formatDateTime },
           {
@@ -64,7 +84,12 @@ export function DocumentPanel({ ownerType, ownerId, uploadTypes, canUpload = fal
             width: 56,
             render: (_: unknown, doc) => (
               <Tooltip title="Download">
-                <Button type="text" icon={<DownloadOutlined />} aria-label={`Download ${doc.fileName}`} onClick={() => void download(`/common/documents/${doc.id}/content`)} />
+                <Button
+                  type="text"
+                  icon={<DownloadOutlined />}
+                  aria-label={`Download ${doc.fileName}`}
+                  onClick={() => void download(`/common/documents/${doc.id}/content`)}
+                />
               </Tooltip>
             ),
           },
@@ -74,7 +99,14 @@ export function DocumentPanel({ ownerType, ownerId, uploadTypes, canUpload = fal
         <UploadDialog
           ownerType={ownerType}
           ownerId={ownerId}
-          types={uploadTypes ?? (codes.data ?? []).map((code) => ({ docType: code.code, label: code.label, mandatory: false }))}
+          types={
+            uploadTypes ??
+            (codes.data ?? []).map((code) => ({
+              docType: code.code,
+              label: code.label,
+              mandatory: false,
+            }))
+          }
           onClose={() => setOpen(false)}
         />
       )}
@@ -101,7 +133,11 @@ function UploadDialog({ ownerType, ownerId, types, onClose }: DialogProps) {
       data.append('file', files[0].originFileObj as File);
       return api.upload<DocumentView>('/common/documents', data);
     },
-    { success: 'Document uploaded', invalidate: ['/common/documents', '/portal', '/backoffice'], onSuccess: onClose },
+    {
+      success: 'Document uploaded',
+      invalidate: ['/common/documents', '/portal', '/backoffice'],
+      onSuccess: onClose,
+    },
   );
 
   return (
@@ -116,14 +152,27 @@ function UploadDialog({ ownerType, ownerId, types, onClose }: DialogProps) {
     >
       <ErrorAlert error={upload.error} className="mb-16" />
       <Form form={form} layout="vertical" requiredMark="optional">
-        <Form.Item name="docType" label="Document type" rules={[{ required: true, message: 'Choose the document type' }]}>
+        <Form.Item
+          name="docType"
+          label="Document type"
+          rules={[{ required: true, message: 'Choose the document type' }]}
+        >
           <Select
             showSearch={{ optionFilterProp: 'label' }}
-            options={types.map((type) => ({ value: type.docType, label: `${type.label}${type.mandatory ? ' (required)' : ''}` }))}
+            options={types.map((type) => ({
+              value: type.docType,
+              label: `${type.label}${type.mandatory ? ' (required)' : ''}`,
+            }))}
           />
         </Form.Item>
         <Form.Item label="File" extra="PDF, PNG or JPEG, up to 10 MB" required>
-          <Upload.Dragger accept={ACCEPT} maxCount={1} fileList={files} beforeUpload={() => false} onChange={({ fileList }) => setFiles(fileList.slice(-1))}>
+          <Upload.Dragger
+            accept={ACCEPT}
+            maxCount={1}
+            fileList={files}
+            beforeUpload={() => false}
+            onChange={({ fileList }) => setFiles(fileList.slice(-1))}
+          >
             <p className="ant-upload-text">Click or drag a file here</p>
           </Upload.Dragger>
         </Form.Item>

@@ -6,7 +6,11 @@ import '../../styles/sales.css';
 export default function ParticipantListPage() {
   return (
     <>
-      <PageHeader title="Participants" subtitle="All registered participants" breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Participants' }]} />
+      <PageHeader
+        title="Participants"
+        subtitle="All registered participants"
+        breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Participants' }]}
+      />
       <ParticipantList path="/backoffice/participants" />
     </>
   );

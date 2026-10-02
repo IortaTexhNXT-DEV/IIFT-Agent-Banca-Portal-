@@ -461,7 +461,7 @@ def build_docx(pm, path, figures):
     w.table(["Table", "Column", "Protection"], rows, widths=[5.0, 6.0, 14.7], font_size=8,
             caption="Protected columns")
     w.para("Document files are encrypted separately with DOCUMENT_ENCRYPTION_KEY (AES-256-GCM, one IV per file); the "
-           "document table holds only metadata and a generated storage key. The audit service writes [REDACTED] in "
+           "document table holds only metadata and a generated storage key. The audit service writes a fixed REDACTED marker in "
            "place of passwords, hashes, encrypted identifiers, tokens and storage keys.")
     w.save(path)
 

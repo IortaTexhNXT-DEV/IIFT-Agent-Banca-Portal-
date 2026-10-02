@@ -29,27 +29,27 @@ function TeamTable() {
       extra={
         <Flex gap={8} wrap>
           <Input.Search
-          allowClear
-          placeholder="Agent code or name"
-          aria-label="Search agents"
-          style={{ width: 260 }}
-          onSearch={(value) => {
-            setSearch(value.trim() || undefined);
-            team.resetPage();
-          }}
-        />
-        <Select
-          allowClear
-          placeholder="Status"
-          aria-label="Status"
-          style={{ width: 160 }}
-          options={enumOptions(AGENT_STATUSES, humanise)}
-          value={status}
-          onChange={(value) => {
-            setStatus(value);
-            team.resetPage();
-          }}
-        />
+            allowClear
+            placeholder="Agent code or name"
+            aria-label="Search agents"
+            style={{ width: 260 }}
+            onSearch={(value) => {
+              setSearch(value.trim() || undefined);
+              team.resetPage();
+            }}
+          />
+          <Select
+            allowClear
+            placeholder="Status"
+            aria-label="Status"
+            style={{ width: 160 }}
+            options={enumOptions(AGENT_STATUSES, humanise)}
+            value={status}
+            onChange={(value) => {
+              setStatus(value);
+              team.resetPage();
+            }}
+          />
         </Flex>
       }
     >
@@ -62,14 +62,38 @@ function TeamTable() {
         scroll={{ x: 'max-content' }}
         locale={{ emptyText: 'No agents match the filters' }}
         columns={[
-          { title: 'Agent code', dataIndex: 'agentCode', render: (code: string, agent) => <Link to={memberPath(agent.id)}>{code}</Link> },
+          {
+            title: 'Agent code',
+            dataIndex: 'agentCode',
+            render: (code: string, agent) => <Link to={memberPath(agent.id)}>{code}</Link>,
+          },
           { title: 'Name', dataIndex: 'fullName' },
-          { title: 'Type', dataIndex: 'agentType', render: (type: AgentView['agentType']) => AGENT_TYPE_LABELS[type] },
-          { title: 'Status', dataIndex: 'status', render: (value: string) => <StatusTag status={value} /> },
-          { title: 'Reports to', key: 'parent', render: (_: unknown, agent) => agent.parent?.fullName ?? '–' },
-          { title: 'Branch', dataIndex: 'branchName', render: (branch: string | null) => branch ?? '–' },
+          {
+            title: 'Type',
+            dataIndex: 'agentType',
+            render: (type: AgentView['agentType']) => AGENT_TYPE_LABELS[type],
+          },
+          {
+            title: 'Status',
+            dataIndex: 'status',
+            render: (value: string) => <StatusTag status={value} />,
+          },
+          {
+            title: 'Reports to',
+            key: 'parent',
+            render: (_: unknown, agent) => agent.parent?.fullName ?? '–',
+          },
+          {
+            title: 'Branch',
+            dataIndex: 'branchName',
+            render: (branch: string | null) => branch ?? '–',
+          },
           { title: 'Licence expiry', dataIndex: 'licenceExpiry', render: formatDate },
-          { title: 'AML', dataIndex: 'amlStatus', render: (value: string) => <StatusTag status={value} /> },
+          {
+            title: 'AML',
+            dataIndex: 'amlStatus',
+            render: (value: string) => <StatusTag status={value} />,
+          },
         ]}
       />
     </Card>
@@ -92,7 +116,11 @@ export default function TeamPage() {
         breadcrumb={[{ title: 'Dashboard', to: '/portal' }, { title: 'Team & hierarchy' }]}
         extra={
           can(P.portalAgentRegister) && (
-            <Button type="primary" icon={<UserAddOutlined />} onClick={() => navigate('/portal/team/register')}>
+            <Button
+              type="primary"
+              icon={<UserAddOutlined />}
+              onClick={() => navigate('/portal/team/register')}
+            >
               {banca ? 'Register bank officer' : 'Register agent'}
             </Button>
           )

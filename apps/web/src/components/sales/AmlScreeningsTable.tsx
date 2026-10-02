@@ -21,11 +21,23 @@ export function AmlScreeningsTable({ screenings }: { screenings: AmlScreening[] 
           title: 'Matches',
           dataIndex: 'matches',
           render: (matches: AmlScreening['matches']) =>
-            matches.length === 0 ? 'None' : matches.map((match) => `${match.name} (${match.listName}, ${match.score})`).join('; '),
+            matches.length === 0
+              ? 'None'
+              : matches
+                  .map((match) => `${match.name} (${match.listName}, ${match.score})`)
+                  .join('; '),
         },
-        { title: 'Outcome', dataIndex: 'status', render: (status: string) => <StatusTag status={status} /> },
+        {
+          title: 'Outcome',
+          dataIndex: 'status',
+          render: (status: string) => <StatusTag status={status} />,
+        },
         { title: 'Reviewed', dataIndex: 'reviewedAt', render: formatDateTime },
-        { title: 'Review remarks', dataIndex: 'reviewRemarks', render: (remarks: string | null) => remarks ?? '–' },
+        {
+          title: 'Review remarks',
+          dataIndex: 'reviewRemarks',
+          render: (remarks: string | null) => remarks ?? '–',
+        },
       ]}
     />
   );
