@@ -2,7 +2,8 @@
  * Repeatable application security checks for SalesVerse 2.0 (OWASP Top 10 2021).
  * Run against a NON-PRODUCTION environment loaded with the demonstration data:
  *
- *   BASE_URL=http://localhost:3000 DEMO_PASSWORD='...' node tools/security/security-checks.mjs > results.json
+ *   BASE_URL=http://localhost:3000 DEMO_PASSWORD='...' [INBOUND_API_KEY='...'] \
+ *     node tools/security/security-checks.mjs > results.json
  *
  * Each check records what was sent, what was expected and what came back. The script
  * changes data (it signs in, fails logins on purpose, attempts uploads) so it must not
@@ -11,6 +12,8 @@
 
 const BASE = process.env.BASE_URL ?? 'http://localhost:3000';
 const PASSWORD = process.env.DEMO_PASSWORD;
+/** Optional: the environment's inbound key, to confirm a valid key is accepted. */
+const INBOUND_API_KEY = process.env.INBOUND_API_KEY;
 if (!PASSWORD) {
   console.error('Set DEMO_PASSWORD');
   process.exit(2);
@@ -264,8 +267,17 @@ await staff.login('manager');
   const guessed = await anonymous.request('GET', `/api/v1/public/esign/${'A'.repeat(43)}`);
   record('SEC-29', 'A01', 'E-signature links cannot be guessed; invalid tokens reveal nothing', [404, 422].includes(badToken.status) && [404, 422].includes(guessed.status) && !leaks(guessed.text), { malformed: badToken.status, wellFormedButUnknown: guessed.status });
 
-  const integration = await anonymous.request('GET', '/api/v1/integration/policies?issuedOn=2026-01-01');
-  record('SEC-30', 'A07', 'System-to-system APIs require an API key', integration.status === 401 || integration.status === 503, { status: integration.status });
+  const path = '/api/v1/integration/policies?issuedOn=2026-01-01';
+  const missing = await anonymous.request('GET', path);
+  const wrong = await anonymous.request('GET', path, { headers: { 'x-api-key': 'not-the-key' } });
+  const evidence = { withoutKey: missing.status, wrongKey: wrong.status };
+  let passed = [401, 503].includes(missing.status) && [401, 503].includes(wrong.status);
+  if (INBOUND_API_KEY) {
+    const valid = await anonymous.request('GET', path, { headers: { 'x-api-key': INBOUND_API_KEY } });
+    evidence.validKey = valid.status;
+    passed &&= valid.status === 200;
+  }
+  record('SEC-30', 'A07', 'System-to-system APIs require a valid API key', passed, evidence);
 }
 
 // Runs last: it deliberately exhausts the sign-in rate limit for this client address.

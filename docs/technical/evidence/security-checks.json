@@ -1,7 +1,7 @@
 {
   "summary": {
     "baseUrl": "http://localhost:3001",
-    "runAt": "2026-10-02T14:04:34.870Z",
+    "runAt": "2026-10-02T14:57:33.721Z",
     "total": 29,
     "passed": 29
   },
@@ -14,8 +14,8 @@
       "evidence": {
         "strict-transport-security": "max-age=31536000; includeSubDomains",
         "x-content-type-options": "nosniff",
-        "x-frame-options": "SAMEORIGIN",
-        "content-security-policy": "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
+        "x-frame-options": "DENY",
+        "content-security-policy": "default-src 'none';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'none';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
         "x-powered-by": null
       }
     },
@@ -30,7 +30,7 @@
           "statusCode": 404,
           "code": "NOT_FOUND",
           "message": "Cannot GET /api/v1/does-not-exist",
-          "correlationId": "31d626fd-1e22-4496-846b-1931553c749d"
+          "correlationId": "a6a5075e-e513-4e2c-8864-b04896f56f8a"
         }
       }
     },
@@ -83,7 +83,7 @@
       "title": "Session cookie is HttpOnly and SameSite=Strict (Secure is enforced in production configuration)",
       "result": "PASS",
       "evidence": {
-        "setCookie": "iift.sid=<redacted>; Path=/; Expires=Fri, 02 Oct 2026 14:19:34 GMT; HttpOnly; SameSite=Strict"
+        "setCookie": "iift.sid=<redacted>; Path=/; Expires=Fri, 02 Oct 2026 15:12:32 GMT; HttpOnly; SameSite=Strict"
       }
     },
     {
@@ -179,56 +179,56 @@
           "payload": "' OR '1'='1",
           "status": 200,
           "items": 0,
-          "ms": 13,
+          "ms": 18,
           "leaked": false
         },
         {
           "payload": "'; DROP TABLE policy; --",
           "status": 200,
           "items": 0,
-          "ms": 12,
+          "ms": 13,
           "leaked": false
         },
         {
           "payload": "1 UNION SELECT password_hash FROM app_user",
           "status": 200,
           "items": 0,
-          "ms": 13,
+          "ms": 14,
           "leaked": false
         },
         {
           "payload": "\\' OR 1=1 --",
           "status": 200,
           "items": 0,
-          "ms": 14,
+          "ms": 13,
           "leaked": false
         },
         {
           "payload": "%27%20OR%201%3D1",
           "status": 200,
           "items": 0,
-          "ms": 12,
+          "ms": 19,
           "leaked": false
         },
         {
           "payload": "${7*7}",
           "status": 200,
           "items": 0,
-          "ms": 12,
+          "ms": 14,
           "leaked": false
         },
         {
           "payload": "<script>alert(1)</script>",
           "status": 200,
           "items": 0,
-          "ms": 12,
+          "ms": 13,
           "leaked": false
         },
         {
           "payload": "admin'--",
           "status": 200,
           "items": 0,
-          "ms": 10,
+          "ms": 12,
           "leaked": false
         },
         {
@@ -242,7 +242,7 @@
           "payload": "SLEEP(5)",
           "status": 200,
           "items": 0,
-          "ms": 9,
+          "ms": 13,
           "leaked": false
         }
       ]
@@ -330,11 +330,11 @@
       "title": "Failed sign-ins are recorded in the audit trail with IP address",
       "result": "PASS",
       "evidence": {
-        "total": 12,
+        "total": 4,
         "sample": {
           "action": "LOGIN_FAILED",
           "ip": "127.0.0.1",
-          "at": "2026-10-02T14:04:34.112Z"
+          "at": "2026-10-02T14:57:32.748Z"
         }
       }
     },
@@ -344,7 +344,7 @@
       "title": "Every response carries a correlation id for tracing",
       "result": "PASS",
       "evidence": {
-        "x-request-id": "88581812-565b-434b-84ea-ed9132bc84c0"
+        "x-request-id": "4f6c99d9-b908-4f7e-8546-e28814373c4a"
       }
     },
     {
@@ -360,10 +360,12 @@
     {
       "id": "SEC-30",
       "owasp": "A07",
-      "title": "System-to-system APIs require an API key",
+      "title": "System-to-system APIs require a valid API key",
       "result": "PASS",
       "evidence": {
-        "status": 503
+        "withoutKey": 401,
+        "wrongKey": 401,
+        "validKey": 200
       }
     },
     {

@@ -18,7 +18,7 @@ SalesVerse 2.0 configured for Insurans Islam Family Takaful Sendirian Berhad (II
 | `docs/api` | OpenAPI description of the API |
 | `docs/technical` | Architecture, data dictionary, quality and security reports, support handover |
 | `docs/proposal` | Tender proposal and commercial workbook (with their build scripts) |
-| `.github/workflows` | CI: formatting, lint, type check, tests, build, audit, image scan |
+| `.github/workflows` | CI: formatting, lint, type check, tests, build, audit, SBOM, CodeQL, secret scan, image scan |
 
 Each API module under `apps/api/src/modules` owns one functional area (for example `policies`, `billing`, `workflow`) with its controller, service, DTOs and tests. Cross-cutting pieces (Prisma client, encryption, numbering, data scoping, request context, error handling) live in `apps/api/src/common`.
 
@@ -51,7 +51,8 @@ The first administrator signs in as `admin` with the temporary password and must
 |---|---|
 | `npm run lint` | oxlint for API and web |
 | `npm run typecheck --workspaces` | TypeScript checks |
-| `npm test --workspaces` | Unit tests |
+| `npm test --workspaces` | Unit tests (API services and rules; web components, API client and helpers) |
+| `npx vitest run --coverage.enabled -w apps/api` | Unit tests with coverage over all API sources |
 | `npm run test:e2e -w apps/api` | End-to-end API tests (rebuilds the `iift_test` database; set `TEST_DATABASE_URL` to change it) |
 | `npm run build` | Production builds of API and web |
 | `npx prettier --check "apps/*/src/**/*.{ts,tsx}"` | Formatting check |
@@ -82,4 +83,4 @@ The web container (nginx, non-root) serves the SPA and forwards `/api` to the AP
 - IC and passport numbers encrypted with AES-256-GCM and searchable through a keyed blind index; documents encrypted at rest; uploads checked by content and optionally by ClamAV.
 - The audit trail is append-only, enforced by a database trigger.
 
-Run `node tools/security/security-checks.mjs` against a test environment before each release (see the header of the script).
+Run `node tools/security/security-checks.mjs` against a test environment loaded with the demonstration data before each release (see the header of the script; pass `INBOUND_API_KEY` to also confirm a valid integration key is accepted). The results are kept in `docs/technical/evidence/security-checks.json`.

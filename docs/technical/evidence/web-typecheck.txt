@@ -1,0 +1,2 @@
+$ npx tsc -b
+exit code: 0
