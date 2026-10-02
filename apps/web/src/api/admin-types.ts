@@ -2,7 +2,7 @@
  * Response shapes used by the distribution, control, operations and administration
  * screens that are not already covered by api/types.ts.
  */
-import type { AgentType, Audience, Channel, IsoDate, Money, UserType } from './types';
+import type { AgentType, ApprovalAction, ApprovalRequest, Audience, Channel, IsoDate, Money, UserType } from './types';
 
 export interface AgencyOption {
   id: string;
@@ -260,4 +260,9 @@ export interface Assignee {
   id: string;
   fullName: string;
   username: string;
+}
+
+/** Approval request as returned by the detail endpoints, whose actions carry the actor id. */
+export interface ApprovalRequestDetail extends ApprovalRequest {
+  actions?: (ApprovalAction & { actorId: string })[];
 }

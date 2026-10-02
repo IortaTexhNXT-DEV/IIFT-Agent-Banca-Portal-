@@ -495,7 +495,8 @@ def on_prem(out):
     for lb in (lb1, lb2):
         x = mid(lb, "bottom")[0]
         draw.line([(x, lb[3]), (x, 418)], fill=DARK, width=3)
-    draw.line([(mid(apps[0], "top")[0], 418), (mid(apps[1], "top")[0], 418)], fill=DARK, width=3)
+    xs = [mid(b, "bottom")[0] for b in (lb1, lb2)] + [mid(a, "top")[0] for a in apps]
+    draw.line([(min(xs), 418), (max(xs), 418)], fill=DARK, width=3)
     for app in apps:
         arrow(draw, (mid(app, "top")[0], 418), mid(app, "top"), colour=DARK, width=3, head=14)
     zone(draw, (20, 790, W - 20, 1140), "Data zone", fill=LIGHT_GREY)

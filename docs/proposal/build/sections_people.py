@@ -197,7 +197,7 @@ SCREENSHOTS = [
     ("21-bo-config.png", "System parameters & master data"),
     ("22-bo-integration-monitor.png", "Integration monitor & reconciliation"),
     ("23-bo-eod.png", "End-of-day processing"),
-    ("24-policy-schedule-pdf.png", "Generated e-Policy schedule"),
+    ("24-policy-schedule-pdf.png", "e-Policy schedule (PDF)"),
 ]
 
 

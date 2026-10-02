@@ -1,11 +1,11 @@
 import { Col, DatePicker, Form, type FormInstance, Row, Select } from 'antd';
 import type { Dayjs } from 'dayjs';
 import { useApiQuery } from '../../api/hooks';
-import type { AgencyOption } from '../../api/admin-types';
 import type { AgentView, Page, Product, ReportDefinition } from '../../api/types';
 import { useAuth } from '../../auth/AuthContext';
 import { humanise } from '../../utils/format';
 import { P } from '../../utils/permissions';
+import { AgencySelect } from './AgencySelect';
 import { enumOptions } from './useCodes';
 
 export interface ReportFilterValues {
@@ -54,7 +54,6 @@ export function ReportFilters({ report, form }: { report: ReportDefinition; form
   const backoffice = user?.audience === 'BACKOFFICE';
   const has = (filter: ReportDefinition['filters'][number]) => report.filters.includes(filter);
   const products = useApiQuery<Product[]>(has('product') ? '/common/products' : null);
-  const agencies = useApiQuery<AgencyOption[]>(backoffice && has('agency') ? '/backoffice/agencies/options' : null);
   const agencyId = Form.useWatch('agencyId', form);
 
   return (
@@ -77,14 +76,7 @@ export function ReportFilters({ report, form }: { report: ReportDefinition; form
         {backoffice && has('agency') && (
           <Col xs={24} md={12} xl={8}>
             <Form.Item name="agencyId" label="Agency / bank">
-              <Select
-                allowClear
-                placeholder="All agencies and banks"
-                showSearch={{ optionFilterProp: 'label' }}
-                loading={agencies.isLoading}
-                options={(agencies.data ?? []).map((agency) => ({ value: agency.id, label: `${agency.name} (${agency.code})` }))}
-                onChange={() => form.setFieldValue('agentId', undefined)}
-              />
+              <AgencySelect allowClear placeholder="All agencies and banks" onChange={() => form.setFieldValue('agentId', undefined)} />
             </Form.Item>
           </Col>
         )}
