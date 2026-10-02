@@ -143,12 +143,21 @@ export class EodService implements OnModuleInit {
         mimeType: 'text/csv',
         content: this.finInterface(isoDate, policies, receipts),
       });
+      // A re-run for the same date is a new revision that replaces the earlier posting in
+      // FIN; the deterministic key lets FIN ignore a revision it has already received.
+      const revision =
+        (await tx.outboxMessage.count({
+          where: { operation: FinanceOperation.EodPosting, aggregateId: eod.id },
+        })) + 1;
       await this.outbox.enqueue(
         tx,
         'FINANCE',
         FinanceOperation.EodPosting,
         {
+          idempotencyKey: `EOD-${isoDate}-R${revision}`,
           businessDate: isoDate,
+          revision,
+          replacesPreviousRevision: revision > 1,
           policiesIssued: policies.length,
           totalContribution: totalContribution.toFixed(2),
           receiptsIssued: receipts.length,

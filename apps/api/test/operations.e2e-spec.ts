@@ -224,6 +224,19 @@ describe('Back-office operations', () => {
     );
     expect(eod.body.status).toBe('COMPLETED');
     expect(eod.body.reportDocumentId).toBeTruthy();
+    const rerun = await write(finance, 'post', '/backoffice/eod', { businessDate: today() }).expect(
+      201,
+    );
+    expect(rerun.body.id).toBe(eod.body.id);
+    const postings = await prisma.outboxMessage.findMany({
+      where: { operation: 'EOD_POSTING', aggregateId: eod.body.id },
+      orderBy: { createdAt: 'asc' },
+    });
+    const keys = postings.map((m) => (m.payload as { idempotencyKey: string }).idempotencyKey);
+    expect(keys.slice(-2)).toEqual([
+      `EOD-${today()}-R${keys.length - 1}`,
+      `EOD-${today()}-R${keys.length}`,
+    ]);
     const fin = await finance.agent
       .get(`/api/v1/common/documents/${eod.body.finFileDocumentId}/content`)
       .buffer(true)

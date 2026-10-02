@@ -87,12 +87,14 @@ export class OutboxDispatcher {
   }
 
   private send(message: OutboxMessage): Promise<DeliveryReceipt> {
-    // The outbox id doubles as idempotency key so the receiver can ignore duplicates.
+    // The receiver uses the idempotency key to ignore duplicates after a retry. It is the
+    // outbox id unless the message carries a business key (e.g. EOD date and revision).
+    const key = idempotencyKeyOf(message);
     switch (message.system) {
       case 'CORE':
-        return this.core.deliver(message.operation, message.payload, message.id);
+        return this.core.deliver(message.operation, message.payload, key);
       case 'FINANCE':
-        return this.finance.deliver(message.operation, message.payload, message.id);
+        return this.finance.deliver(message.operation, message.payload, key);
       default:
         throw new IntegrationError(`No gateway for ${message.system}`, false);
     }
@@ -145,4 +147,9 @@ export class OutboxDispatcher {
       }
     });
   }
+}
+
+function idempotencyKeyOf(message: OutboxMessage): string {
+  const payload = message.payload as { idempotencyKey?: unknown } | null;
+  return typeof payload?.idempotencyKey === 'string' ? payload.idempotencyKey : message.id;
 }
