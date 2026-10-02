@@ -297,4 +297,29 @@ describe('Quotation to e-Policy and e-Receipt (FFR03, AP-17..45, BO-16..19)', ()
       .expect(200);
     expect(detail.body.actions[0].action).toBe('SUBMIT');
   });
+
+  it('renews a policy only inside its renewal window', async () => {
+    const csrf = { 'x-csrf-token': agent.csrf };
+    const due = await agent.agent.get('/api/v1/portal/policies/renewals-due').expect(200);
+    expect(due.body.items.length).toBeGreaterThan(0);
+    const renewal = await agent.agent
+      .post(`/api/v1/portal/policies/${due.body.items[0].id}/renew`)
+      .set(csrf)
+      .expect(201);
+    expect(renewal.body.status).toBe('DRAFT');
+
+    const notDue = await prisma.policy.findFirstOrThrow({
+      where: {
+        agent: { agentCode: 'AG-000002' },
+        status: 'ACTIVE',
+        product: { allowRenewal: true },
+        endDate: { gt: new Date(Date.now() + 120 * 24 * 3600 * 1000) },
+      },
+    });
+    const refused = await agent.agent
+      .post(`/api/v1/portal/policies/${notDue.id}/renew`)
+      .set(csrf)
+      .expect(422);
+    expect(refused.body.code).toBe('OUTSIDE_RENEWAL_WINDOW');
+  });
 });

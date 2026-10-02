@@ -56,6 +56,9 @@ function productRules(product: Product): ProductRules {
   };
 }
 
+/** Expired policies can still be renewed for this many days after their end date. */
+const RENEWAL_LAPSE_DAYS = 30;
+
 const LIST_SELECT = {
   id: true,
   quotationNo: true,
@@ -515,13 +518,12 @@ export class PoliciesService {
   /** AP-26: active or recently expired policies whose renewal is due. */
   async renewalsDue(user: SessionUser, query: PolicyQueryDto) {
     const scope = await this.scopes.resolve(user);
-    const today = businessToday();
-    const noticeDays = await this.settings.getInt(Setting.RenewalNoticeDays);
+    const due = await this.renewalWindow();
     const where: Prisma.PolicyWhereInput = {
       ...DataScopeService.recordFilter(scope),
       status: { in: ['ACTIVE', 'EXPIRED'] },
       product: { allowRenewal: true },
-      endDate: { gte: addDays(today, -30), lte: addDays(today, noticeDays) },
+      endDate: { gte: due.from, lte: due.to },
       renewals: { none: { status: { notIn: ['CANCELLED', 'REJECTED'] } } },
     };
     const [items, total] = await this.prisma.$transaction([
@@ -548,6 +550,14 @@ export class PoliciesService {
       throw new BusinessRuleError(
         'NOT_RENEWABLE',
         `${source.product.name} cannot be renewed through the portal`,
+      );
+    }
+    const due = await this.renewalWindow();
+    if (!source.endDate || source.endDate < due.from || source.endDate > due.to) {
+      throw new BusinessRuleError(
+        'OUTSIDE_RENEWAL_WINDOW',
+        `Renewal opens ${due.noticeDays} days before the policy ends and closes ` +
+          `${RENEWAL_LAPSE_DAYS} days after it`,
       );
     }
     const existing = await this.prisma.policy.count({
@@ -761,6 +771,17 @@ export class PoliciesService {
       role: n.role,
       sharePercent: money(n.sharePercent),
     }));
+  }
+
+  /** End dates for which a policy is listed as due, and may be renewed, today. */
+  private async renewalWindow(): Promise<{ from: Date; to: Date; noticeDays: number }> {
+    const today = businessToday();
+    const noticeDays = await this.settings.getInt(Setting.RenewalNoticeDays);
+    return {
+      from: addDays(today, -RENEWAL_LAPSE_DAYS),
+      to: addDays(today, noticeDays),
+      noticeDays,
+    };
   }
 
   /**
