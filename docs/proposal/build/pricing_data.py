@@ -28,7 +28,11 @@ WARRANTY_MONTHS = 6
 HYPERCARE_WEEKS = 4
 IMPLEMENTATION_WEEKS = 24
 ENHANCEMENT_HOURS_PER_YEAR = 60
-WHT_POSITION = "inclusive"     # IIFT withholds and remits; iorta absorbs the tax
+WHT_POSITION = "inclusive"     # IIFT withholds and remits; iorta absorbs the tax on fees
+# Cloud infrastructure and OPE are recharged at cost as disbursements (provider and travel
+# invoices attached), outside the fees that WHT applies to; IIFT may instead hold the cloud
+# account in its own name and pay the provider directly.
+RECHARGE_BASIS = "disbursement"
 
 # ---------------------------------------------------------------------------
 # One-time items, keyed by RFP section 10 item number.
@@ -116,7 +120,7 @@ MAINTENANCE_INCLUSIONS = [
 # ---------------------------------------------------------------------------
 SUBSCRIPTION_MONTHLY_PORTAL = 1_850
 SUBSCRIPTION_MONTHLY_BACKOFFICE = 1_550
-SUBSCRIPTION_MINIMUM_MONTHS = 36
+SUBSCRIPTION_MINIMUM_MONTHS = 60
 SUBSCRIPTION_BILLING = "Monthly in advance from go-live (quarterly in advance on request)"
 SUBSCRIPTION_INCLUSIONS = [
     "Right to use SalesVerse 2.0 (Agent/Banca Portal and Back-office) for unlimited IIFT named users",
@@ -126,6 +130,10 @@ SUBSCRIPTION_INCLUSIONS = [
     "Production, DR and UAT environments operated by iorta (infrastructure charged separately on actuals)",
     "Data export in open formats at any time and at exit; data remains IIFT's property",
 ]
+
+# One-time set-up of the cloud landing zone, environments, monitoring, backups and DR for
+# Option B (RFP item 5, one-off). Payable at contract signing; not part of the AMC base.
+CLOUD_SETUP_FEE = 15_000
 
 MANAGED_SERVICES_MONTHLY = 1_100
 MANAGED_SERVICES_INCLUSIONS = [
@@ -394,8 +402,8 @@ def tco_option_a(include_ope: bool = True) -> int:
 
 def tco_option_b(include_ope: bool = True) -> int:
     """Five-year cost of Option B including cloud on actuals (estimate) and managed services."""
-    return (one_time_total("B") + subscription_total() + managed_total() + cloud_total()
-            + (ope_total() if include_ope else 0))
+    return (one_time_total("B") + CLOUD_SETUP_FEE + subscription_total() + managed_total()
+            + cloud_total() + (ope_total() if include_ope else 0))
 
 
 def usd(amount_bnd: float) -> int:
@@ -411,6 +419,370 @@ def bnd_usd(amount: float) -> str:
     return f"B$ {amount:,.0f} (USD {usd(amount):,})"
 
 
+# ===========================================================================
+# Additions used by the commercial chapter, the pricing workbook and the bill
+# of materials. They add descriptive data and derived views only; none of the
+# approved prices above is changed.
+# ===========================================================================
+OPTION_TITLES = {
+    "A": "Option A – On-premise perpetual licence",
+    "B": "Option B – Subscription, hosted and managed by iorta",
+    "C": "Option C – Source code handover (add-on)",
+}
+SUBSCRIPTION_TERM_MONTHS = 60          # prices quoted for a 60-month term
+OPE_TOLERANCE = 0.10                   # OPE may not exceed the estimate by more than 10% without approval
+PRICE_INCREASE_CAP = ESCALATION        # COM-18: yearly increase capped at 5%
+GO_LIVE_WEEK = IMPLEMENTATION_WEEKS
+KT_START_WEEK = IMPLEMENTATION_WEEKS + HYPERCARE_WEEKS + 1   # earliest start of Option C knowledge transfer
+CLOUD_REGION = "AWS Asia Pacific (Malaysia) or Azure Malaysia West"
+CLOUD_DR_REGION = "a second region approved by IIFT (the reference regions are AWS Asia Pacific (Malaysia) and Azure Malaysia West)"
+
+
+def option_b_one_time() -> int:
+    """All one-time iorta fees under Option B: services plus the cloud set-up fee."""
+    return one_time_total("B") + CLOUD_SETUP_FEE
+
+
+def licence_fee(module: str = "total") -> int:
+    item = _item("licence")
+    return {"portal": item[4], "backoffice": item[5], "total": item[4] + item[5]}[module]
+
+
+def services_fee(module: str = "total") -> int:
+    """One-time services (everything except the licence) – identical under Options A and B."""
+    return {"portal": one_time_portal("B"), "backoffice": one_time_backoffice("B"),
+            "total": one_time_total("B")}[module]
+
+
+def integration_portal() -> int:
+    return sum(i[2] for i in INTERFACES)
+
+
+def integration_backoffice() -> int:
+    return sum(i[3] for i in INTERFACES)
+
+
+def subscription_monthly_portal(year: int) -> int:
+    return escalate(SUBSCRIPTION_MONTHLY_PORTAL, year)
+
+
+def subscription_monthly_backoffice(year: int) -> int:
+    return escalate(SUBSCRIPTION_MONTHLY_BACKOFFICE, year)
+
+
+def subscription_minimum_commitment() -> int:
+    """Subscription value of the minimum term."""
+    return sum(subscription_annual(y) for y in range(1, SUBSCRIPTION_MINIMUM_MONTHS // 12 + 1))
+
+
+def post_handover_total() -> int:
+    return sum(post_handover_support(y) for y in range(1, CONTRACT_YEARS + 1))
+
+
+def rate(amount: float, year: int) -> int:
+    """Rate card value in contract year `year`."""
+    return escalate(amount, year)
+
+
+def ope_trip_rows(include_optional: bool = True) -> list:
+    """[(trip, costs dict)] for the onsite plan."""
+    return [(t, trip_cost(t)) for t in ONSITE_PLAN if include_optional or not t.optional]
+
+
+def ope_by_phase(include_optional: bool = True) -> list:
+    """[(phase, trips, nights, total B$, optional)] in plan order."""
+    phases = []
+    for trip in ONSITE_PLAN:
+        if trip.optional and not include_optional:
+            continue
+        if not phases or phases[-1][0] != trip.phase:
+            phases.append([trip.phase, 0, 0, 0, trip.optional])
+        phases[-1][1] += 1
+        phases[-1][2] += trip.nights
+        phases[-1][3] += trip_cost(trip)["total"]
+    return [tuple(p) for p in phases]
+
+
+def milestone_amounts(schedule, base: int) -> list:
+    """[(code, trigger, share, amount)] for a payment schedule applied to `base`."""
+    return [(m[0], m[1], m[-1], round(base * m[-1])) for m in schedule]
+
+
+def source_code_milestone_amounts() -> list:
+    bases = {"Source code licence": SOURCE_CODE_LICENCE, "Knowledge transfer": KNOWLEDGE_TRANSFER}
+    return [(code, trigger, component, share, round(bases[component] * share))
+            for code, trigger, component, share in SOURCE_CODE_MILESTONES]
+
+
+def five_year_view(option: str) -> dict:
+    """Year 0 (implementation) and Years 1–5 cash view of iorta fees, OPE and pass-through estimates."""
+    years = {}
+    if option == "A":
+        years[0] = {"one_time": one_time_total("A"), "recurring": 0, "managed": 0, "ope": ope_total(), "cloud": 0}
+        for y in range(1, CONTRACT_YEARS + 1):
+            years[y] = {"one_time": 0, "recurring": amc(y), "managed": 0, "ope": 0, "cloud": 0}
+    else:
+        years[0] = {"one_time": option_b_one_time(), "recurring": 0, "managed": 0, "ope": ope_total(),
+                    "cloud": CLOUD_IMPLEMENTATION_MONTHLY * CLOUD_IMPLEMENTATION_MONTHS}
+        for y in range(1, CONTRACT_YEARS + 1):
+            years[y] = {"one_time": 0, "recurring": subscription_annual(y), "managed": 12 * managed_monthly(y),
+                        "ope": 0, "cloud": cloud_annual()}
+    for values in years.values():
+        values["total"] = sum(values.values())
+    return years
+
+
+def rfp_section10_rows(option: str) -> list:
+    """All 21 items of RFP section 10 for Option "A" or "B", in RFP order.
+
+    Each row: no, component, basis, portal, backoffice (numbers, or None when the
+    item is not a fixed amount), amount (portal + back-office or None), text
+    (shown when amount is None), remark and category ("one-time", "recurring",
+    "rate", "pass-through", "included").
+    """
+    one_time = {item[0]: item for item in ONE_TIME_ITEMS}
+    maintenance = {m[0]: m for m in MAINTENANCE_PLAN}
+    rates = {r[0]: r for r in RATE_CARD}
+    tp_low, tp_high = third_party_annual(option)
+    rows = []
+
+    def add(no, component, basis, portal=None, backoffice=None, text=None, remark="", category="rate",
+            amount=None):
+        if amount is None and portal is not None:
+            amount = portal + backoffice
+        rows.append(dict(no=no, component=component, basis=basis, portal=portal, backoffice=backoffice,
+                         amount=amount, text=text, remark=remark, category=category))
+
+    for no in range(1, 22):
+        if no == 1:
+            if option == "A":
+                item = one_time[1]
+                add(1, "Software licence (Agent/Banca Portal and Back-office)", "One-off, perpetual", item[4],
+                    item[5], remark=item[7], category="one-time")
+            else:
+                add(1, "Software licence (Agent/Banca Portal and Back-office)", "Subscription",
+                    text="Included in subscription",
+                    remark="Right to use for unlimited IIFT named users during the subscription term "
+                           "(items 12–16). Conversion to a perpetual licence is available.", category="included")
+        elif no in one_time:
+            _, _, component, basis, portal, backoffice, _, note = one_time[no]
+            add(no, component, basis, portal, backoffice, remark=note, category="one-time")
+        elif no == 5:
+            if option == "A":
+                low, high = bom_onprem_totals()
+                add(5, "Infrastructure / cloud", "Annual", text="IIFT procures (BOM); B$0 from iorta",
+                    remark=f"Servers or VMs, OS, storage, network and DR site to iorta's sizing. Indicative "
+                           f"{bnd(low)}–{high:,} one-time if provisioned new (IIFT's own procurement).",
+                    category="pass-through")
+            else:
+                add(5, "Infrastructure / cloud", "One-off / monthly",
+                    text=f"Cloud set-up {bnd(CLOUD_SETUP_FEE)} one-off; managed services "
+                         f"{bnd(12 * managed_monthly(1))} a year (Year 1); cloud at cost ≈ {bnd(cloud_annual())} a year",
+                    remark=f"One-off cloud set-up (landing zone, PROD/DR/UAT environments, monitoring, backups, DR) "
+                           f"payable at contract signing. Managed services B$ {MANAGED_SERVICES_MONTHLY:,} a month in "
+                           f"Year 1, +5% a year. Cloud infrastructure ({CLOUD_REGION}) recharged at cost as a "
+                           "disbursement, or paid by IIFT directly.",
+                    category="one-time", amount=CLOUD_SETUP_FEE)
+        elif no == 6:
+            if option == "A":
+                add(6, "Database", "Annual", text="B$0 – PostgreSQL 16, no licence fee",
+                    remark="Open-source PostgreSQL licence. Database support is part of the AMC; optional "
+                           "commercial PostgreSQL support is listed in the BOM.", category="included")
+            else:
+                add(6, "Database", "Annual", text="In cloud actuals; support in managed services",
+                    remark="Managed PostgreSQL (Multi-AZ) is part of the cloud infrastructure on actuals.",
+                    category="included")
+        elif no == 11:
+            add(11, "Warranty", "Included", text=f"Included – {WARRANTY_MONTHS} months",
+                remark=f"Defect correction at no charge for {WARRANTY_MONTHS} months from production go-live.",
+                category="included")
+        elif no in maintenance:
+            _, year, focus, description = maintenance[no]
+            if option == "A":
+                add(no, f"Year {year} maintenance (AMC): {focus}", "Annual", amc_portal(year), amc_backoffice(year),
+                    remark=description, category="recurring")
+            else:
+                add(no, f"Year {year} subscription: {focus}", "Monthly",
+                    12 * subscription_monthly_portal(year), 12 * subscription_monthly_backoffice(year),
+                    remark=f"{description} Included in the subscription with application management.",
+                    category="recurring")
+        elif no in rates:
+            _, component, basis, rate_text, remark = rates[no]
+            if no == 21:
+                rate_text = ("Included in Year 5 AMC" if option == "A"
+                             else "Included in the subscription (end of term)")
+                remark = remark + " Core source code handover is Option C."
+            add(no, component, basis, text=rate_text, remark=remark + (" Rates rise 5% a year." if no in (17, 18, 19)
+                                                                       else ""))
+        elif no == 20:
+            add(20, "Third-party charges", "Annual / usage", text="Excluded – see Bill of Materials",
+                remark=f"SMS messages, AML data service, SSL certificates, e-mail relay: indicative "
+                       f"{bnd(tp_low)}–{tp_high:,} a year, paid by IIFT or passed through at cost.",
+                category="pass-through")
+    return rows
+
+
+# ---------------------------------------------------------------------------
+# Bill of materials
+# ---------------------------------------------------------------------------
+# On-premise servers for Option A, procured by IIFT. Sizing is identical to the
+# Solution Architecture (docs/technical/build/sad_part2.py, "On-premise sizing");
+# build_bom.py checks that the two agree.
+# (group, server, qty text, qty number, vCPU, RAM text, storage text, software, os_vm,
+#  indicative one-time cost per unit B$ (low, high), note)
+ON_PREM_BOM = [
+    ("Production", "WAF / load balancer", "2 (or existing)", 2, "2", "4 GB", "–",
+     "IITH appliance or HAProxy/nginx pair", False, (0, 1_000),
+     "B$0 where the IITH WAF / F5 is reused (recommended)"),
+    ("Production", "Application VM", "2", 2, "4", "8 GB", "100 GB",
+     "Linux, Docker Engine; web, api, clamav containers", True, (1_500, 3_000), ""),
+    ("Production", "Database VM", "2", 2, "4", "16 GB", "200 GB SSD",
+     "PostgreSQL 16 primary and hot standby, pgBackRest", True, (2_500, 4_500), ""),
+    ("Production", "Document store", "1 share", 1, "–", "–", "500 GB",
+     "NFS export, encrypted volume", False, (1_000, 2_000), ""),
+    ("Production", "Backup repository", "1", 1, "–", "–", "1 TB",
+     "pgBackRest repository, document backups", False, (1_500, 3_000),
+     "Lower where IITH backup capacity is reused"),
+    ("Production", "Monitoring", "1 (or existing)", 1, "2", "4 GB", "100 GB",
+     "Prometheus, Grafana, log collector", True, (0, 1_500), "B$0 where IITH monitoring is reused"),
+    ("Non-production", "SIT", "1", 1, "4", "16 GB", "200 GB",
+     "Compose: web, api, clamav, PostgreSQL", True, (2_000, 3_500), ""),
+    ("Non-production", "UAT", "1", 1, "4", "16 GB", "200 GB",
+     "Compose: web, api, clamav, PostgreSQL", True, (2_000, 3_500), ""),
+    ("Non-production", "DEV", "Not required", 0, "–", "–", "–",
+     "Hosted by iorta during the project and support", False, (0, 0), "No IIFT infrastructure needed"),
+    ("DR site", "Application VM", "1", 1, "4", "8 GB", "100 GB",
+     "Cold standby, same images", True, (1_500, 3_000), ""),
+    ("DR site", "Database VM", "1", 1, "4", "16 GB", "200 GB SSD",
+     "Asynchronous replica", True, (2_500, 4_500), ""),
+    ("DR site", "Document and backup copies", "–", 1, "–", "–", "500 GB + 1 TB",
+     "rsync target, backup copy", False, (2_000, 4_000), ""),
+]
+RHEL_PER_VM_YEAR = (500, 1_200)        # optional: only if IIFT standardises on RHEL instead of Ubuntu LTS
+PG_SUPPORT_YEAR = (5_000, 10_000)      # optional commercial PostgreSQL support
+
+
+def os_vm_count() -> int:
+    return sum(row[3] for row in ON_PREM_BOM if row[8])
+
+
+def bom_onprem_totals() -> tuple:
+    """Indicative one-time cost (low, high) of the Option A infrastructure, IIFT's own procurement."""
+    low = sum(row[3] * row[9][0] for row in ON_PREM_BOM)
+    high = sum(row[3] * row[9][1] for row in ON_PREM_BOM)
+    return low, high
+
+
+def rhel_annual() -> tuple:
+    return os_vm_count() * RHEL_PER_VM_YEAR[0], os_vm_count() * RHEL_PER_VM_YEAR[1]
+
+
+# Cloud sizing per CLOUD_MONTHLY_ITEMS line (same order), from the Solution Architecture cloud sizing.
+CLOUD_SIZING = [
+    "2 tasks × (1 vCPU, 2 GB) incl. ClamAV sidecar; scales to 4 tasks",
+    "db.t4g.large (2 vCPU, 8 GB), Multi-AZ, 100 GB gp3, 35-day backups and PITR",
+    "1 load balancer; WAF with managed OWASP rule sets; managed TLS certificate",
+    "NAT gateway, site-to-site VPN to the IITH data centre, outbound data",
+    "Shared file storage up to 100 GB; about 200 GB object storage; cross-region copy",
+    "Log retention 90 days, metrics, alarms, threat detection",
+    "Secrets store and customer-managed encryption keys",
+    "1 task and a single-AZ db.t4g.medium; stopped outside test periods",
+    "Cross-region database replica or snapshots and standby images",
+]
+CLOUD_BILLING_BASIS = "At cost as a disbursement (provider invoice attached, no mark-up), or paid by IIFT directly"
+
+# Paid and optional third-party items.
+# (item, basis, Option A treatment, Option B treatment, indicative B$ a year (low, high),
+#  required, note)
+INCLUDED = "Included in iorta fee"
+PASS_THROUGH = "Pass-through at cost"
+IIFT_PROCURES = "IIFT procures"
+NOT_REQUIRED = "Not required"
+THIRD_PARTY_ITEMS = [
+    ("SSL/TLS certificates", "Annual, per certificate", IIFT_PROCURES, PASS_THROUGH, (300, 1_000), True,
+     "Two public certificates (portal, e-signature link) at about B$150–500 each; internal certificates from the "
+     "IITH CA. Under Option B the load-balancer certificate is issued by the cloud provider at no charge."),
+    ("SMS gateway", "Per message", IIFT_PROCURES, IIFT_PROCURES, (300, 600), True,
+     "IIFT's SMS provider account; about B$0.05–0.10 per message, roughly 6,000 OTP and alert messages a year."),
+    ("AML screening data / service", "Annual or per search", IIFT_PROCURES, IIFT_PROCURES, (0, 3_000), True,
+     "B$0 if IIFT's existing screening service or lists are reused; otherwise from about B$3,000 a year."),
+    ("E-mail relay", "Usage", IIFT_PROCURES, IIFT_PROCURES, (0, 120), True,
+     "B$0 through the IITH relay (over the VPN under Option B); a cloud e-mail service costs under B$10 a month."),
+    ("Commercial PostgreSQL support (EDB or similar)", "Annual", IIFT_PROCURES, NOT_REQUIRED, PG_SUPPORT_YEAR,
+     False, "Optional. Database support is already part of the AMC; vendor support only if IIFT policy requires "
+            "it. Under Option B the managed database is supported by the cloud provider."),
+    ("Red Hat Enterprise Linux subscriptions", "Annual, per VM", IIFT_PROCURES, NOT_REQUIRED, None, False,
+     "Optional. Ubuntu Server 24.04 LTS carries no licence fee; RHEL about B$500–1,200 per VM a year if IIFT "
+     "standardises on it."),
+    ("Source code escrow agent", "Annual", PASS_THROUGH, PASS_THROUGH, ESCROW_ANNUAL_ESTIMATE, False,
+     "Optional alternative to Option C. Agent fees payable by IIFT at cost; iorta's deposits are included."),
+    ("Independent VAPT and re-test", "One-off", INCLUDED, INCLUDED, (0, 0), True,
+     "Pre-go-live test and re-test included in item 7. Later annual tests can be quoted on request."),
+    ("Backup software", "–", IIFT_PROCURES, PASS_THROUGH, (0, 0), True,
+     "Option A: IITH backup platform reused; pgBackRest (open source) for PostgreSQL. Option B: cloud backup "
+     "services within the cloud actuals."),
+    ("SIEM / security monitoring", "–", IIFT_PROCURES, PASS_THROUGH, (0, 0), True,
+     "Option A: IITH SIEM reused; iorta configures log forwarding. Option B: cloud threat detection within the "
+     "cloud actuals; forwarding to the IITH SIEM on request."),
+    ("Virtualisation, network, firewall, DNS", "–", IIFT_PROCURES, IIFT_PROCURES, (0, 0), True,
+     "Existing IITH platforms. Under Option B only the IITH VPN endpoint and DNS entries are needed."),
+    ("Source code repository and CI/CD", "–", INCLUDED, INCLUDED, (0, 0), True,
+     "iorta's repository and pipeline during the contract, mirrored to IITH GitLab if required."),
+    ("Monitoring stack (Prometheus, Grafana, Loki)", "–", INCLUDED, INCLUDED, (0, 0), True,
+     "Open source; set up by iorta. IITH monitoring tools can be used instead."),
+    ("PKI digital signature certificates", "–", NOT_REQUIRED, NOT_REQUIRED, (0, 0), False,
+     "Not required: the solution's e-signature captures consent with an audit record. Can be added later."),
+    ("Payment gateway", "–", NOT_REQUIRED, NOT_REQUIRED, (0, 0), False,
+     "Not required: payments are recorded and verified in the back-office. Can be added later."),
+]
+
+
+def third_party_cost(item) -> tuple:
+    """Indicative annual (low, high) cost of a THIRD_PARTY_ITEMS row."""
+    return rhel_annual() if item[4] is None else item[4]
+
+
+def third_party_annual(option: str, optional: bool = False) -> tuple:
+    """Indicative annual third-party cost (low, high) paid by IIFT or passed through, for an option.
+
+    optional=False sums the required items; optional=True sums only the optional ones.
+    """
+    column = 2 if option == "A" else 3
+    low = high = 0
+    for item in THIRD_PARTY_ITEMS:
+        is_optional = not item[5]
+        if is_optional == optional and item[column] in (IIFT_PROCURES, PASS_THROUGH):
+            costs = third_party_cost(item)
+            if option == "B" and item[0].startswith("SSL"):
+                costs = (0, 0)       # provider-issued certificate on the cloud load balancer
+            low, high = low + costs[0], high + costs[1]
+    return low, high
+
+
+# Runtime software components of the solution with their licences. Licence fee is B$0 for all.
+# (component, version, role, licence)
+SOFTWARE_COMPONENTS = [
+    ("Node.js", "22 LTS", "API runtime (inside the container image)", "MIT"),
+    ("NestJS", "12", "API framework", "MIT"),
+    ("Prisma ORM and PostgreSQL driver adapter", "7", "Data access and migrations", "Apache-2.0"),
+    ("React and React DOM", "19", "Portal and back-office user interface", "MIT"),
+    ("Ant Design and Ant Design Icons", "6", "UI component library", "MIT"),
+    ("TanStack Query, React Router, Recharts, Day.js", "5 / 7 / 3 / 1", "UI data, routing, charts, dates", "MIT"),
+    ("pdfkit, exceljs", "0.20 / 4.4", "PDF documents and Excel reports", "MIT"),
+    ("Argon2 (@node-rs/argon2), helmet, express-session", "2 / 8 / 1", "Password hashing, security headers, "
+     "sessions", "MIT"),
+    ("pino, prom-client", "10 / 15", "Structured logs and metrics", "MIT / Apache-2.0"),
+    ("ldapts, nodemailer", "9 / 10", "Active Directory and e-mail integration", "MIT / MIT-0"),
+    ("PostgreSQL", "16", "Database", "PostgreSQL Licence"),
+    ("pgBackRest", "2", "Database backup and point-in-time recovery", "MIT"),
+    ("nginx (unprivileged image)", "1.29", "Web server for the user interface", "BSD-2-Clause"),
+    ("ClamAV", "stable", "Malware scan of uploaded documents (separate container)", "GPL-2.0"),
+    ("Docker Engine, containerd", "27+ / 1.7+", "Container runtime", "Apache-2.0"),
+    ("Linux operating system", "Ubuntu Server 24.04 LTS or RHEL 9", "Server OS", "Ubuntu: free; RHEL: subscription"),
+    ("Prometheus, Grafana, Loki", "current", "Monitoring, dashboards, log aggregation", "Apache-2.0 / AGPL-3.0"),
+]
+
+
 # ---------------------------------------------------------------------------
 # Expected totals – a self-check so that a typo in the data above fails the build.
 # ---------------------------------------------------------------------------
@@ -422,6 +794,7 @@ EXPECTED = {
     "amc_year1": 31_350,
     "amc_5yr": 173_229,
     "subscription_year1": 40_800,
+    "cloud_setup": 15_000,
     "subscription_5yr": 225_456,
     "managed_5yr": 72_936,
     "cloud_monthly": 1_330,
@@ -441,6 +814,7 @@ def verify() -> None:
         "amc_year1": amc(1),
         "amc_5yr": amc_total(),
         "subscription_year1": subscription_annual(1),
+        "cloud_setup": CLOUD_SETUP_FEE,
         "subscription_5yr": subscription_total(),
         "managed_5yr": managed_total(),
         "cloud_monthly": cloud_monthly(),
