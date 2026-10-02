@@ -623,7 +623,7 @@ def infrastructure(w: ProposalWriter, figs: dict):
            f"possible. Costs are in Section {sec('commercials')} and the Bill of Materials.")
     w.h2("Option A: on-premise in the IIFT/IITH data centre (recommended)")
     w.para("Two application VMs run behind the load balancer. PostgreSQL runs as a primary with a streaming standby, "
-           "and a warm standby at the DR site receives WAL log shipping. The solution uses IITH's network security, "
+           "and an asynchronous streaming replica at the DR site stands ready for promotion. The solution uses IITH's network security, "
            "backup and monitoring services where capacity allows. Production needs two 4 vCPU / 8 GB application "
            "servers, two 4 vCPU / 16 GB database servers and 500 GB of document storage.")
     w.figure(figs["on_prem"], "Option A: on-premise deployment", width_cm=16.0)

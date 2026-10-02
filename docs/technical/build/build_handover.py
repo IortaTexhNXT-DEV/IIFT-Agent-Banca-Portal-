@@ -150,7 +150,7 @@ CHECKLIST = [
      "scripts) delivered to the IIFT/IITH repository at go-live; core platform source under Option C or escrow "
      "deposit confirmed", "Repository access confirmed; deposit receipt", "iorta"],
     ["Production, UAT and SIT environments documented with access granted", "Access matrix", "iorta, IITH"],
-    ["Secrets and keys held in the IITH vault; no copies outside", "Vault inventory signed", "IITH, iorta"],
+    ["Secrets and keys held in the IITH vault (Option A) or the cloud key management service (Option B); no copies outside", "Vault or KMS inventory signed", "IITH, iorta"],
     ["Monitoring dashboards and alert rules live; alert recipients tested", "Test alert received", "iorta"],
     ["Backups running; one restore tested and reconciled", "Restore test record", "IITH, iorta"],
     ["DR replication running; DR test plan agreed", "Plan approved", "IITH, iorta"],

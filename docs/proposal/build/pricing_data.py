@@ -441,7 +441,7 @@ PRICE_INCREASE_CAP = ESCALATION        # COM-18: yearly increase capped at 5%
 GO_LIVE_WEEK = IMPLEMENTATION_WEEKS
 KT_START_WEEK = IMPLEMENTATION_WEEKS + HYPERCARE_WEEKS + 1   # earliest start of Option C knowledge transfer
 CLOUD_REGION = "AWS Asia Pacific (Malaysia) or Azure Malaysia West"
-CLOUD_DR_REGION = "a second region approved by IIFT (the reference regions are AWS Asia Pacific (Malaysia) and Azure Malaysia West)"
+CLOUD_DR_REGION = "AWS Asia Pacific (Singapore) or Azure Southeast Asia as the DR region, subject to IIFT's data-residency approval"
 
 
 def option_b_one_time() -> int:
