@@ -77,6 +77,79 @@ describe('Back-office operations', () => {
     expect(agent.user?.mustChangePassword).toBe(true);
   });
 
+  it('asks passport holders for a passport copy instead of an IC copy', async () => {
+    const principal = await signIn(app, 'ag-000001');
+    const registered = await write(principal, 'post', '/portal/agents', {
+      agentType: 'SUB_AGENT',
+      fullName: 'Nurul Ain binti Osman',
+      idType: 'PASSPORT',
+      idNumber: 'B7700123',
+      dateOfBirth: '1994-07-15',
+      email: 'nurul.ain@agents.example',
+      mobile: '6738123456',
+    }).expect(201);
+    const request = await prisma.approvalRequest.findFirstOrThrow({
+      where: { entityId: registered.body.id, status: 'PENDING' },
+    });
+    const upload = (docType: string) =>
+      principal.agent
+        .post('/api/v1/common/documents')
+        .set('x-csrf-token', principal.csrf)
+        .field('ownerType', 'AGENT')
+        .field('ownerId', registered.body.id)
+        .field('docType', docType)
+        .attach('file', PDF, 'identity.pdf')
+        .expect(201);
+
+    await upload('IC_COPY');
+    const checker = await signIn(app, 'ops.checker');
+    const missing = await write(
+      checker,
+      'post',
+      `/backoffice/approvals/${request.id}/approve`,
+    ).expect(422);
+    expect(missing.body.code).toBe('DOCUMENTS_MISSING');
+
+    await upload('PASSPORT_COPY');
+    await write(checker, 'post', `/backoffice/approvals/${request.id}/approve`).expect(200);
+  });
+
+  it('closes a pending registration when Compliance confirms an AML match', async () => {
+    const principal = await signIn(app, 'ag-000001');
+    const registered = await write(principal, 'post', '/portal/agents', {
+      agentType: 'SUB_AGENT',
+      fullName: 'Viktor Petrenko',
+      idType: 'PASSPORT',
+      idNumber: 'C5500991',
+      dateOfBirth: '1980-03-03',
+      email: 'v.petrenko@agents.example',
+      mobile: '6738990011',
+    }).expect(201);
+    expect(registered.body.amlStatus).toBe('FLAGGED');
+
+    const compliance = await signIn(app, 'compliance');
+    const screening = await prisma.amlScreening.findFirstOrThrow({
+      where: { subjectId: registered.body.id, status: 'PENDING_REVIEW' },
+    });
+    await write(compliance, 'post', `/backoffice/aml/cases/${screening.id}/review`, {
+      decision: 'CONFIRMED_MATCH',
+      remarks: 'Matches DEMO-002 listing',
+    }).expect(201);
+
+    const request = await prisma.approvalRequest.findFirstOrThrow({
+      where: { entityId: registered.body.id, type: 'AGENT_REGISTRATION' },
+      include: { actions: true },
+    });
+    expect(request.status).toBe('REJECTED');
+    expect(request.finalRemarks).toContain('AML match confirmed');
+    expect(request.actions.at(-1)).toMatchObject({
+      action: 'REJECT',
+      actorName: expect.any(String),
+    });
+    const agent = await prisma.agent.findUniqueOrThrow({ where: { id: registered.body.id } });
+    expect(agent).toMatchObject({ status: 'REJECTED', amlStatus: 'REJECTED' });
+  });
+
   it('routes a watch-list match to Compliance and records the review (AP-16, BO-13..15)', async () => {
     const compliance = await signIn(app, 'compliance');
     const cases = await compliance.agent.get('/api/v1/backoffice/aml/cases').expect(200);

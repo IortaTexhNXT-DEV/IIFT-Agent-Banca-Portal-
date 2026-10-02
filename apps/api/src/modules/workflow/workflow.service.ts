@@ -169,6 +169,50 @@ export class WorkflowService {
     });
   }
 
+  /**
+   * Closes the pending requests on a record whose subject has been rejected outside the
+   * workflow, for example a confirmed AML match. Each is recorded as a rejection by the
+   * user who made that decision, so handlers and notifications run as for a normal reject.
+   */
+  async rejectPendingFor(
+    tx: Prisma.TransactionClient,
+    user: SessionUser,
+    entity: { entityType: string; entityId: string },
+    remarks: string,
+  ): Promise<number> {
+    const pending = await tx.approvalRequest.findMany({ where: { ...entity, status: 'PENDING' } });
+    for (const request of pending) {
+      await tx.approvalAction.create({
+        data: {
+          requestId: request.id,
+          level: request.currentLevel,
+          action: 'REJECT',
+          actorId: user.id,
+          actorName: user.fullName,
+          remarks,
+        },
+      });
+      const updated = await this.transition(tx, request, {
+        status: 'REJECTED',
+        decidedAt: new Date(),
+        finalRemarks: remarks,
+      });
+      await this.handlerFor(request.type).onRejected(updated, tx);
+      await this.notifyMaker(tx, updated, 'rejected', remarks);
+      await this.audit.record(
+        {
+          action: 'APPROVAL_REJECTED',
+          entityType: request.entityType,
+          entityId: request.entityId,
+          before: { status: request.status, level: request.currentLevel },
+          after: { status: updated.status, requestNo: request.requestNo, remarks },
+        },
+        tx,
+      );
+    }
+    return pending.length;
+  }
+
   /** Requests waiting for this user at their current level, excluding their own (BO-21). */
   async inbox(
     user: SessionUser,
@@ -193,7 +237,7 @@ export class WorkflowService {
       orderBy: { submittedAt: 'asc' },
       ...pageArgs(query),
     });
-    return toPage(items, ids.length, query);
+    return toPage(items.map(withoutCiphertext), ids.length, query);
   }
 
   /** History/search for back-office users. */
@@ -214,7 +258,7 @@ export class WorkflowService {
       }),
       this.prisma.approvalRequest.count({ where }),
     ]);
-    return toPage(items, total, query);
+    return toPage(items.map(withoutCiphertext), total, query);
   }
 
   /** AP-49/50/51: requests the portal user (or their agency, if permitted) submitted. */
@@ -229,7 +273,7 @@ export class WorkflowService {
       }),
       this.prisma.approvalRequest.count({ where }),
     ]);
-    return toPage(items, total, query);
+    return toPage(items.map(withoutCiphertext), total, query);
   }
 
   async detail(requestId: string) {
@@ -240,15 +284,16 @@ export class WorkflowService {
     if (!request) {
       throw notFound('Approval request');
     }
-    return request;
+    return withoutCiphertext(request);
   }
 
   async historyForEntity(entityType: string, entityId: string) {
-    return this.prisma.approvalRequest.findMany({
+    const requests = await this.prisma.approvalRequest.findMany({
       where: { entityType, entityId },
       orderBy: { submittedAt: 'desc' },
       include: { actions: { orderBy: { createdAt: 'asc' } } },
     });
+    return requests.map(withoutCiphertext);
   }
 
   listDefinitions() {
@@ -500,4 +545,26 @@ export class WorkflowService {
       channels: ['EMAIL'],
     });
   }
+}
+
+/**
+ * Payloads may carry encrypted values (keys ending in "Enc") that the handler applies on
+ * approval. They stay in the database but are never returned to clients.
+ */
+export function withoutCiphertext<T extends { payload: Prisma.JsonValue }>(request: T): T {
+  return { ...request, payload: stripEncrypted(request.payload) };
+}
+
+function stripEncrypted(value: Prisma.JsonValue): Prisma.JsonValue {
+  if (Array.isArray(value)) {
+    return value.map(stripEncrypted);
+  }
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([key]) => !key.endsWith('Enc'))
+        .map(([key, item]) => [key, stripEncrypted(item ?? null)]),
+    );
+  }
+  return value;
 }

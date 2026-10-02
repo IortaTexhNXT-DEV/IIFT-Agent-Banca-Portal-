@@ -13,6 +13,7 @@ import { AuditService } from '../audit/audit.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { Setting } from '../settings/setting-keys.js';
 import { SettingsService } from '../settings/settings.service.js';
+import { WorkflowService } from '../workflow/workflow.service.js';
 import { nameSimilarity, normaliseName } from './name-matching.js';
 
 export type AmlSubjectType = 'AGENT' | 'PARTICIPANT';
@@ -57,6 +58,7 @@ export class AmlService {
     private readonly settings: SettingsService,
     private readonly notifications: NotificationsService,
     private readonly audit: AuditService,
+    private readonly workflow: WorkflowService,
   ) {}
 
   async screen(db: Db, subject: AmlSubject): Promise<ScreeningOutcome> {
@@ -124,7 +126,10 @@ export class AmlService {
     });
   }
 
-  /** BO-15: Compliance clears a false positive or confirms the match (subject rejected). */
+  /**
+   * BO-15: Compliance clears a false positive or confirms the match. A confirmed match
+   * rejects the subject and closes its pending requests (e.g. the agent registration).
+   */
   async review(
     user: SessionUser,
     screeningId: string,
@@ -157,6 +162,17 @@ export class AmlService {
         screening.subjectId,
         decision === 'CLEARED' ? 'CLEAR' : 'REJECTED',
       );
+      if (decision === 'CONFIRMED_MATCH') {
+        await this.workflow.rejectPendingFor(
+          tx,
+          user,
+          {
+            entityType: screening.subjectType === 'AGENT' ? 'Agent' : 'Participant',
+            entityId: screening.subjectId,
+          },
+          `AML match confirmed by Compliance: ${remarks.trim()}`,
+        );
+      }
       await this.audit.record(
         {
           action: 'AML_REVIEWED',

@@ -13,8 +13,13 @@ import type { ApprovalHandler } from '../workflow/approval-handler.js';
 import { WorkflowService } from '../workflow/workflow.service.js';
 import { type AgentProfileChanges, AgentsService } from './agents.service.js';
 
-/** Documents an applicant must have uploaded before registration can be approved. */
-export const REQUIRED_AGENT_DOCUMENTS = ['IC_COPY'];
+/**
+ * Identity document an applicant must have uploaded before registration can be approved:
+ * the passport copy for passport holders, otherwise the IC copy.
+ */
+export function requiredAgentDocuments(agent: Pick<Agent, 'idType'>): string[] {
+  return [agent.idType === 'PASSPORT' ? 'PASSPORT_COPY' : 'IC_COPY'];
+}
 
 /** Portal role granted automatically when a registration is approved. */
 const DEFAULT_PORTAL_ROLE: Record<AgentType, string> = {
@@ -79,7 +84,7 @@ export class AgentRegistrationHandler implements ApprovalHandler, OnModuleInit {
       tx,
       'AGENT',
       agent.id,
-      REQUIRED_AGENT_DOCUMENTS,
+      requiredAgentDocuments(agent),
     );
     if (missing.length > 0) {
       throw new BusinessRuleError(
