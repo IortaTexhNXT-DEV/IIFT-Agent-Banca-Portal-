@@ -10,6 +10,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 import brand
+import pricing_data as price
 
 MAGENTA = brand.rgb(brand.MAGENTA)
 ORANGE = brand.rgb(brand.ORANGE)
@@ -259,11 +260,11 @@ def on_prem_deployment(out_dir):
 def cloud_deployment(out_dir):
     width, height = 1800, 1120
     image, draw = new_canvas(width, height)
-    draw.text((20, 14), "Option B – Cloud (AWS Asia Pacific – Singapore; Azure Southeast Asia equivalent)", font=font(28, True), fill=DARK)
+    draw.text((20, 14), "Option B – iorta-hosted cloud (AWS Asia Pacific – Malaysia; Azure Malaysia West equivalent)", font=font(28, True), fill=DARK)
     box(draw, (30, 140, 300, 280), "Agents & Banca officers\n(internet)", fill=WHITE, size=21)
     box(draw, (30, 420, 300, 560), "Participants\n(e-signature link)", fill=WHITE, size=21)
 
-    zone(draw, (340, 70, 1450, 900), "Region ap-southeast-1  ·  VPC", fill=LIGHT_GREY)
+    zone(draw, (340, 70, 1450, 900), "Region ap-southeast-5 (Malaysia)  ·  VPC dedicated to IIFT", fill=LIGHT_GREY)
     zone(draw, (370, 120, 1420, 260), "Public subnets (2 AZ)", fill=LIGHT_ORANGE, outline=ORANGE, title_fill=ORANGE, size=21)
     box(draw, (560, 160, 1230, 245), "AWS WAF  +  Application Load Balancer (TLS, ACM certificate)", fill=WHITE, outline=ORANGE, size=22)
 
@@ -279,7 +280,7 @@ def cloud_deployment(out_dir):
     box(draw, (395, 775, 1395, 860), "Secrets Manager · KMS (encryption keys) · VPC endpoints · security groups (least privilege)", fill=WHITE, size=20)
 
     for k, label in enumerate(["S3 documents & backups\n(SSE-KMS, versioning)", "CloudWatch logs,\nmetrics & alarms",
-                               "Cross-region snapshot\ncopy (DR)"]):
+                               "DR pilot light in a\nsecond region"]):
         y0 = 120 + k * 170
         box(draw, (1490, y0, 1770, y0 + 130), label, fill=WHITE, size=21)
     arrow(draw, (1420, 450), (1490, 185))
@@ -296,8 +297,9 @@ def cloud_deployment(out_dir):
     elbow(draw, [(300, 490), (330, 490), (330, 205), (560, 205)])
     draw.text((330, 940), "Back-office traffic enters over the site-to-site VPN; the back-office path is not published to the internet.",
               font=font(20), fill=MUTED)
-    draw.text((30, 990), "Indicative run cost B$ 950 per month (pass-through). Subject to AMBD outsourcing / cloud "
-              "notification and IIFT data-residency approval.", font=font(20, True), fill=MAGENTA)
+    draw.text((30, 990), f"Cloud infrastructure at cost, indicative B$ {price.cloud_monthly():,} per month, plus iorta "
+              "managed services. Subject to AMBD outsourcing / cloud notification and IIFT approval.",
+              font=font(20, True), fill=MAGENTA)
     draw.text((30, 1035), "RPO ≤ 15 min (PITR) · RTO ≤ 4 h (restore in secondary AZ or region)", font=font(20), fill=MUTED)
     return save(image, out_dir, "fig-deployment-cloud.png")
 

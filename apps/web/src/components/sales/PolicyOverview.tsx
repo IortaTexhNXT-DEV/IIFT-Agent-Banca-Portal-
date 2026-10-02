@@ -1,7 +1,8 @@
-import { Alert, Card, Col, Descriptions, type DescriptionsProps, Row } from 'antd';
+import { Alert, Card, Col, Row } from 'antd';
 import { Link } from 'react-router';
 import type { PolicyDetail } from '../../api/types';
 import { formatDate } from '../../utils/format';
+import { FieldGrid } from '../FieldGrid';
 import { Money } from '../Money';
 import { ContributionBreakdown } from './ContributionBreakdown';
 import { NomineesTable } from './NomineesTable';
@@ -12,101 +13,105 @@ import { RiskDetails } from './RiskDetails';
 import { useSalesLinks } from './useSalesLinks';
 
 function coverPeriod({ startDate, endDate }: PolicyDetail): string {
-  if (startDate && endDate) return `${formatDate(startDate)} to ${formatDate(endDate)}`;
-  return startDate ? `From ${formatDate(startDate)}` : 'Starts on issuance';
+  if (startDate && endDate) return `${formatDate(startDate)} – ${formatDate(endDate)}`;
+  return startDate ? `From ${formatDate(startDate)}` : 'Starts on issue';
 }
 
-/** Cover, plan and period of a quotation or policy. */
-function CoverDescriptions({ policy }: { policy: PolicyDetail }) {
-  const links = useSalesLinks();
+/** Product, plan, period and amounts of a quotation or policy. */
+function CoverFields({ policy }: { policy: PolicyDetail }) {
   const { config } = policy.product;
   const plan = config.plans?.find((candidate) => candidate.code === policy.planCode);
   const coverageType = config.coverageTypes?.find(
     (candidate) => candidate.code === policy.coverageType,
   );
+  return (
+    <FieldGrid
+      columns={3}
+      items={[
+        {
+          key: 'product',
+          label: 'Product',
+          value: `${policy.product.name} (${policy.product.code})`,
+        },
+        { key: 'lob', label: 'Line of business', value: policy.product.lineOfBusiness },
+        plan && { key: 'plan', label: 'Plan', value: plan.name },
+        coverageType && { key: 'coverage', label: 'Coverage type', value: coverageType.name },
+        plan?.additionalCover && {
+          key: 'additional',
+          label: 'Additional cover',
+          value:
+            policy.riskDetails.additionalCover === true
+              ? plan.additionalCover.name
+              : 'Not included',
+        },
+        { key: 'term', label: 'Term', value: formatTerm(policy.termMonths) },
+        { key: 'period', label: 'Period of cover', value: coverPeriod(policy) },
+        { key: 'sum', label: 'Sum covered', value: <Money value={policy.sumCovered} strong /> },
+        {
+          key: 'contribution',
+          label: 'Contribution',
+          value: <Money value={policy.contribution} strong />,
+        },
+        {
+          key: 'outstanding',
+          label: 'Outstanding',
+          value: <Money value={policy.outstandingAmount} />,
+        },
+        policy.paymentDueDate && {
+          key: 'due',
+          label: 'Payment due',
+          value: formatDate(policy.paymentDueDate),
+        },
+      ]}
+    />
+  );
+}
 
-  const items: DescriptionsProps['items'] = [
-    {
-      key: 'product',
-      label: 'Product',
-      children: `${policy.product.name} (${policy.product.code})`,
-    },
-    { key: 'lob', label: 'Line of business', children: policy.product.lineOfBusiness },
-    ...(plan ? [{ key: 'plan', label: 'Plan', children: plan.name }] : []),
-    ...(coverageType
-      ? [{ key: 'coverage', label: 'Coverage type', children: coverageType.name }]
-      : []),
-    ...(plan?.additionalCover
-      ? [
-          {
-            key: 'additional',
-            label: 'Additional cover',
-            children:
-              policy.riskDetails.additionalCover === true
-                ? plan.additionalCover.name
-                : 'Not included',
-          },
-        ]
-      : []),
-    { key: 'term', label: 'Term', children: formatTerm(policy.termMonths) },
-    {
-      key: 'period',
-      label: 'Period of cover',
-      children: coverPeriod(policy),
-    },
-    { key: 'sum', label: 'Sum covered', children: <Money value={policy.sumCovered} strong /> },
-    {
-      key: 'contribution',
-      label: 'Contribution',
-      children: <Money value={policy.contribution} strong />,
-    },
-    {
-      key: 'outstanding',
-      label: 'Outstanding',
-      children: <Money value={policy.outstandingAmount} />,
-    },
-    ...(policy.paymentDueDate
-      ? [{ key: 'due', label: 'Payment due', children: formatDate(policy.paymentDueDate) }]
-      : []),
-    { key: 'quotationNo', label: 'Quotation no.', children: policy.quotationNo },
-    { key: 'policyNo', label: 'Policy no.', children: policy.policyNo ?? 'Not issued' },
-    {
-      key: 'agent',
-      label: 'Agent',
-      children: `${policy.agent.fullName} (${policy.agent.agentCode})`,
-    },
-    { key: 'agency', label: 'Agency / bank', children: policy.agency.name },
-    { key: 'created', label: 'Quoted', children: formatDate(policy.createdAt) },
-    ...(policy.submittedAt
-      ? [{ key: 'submitted', label: 'Submitted', children: formatDate(policy.submittedAt) }]
-      : []),
-    ...(policy.issuedAt
-      ? [{ key: 'issued', label: 'Issued', children: formatDate(policy.issuedAt) }]
-      : []),
-    ...(policy.renewalOf
-      ? [
-          {
-            key: 'renewal',
-            label: 'Renewal of',
-            children: (
-              <Link to={links.policy(policy.renewalOf.id)}>
-                {policy.renewalOf.policyNo ?? 'Previous policy'}
-              </Link>
-            ),
-          },
-        ]
-      : []),
-    ...(policy.cancelledAt
-      ? [
-          {
-            key: 'cancelled',
-            label: 'Cancelled',
-            children: `${formatDate(policy.cancelledAt)}${policy.cancellationReason ? ` – ${policy.cancellationReason}` : ''}`,
-          },
-        ]
-      : []),
-  ];
-  return <Descriptions size="small" column={{ xs: 1, md: 2 }} items={items} />;
+/** Numbers, servicing agent and the dates of the policy's lifecycle. */
+function RecordFields({ policy }: { policy: PolicyDetail }) {
+  const links = useSalesLinks();
+  return (
+    <FieldGrid
+      columns={3}
+      items={[
+        { key: 'quotationNo', label: 'Quotation no.', value: policy.quotationNo },
+        { key: 'policyNo', label: 'Policy no.', value: policy.policyNo ?? 'Not issued' },
+        policy.renewalOf && {
+          key: 'renewal',
+          label: 'Renewal of',
+          value: (
+            <Link to={links.policy(policy.renewalOf.id)}>
+              {policy.renewalOf.policyNo ?? 'Previous policy'}
+            </Link>
+          ),
+        },
+        {
+          key: 'agent',
+          label: 'Agent',
+          value: `${policy.agent.fullName} (${policy.agent.agentCode})`,
+        },
+        { key: 'agency', label: 'Agency / bank', value: policy.agency.name },
+        { key: 'created', label: 'Quoted', value: formatDate(policy.createdAt) },
+        policy.submittedAt && {
+          key: 'submitted',
+          label: 'Submitted',
+          value: formatDate(policy.submittedAt),
+        },
+        policy.issuedAt && { key: 'issued', label: 'Issued', value: formatDate(policy.issuedAt) },
+        policy.cancelledAt && {
+          key: 'cancelled',
+          label: 'Cancelled',
+          value: formatDate(policy.cancelledAt),
+        },
+        policy.cancellationReason && {
+          key: 'cancellationReason',
+          label: 'Cancellation reason',
+          value: policy.cancellationReason,
+          span: 'full',
+        },
+      ]}
+    />
+  );
 }
 
 /** Overview tab of the policy page, shared by the portal and the back-office. */
@@ -131,25 +136,33 @@ export function PolicyOverview({ policy }: { policy: PolicyDetail }) {
           }
         />
       )}
-      <Row gutter={[16, 0]}>
-        <Col xs={24} xl={14}>
-          <Card size="small" title="Cover" className="content-card">
-            <CoverDescriptions policy={policy} />
+      <Row gutter={16}>
+        <Col xs={24} xl={16}>
+          <Card title="Cover" className="content-card">
+            <CoverFields policy={policy} />
+          </Card>
+          <Card title="Policy record" className="content-card">
+            <RecordFields policy={policy} />
           </Card>
           {Object.keys(riskDetails).length > 0 && (
-            <Card size="small" title="Risk details" className="content-card">
+            <Card title="Risk details" className="content-card">
               <RiskDetails details={riskDetails} fields={policy.product.config.riskFields} />
             </Card>
           )}
-          <Card size="small" title="Declarations" className="content-card">
+          {showNominees && (
+            <Card title="Nominees" className="content-card content-card--flush">
+              <NomineesTable nominees={policy.nominees} />
+            </Card>
+          )}
+          <Card title="Declarations" className="content-card">
             <QuestionnaireAnswers
               questions={policy.product.questionnaire}
               answers={policy.questionnaire}
             />
           </Card>
         </Col>
-        <Col xs={24} xl={10}>
-          <Card size="small" title="Contribution" className="content-card">
+        <Col xs={24} xl={8}>
+          <Card title="Contribution" className="content-card">
             <ContributionBreakdown
               lines={policy.contributionBreakdown.lines}
               contribution={policy.contribution}
@@ -157,14 +170,9 @@ export function PolicyOverview({ policy }: { policy: PolicyDetail }) {
               wakalahFee={policy.contributionBreakdown.wakalahFee}
             />
           </Card>
-          <Card size="small" title="Participant" className="content-card">
+          <Card title="Participant" className="content-card">
             <ParticipantProfile participant={policy.participant} compact />
           </Card>
-          {showNominees && (
-            <Card size="small" title="Nominees" className="content-card">
-              <NomineesTable nominees={policy.nominees} />
-            </Card>
-          )}
         </Col>
       </Row>
     </>

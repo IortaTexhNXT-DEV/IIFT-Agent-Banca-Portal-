@@ -15,7 +15,6 @@ export default function ParticipantListPage() {
     <>
       <PageHeader
         title="Participants"
-        subtitle="Participants registered by your agency or holding a policy with it"
         breadcrumb={[{ title: 'Home', to: '/portal' }, { title: 'Participants' }]}
         extra={
           can(P.portalParticipantsManage) && (

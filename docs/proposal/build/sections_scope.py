@@ -33,7 +33,7 @@ COMPONENTS = [
     ("21", "Security", "Controls in Section {security}; MFA; independent VAPT", "Apply IITH policy values; remediate VAPT findings", "VAPT and re-test report (DEL-17)"),
     ("22", "Data migration", "Agent, agency, bank, participant and reference data", "Scripted extract, cleanse, load, reconcile; two rehearsals", "Signed reconciliation report"),
     ("23", "Testing", "Unit, API, SIT, regression, performance, security; UAT support", "Automated suites in CI; SIT and UAT plans", "SIT and UAT results (DEL-14, DEL-16)"),
-    ("24", "Deployment", "DEV, SIT, UAT, PROD and DR environments; CI/CD; cut-over", "Container deployment on IIFT infrastructure", "Deployment plan and go-live checklist signed"),
+    ("24", "Deployment", "DEV, SIT, UAT, PROD and DR environments; CI/CD; cut-over", "Container deployment on IIFT infrastructure (Option A) or iorta-managed cloud (Option B)", "Deployment plan and go-live checklist signed"),
     ("25", "Training", "Agents, bank officers, back-office, administrators, IT", "Train-the-trainer, hands-on sessions, manuals", "Attendance records and feedback"),
     ("26", "Documentation", "User, administrator, technical and operations manuals", "Update the SalesVerse 2.0 document pack for IIFT", "Document acceptance by IIFT"),
     ("27", "Warranty", "Six months of defect correction from go-live", "Fixes under the SLA at no charge", "Monthly service report"),
@@ -124,7 +124,7 @@ DELIVERABLES = [
     ("DEL-08", "UI/UX design", "Screen designs and journeys based on the working screens", "Wk 5", "Business owner sign-off"),
     ("DEL-09", "Interface specification", "APIs, mappings, methods, security, error handling per interface", "Wk 6", "System owner sign-off"),
     ("DEL-10", "Configured solution", "SalesVerse 2.0 configured and integrated for IIFT", "Wk 16", "Build-complete demo (M3)"),
-    ("DEL-11", "Source code", "Source code of the deployed solution, build scripts, migrations", "Wk 24 and each release", "Repository handover checklist"),
+    ("DEL-11", "Source code", "Source code of IIFT-specific components (configuration, adapters, reports, templates), build scripts, migrations; core platform via Option C or escrow", "Wk 24 and each release", "Repository handover checklist"),
     ("DEL-12", "Test strategy", "Levels, roles, environments, entry and exit criteria", "Wk 6", "IIFT approval"),
     ("DEL-13", "SIT test cases", "Scenarios traced to requirements", "Wk 14", "IITH IT review"),
     ("DEL-14", "SIT results", "Execution evidence, defect log, closure", "Wk 19", "SIT exit sign-off (M4)"),
@@ -176,7 +176,7 @@ MAINTENANCE = [
     ("MNT-26", "Quarterly review", "Service performance and improvement plan", "Minutes and action log"),
     ("MNT-27", "Documentation updates", "Documents updated after material change", "Document version history"),
     ("MNT-28", "Knowledge transfer", "Sessions for IIFT/IITH support staff", "Session records"),
-    ("MNT-29", "Onsite support", "Onsite for major incidents or upgrades (rate card)", "Visit reports"),
+    ("MNT-29", "Onsite support", "Onsite for major incidents or upgrades (rate card plus OPE)", "Visit reports"),
     ("MNT-30", "Transition support", "Year 5 knowledge transfer, documents and technical help", "Transition acceptance"),
 ]
 

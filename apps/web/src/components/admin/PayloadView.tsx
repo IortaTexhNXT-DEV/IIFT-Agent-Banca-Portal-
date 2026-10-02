@@ -1,4 +1,5 @@
-import { Descriptions, Table, Typography } from 'antd';
+import { Table, Typography } from 'antd';
+import { FieldGrid } from '../FieldGrid';
 import { ChangeTable } from './ChangeTable';
 import { formatValue, isHiddenKey, isRecord, keyLabel } from './values';
 
@@ -11,15 +12,13 @@ function visibleEntries(payload: Payload): [string, unknown][] {
 function ScalarList({ entries }: { entries: [string, unknown][] }) {
   if (entries.length === 0) return null;
   return (
-    <Descriptions
-      size="small"
-      bordered
-      column={{ xs: 1, md: 2 }}
+    <FieldGrid
+      columns={3}
       className="mb-16"
       items={entries.map(([key, value]) => ({
         key,
         label: keyLabel(key),
-        children: formatValue(key, value),
+        value: formatValue(key, value),
       }))}
     />
   );
@@ -35,6 +34,7 @@ function ObjectTable({ name, rows }: { name: string; rows: Payload[] }) {
       pagination={false}
       rowKey="rowKey"
       dataSource={rows.map((row, index) => ({ ...row, rowKey: `${name}-${index}` }))}
+      className="mb-16"
       scroll={{ x: 'max-content' }}
       columns={columns.map((key) => ({
         key,

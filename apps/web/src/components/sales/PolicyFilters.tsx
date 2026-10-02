@@ -3,7 +3,6 @@ import type { Dayjs } from 'dayjs';
 import { useApiQuery } from '../../api/hooks';
 import type { AgencyOption } from '../../api/sales-types';
 import type { PolicyPaymentStatus, PolicyStatus, Product } from '../../api/types';
-import { FilterBar } from '../FilterBar';
 import { ISO_DATE, POLICY_PAYMENT_STATUS_OPTIONS, POLICY_STATUS_OPTIONS } from './options';
 
 export interface PolicyFilterValues {
@@ -35,14 +34,14 @@ interface Props {
   showAgency?: boolean;
 }
 
-/** AP-21/22: search and filter quotations and policies. */
+/** AP-21/22: search and filter quotations and policies (controls for a table toolbar). */
 export function PolicyFilters({ value, onChange, showAgency = false }: Props) {
   const products = useApiQuery<Product[]>('/common/products');
   const agencies = useApiQuery<AgencyOption[]>(showAgency ? '/backoffice/agencies/options' : null);
   const set = (patch: Partial<PolicyFilterValues>) => onChange({ ...value, ...patch });
 
   return (
-    <FilterBar>
+    <>
       <Input.Search
         placeholder="Policy / quotation no. or participant"
         aria-label="Search policies"
@@ -108,6 +107,6 @@ export function PolicyFilters({ value, onChange, showAgency = false }: Props) {
         }
         className="filter-range"
       />
-    </FilterBar>
+    </>
   );
 }

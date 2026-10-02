@@ -123,8 +123,11 @@ export default function ProfilePage() {
           <>
             <PageHeader
               title="My profile"
-              subtitle={`${data.fullName} · ${data.agentCode}`}
-              breadcrumb={[{ title: 'Dashboard', to: '/portal' }, { title: 'My profile' }]}
+              meta={[
+                { label: 'Name', value: data.fullName },
+                { label: 'Code', value: data.agentCode },
+              ]}
+              breadcrumb={[{ title: 'Home', to: '/portal' }, { title: 'My profile' }]}
               extra={
                 can(P.portalProfileUpdate) && (
                   <Button

@@ -15,7 +15,6 @@ import {
   FileTextOutlined,
   FundOutlined,
   MedicineBoxOutlined,
-  PlusCircleOutlined,
   ReconciliationOutlined,
   SafetyCertificateOutlined,
   ScheduleOutlined,
@@ -40,7 +39,10 @@ export interface MenuEntry {
 }
 
 export interface MenuGroup {
+  /** Groups without a label are shown as top-level entries. */
   label?: string;
+  /** Shown beside the group label, and alone when the navigation is collapsed. */
+  icon?: ReactNode;
   entries: MenuEntry[];
 }
 
@@ -54,16 +56,11 @@ export const PORTAL_MENU: MenuGroup[] = [
         anyOf: [P.portalDashboard],
         exact: true,
       },
-      {
-        path: '/portal/quotations/new',
-        label: 'New quotation',
-        icon: <PlusCircleOutlined />,
-        anyOf: [P.portalPoliciesQuote],
-      },
     ],
   },
   {
-    label: 'Business',
+    label: 'Sales',
+    icon: <FileProtectOutlined />,
     entries: [
       {
         path: '/portal/policies',
@@ -83,6 +80,12 @@ export const PORTAL_MENU: MenuGroup[] = [
         icon: <TeamOutlined />,
         anyOf: [P.portalParticipantsView],
       },
+    ],
+  },
+  {
+    label: 'Servicing',
+    icon: <WalletOutlined />,
+    entries: [
       {
         path: '/portal/billing',
         label: 'Billing & payments',
@@ -100,6 +103,7 @@ export const PORTAL_MENU: MenuGroup[] = [
   },
   {
     label: 'Agency',
+    icon: <ApartmentOutlined />,
     entries: [
       {
         path: '/portal/team',
@@ -149,6 +153,7 @@ export const BACKOFFICE_MENU: MenuGroup[] = [
   },
   {
     label: 'Distribution',
+    icon: <ApartmentOutlined />,
     entries: [
       {
         path: '/backoffice/agents',
@@ -166,6 +171,7 @@ export const BACKOFFICE_MENU: MenuGroup[] = [
   },
   {
     label: 'Business',
+    icon: <FileProtectOutlined />,
     entries: [
       {
         path: '/backoffice/policies',
@@ -195,6 +201,7 @@ export const BACKOFFICE_MENU: MenuGroup[] = [
   },
   {
     label: 'Control',
+    icon: <SafetyCertificateOutlined />,
     entries: [
       {
         path: '/backoffice/aml',
@@ -218,6 +225,7 @@ export const BACKOFFICE_MENU: MenuGroup[] = [
   },
   {
     label: 'Operations',
+    icon: <ScheduleOutlined />,
     entries: [
       {
         path: '/backoffice/issues',
@@ -247,6 +255,7 @@ export const BACKOFFICE_MENU: MenuGroup[] = [
   },
   {
     label: 'Administration',
+    icon: <SettingOutlined />,
     entries: [
       {
         path: '/backoffice/users',
@@ -295,4 +304,31 @@ export function selectedMenuKeys(menu: MenuGroup[], pathname: string): string[] 
     .map((entry) => entry.path)
     .sort((a, b) => b.length - a.length)[0];
   return match ? [match] : [];
+}
+
+/** Key of a labelled group, used for its open/closed state. */
+export function groupKey(group: MenuGroup): string {
+  return `group:${group.label ?? ''}`;
+}
+
+/** The labelled group holding the entry highlighted for this path, if any. */
+export function groupOfPath(menu: MenuGroup[], pathname: string): string | undefined {
+  const [selected] = selectedMenuKeys(menu, pathname);
+  const group = menu.find(
+    (candidate) => candidate.label && candidate.entries.some((entry) => entry.path === selected),
+  );
+  return group && groupKey(group);
+}
+
+/** Title of the highlighted entry and its group, for page titles and breadcrumbs. */
+export function menuTrail(
+  menu: MenuGroup[],
+  pathname: string,
+): { group?: string; entry?: MenuEntry } {
+  const [selected] = selectedMenuKeys(menu, pathname);
+  for (const group of menu) {
+    const entry = group.entries.find((candidate) => candidate.path === selected);
+    if (entry) return { group: group.label, entry };
+  }
+  return {};
 }

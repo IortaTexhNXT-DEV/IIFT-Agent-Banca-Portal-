@@ -33,12 +33,13 @@ export function ProductionTrend({ points }: { points: MonthlyPoint[] }) {
       <div className="chart-box">
         <ResponsiveContainer width="100%" height={200}>
           <ComposedChart data={data} syncId={SYNC_ID} margin={CHART_MARGIN}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={brand.border} />
-            <XAxis dataKey="label" tickLine={false} axisLine={false} />
+            <CartesianGrid vertical={false} stroke={brand.border} />
+            <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
             <YAxis
               tickLine={false}
               axisLine={false}
               width={72}
+              fontSize={12}
               tickFormatter={(value: number) => value.toLocaleString('en-GB')}
             />
             <Tooltip formatter={(value) => [formatMoney(Number(value)), 'Contribution']} />
@@ -56,9 +57,15 @@ export function ProductionTrend({ points }: { points: MonthlyPoint[] }) {
       <div className="chart-box">
         <ResponsiveContainer width="100%" height={150}>
           <ComposedChart data={data} syncId={SYNC_ID} margin={CHART_MARGIN}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={brand.border} />
-            <XAxis dataKey="label" scale="band" tickLine={false} axisLine={false} />
-            <YAxis tickLine={false} axisLine={false} width={72} allowDecimals={false} />
+            <CartesianGrid vertical={false} stroke={brand.border} />
+            <XAxis dataKey="label" scale="band" tickLine={false} axisLine={false} fontSize={12} />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              width={72}
+              fontSize={12}
+              allowDecimals={false}
+            />
             <Tooltip formatter={(value) => [formatNumber(Number(value)), 'Policies']} />
             <Line
               type="monotone"

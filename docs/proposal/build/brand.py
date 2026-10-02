@@ -13,6 +13,7 @@ CLIENT_LOGO = ASSETS_DIR / "iift-logo.png"
 
 DOCX_OUTPUT = PROPOSAL_DIR / "IIFT-Agent-Banca-Portal-Proposal-iorta-TechNXT.docx"
 XLSX_OUTPUT = PROPOSAL_DIR / "IIFT-Commercial-Pricing-iorta-TechNXT.xlsx"
+BOM_OUTPUT = PROPOSAL_DIR / "IIFT-Bill-of-Materials-iorta-TechNXT.xlsx"
 
 # --- Document identity -----------------------------------------------------
 BIDDER = "iorta TechNXT"

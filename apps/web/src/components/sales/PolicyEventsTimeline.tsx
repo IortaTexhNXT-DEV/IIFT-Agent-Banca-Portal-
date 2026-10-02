@@ -1,4 +1,5 @@
-import { Empty, Timeline, Typography } from 'antd';
+import { Timeline, Typography } from 'antd';
+import { EmptyState } from '../EmptyState';
 import type { PolicyEvent } from '../../api/types';
 import { formatDateTime, humanise } from '../../utils/format';
 import { StatusTag } from '../StatusTag';
@@ -6,7 +7,7 @@ import { StatusTag } from '../StatusTag';
 /** Lifecycle of a quotation / policy: every action with its status change, actor and remarks. */
 export function PolicyEventsTimeline({ events }: { events: PolicyEvent[] }) {
   if (events.length === 0) {
-    return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No history yet" />;
+    return <EmptyState label="No history yet" />;
   }
   return (
     <Timeline

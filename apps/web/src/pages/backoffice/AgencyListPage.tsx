@@ -42,7 +42,7 @@ export default function AgencyListPage() {
     <>
       <PageHeader
         title="Agencies & banks"
-        breadcrumb={[{ title: 'Dashboard', to: '/backoffice' }, { title: 'Agencies & banks' }]}
+        breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Agencies & banks' }]}
         extra={
           can(P.boAgenciesManage) && (
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreating(true)}>

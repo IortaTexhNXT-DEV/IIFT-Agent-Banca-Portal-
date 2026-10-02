@@ -20,6 +20,7 @@
 
 .payload-section h5.ant-typography {
   margin: 0 0 8px;
+  font-size: 14px;
 }
 
 .payload-list {
@@ -116,10 +117,12 @@
 
 .chart-title {
   font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--muted);
-  margin: 4px 0 6px;
+  color: var(--subtle);
+  margin: 0 0 8px;
+}
+
+.chart-title + .chart-box + .chart-title {
+  margin-top: 16px;
 }
 
 /* ---- Filter bars with trailing actions ---------------------------------- */

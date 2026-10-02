@@ -1,7 +1,8 @@
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
-import { Alert, Button, Form, Input, Typography } from 'antd';
+import { Alert, Button, Form, Input } from 'antd';
 import { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router';
+import { AuthLayout } from '../../components/AuthLayout';
 import { ErrorAlert } from '../../components/ErrorAlert';
 import { homePath, useAuth } from '../../auth/AuthContext';
 
@@ -10,6 +11,7 @@ interface Credentials {
   password: string;
 }
 
+/** AP-01: sign-in for portal users and IIFT staff. */
 export default function LoginPage() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
@@ -38,64 +40,39 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="auth-page">
-      <section className="auth-page__visual" aria-hidden="true">
-        <div className="auth-page__product">SalesVerse 2.0</div>
-        <div>
-          <h1>Agent & Banca Portal and Back-office</h1>
-          <p>
-            Quotation, issuance, payments, claims notification and servicing for Insurans Islam
-            Family Takaful products, with approvals and records handled in one system.
-          </p>
-        </div>
-        <p>
-          Insurans Islam Family Takaful Sendirian Berhad · A member of Insurans Islam TAIB Holding
-        </p>
-      </section>
-
-      <section className="auth-page__form">
-        <img src="/iift-logo.png" alt="Insurans Islam Family Takaful" className="auth-page__logo" />
-        <Typography.Title level={3}>Sign in</Typography.Title>
-        <Typography.Paragraph type="secondary">
-          Use the username and password issued to you by IIFT.
-        </Typography.Paragraph>
-
-        {sessionEnded && (
-          <Alert
-            className="mb-16"
-            type="info"
-            showIcon
-            title="Your session ended. Please sign in again."
+    <AuthLayout title="Sign in">
+      {sessionEnded && (
+        <Alert
+          className="mb-16"
+          type="info"
+          showIcon
+          title="Your session ended. Please sign in again."
+        />
+      )}
+      <ErrorAlert error={error} className="mb-16" />
+      <Form<Credentials> layout="vertical" onFinish={submit} requiredMark={false}>
+        <Form.Item
+          name="username"
+          label="Username"
+          rules={[{ required: true, message: 'Enter your username' }]}
+        >
+          <Input prefix={<UserOutlined className="muted" />} autoComplete="username" />
+        </Form.Item>
+        <Form.Item
+          name="password"
+          label="Password"
+          rules={[{ required: true, message: 'Enter your password' }]}
+        >
+          <Input.Password
+            prefix={<LockOutlined className="muted" />}
+            autoComplete="current-password"
           />
-        )}
-        <ErrorAlert error={error} className="mb-16" />
-
-        <Form<Credentials> layout="vertical" onFinish={submit} requiredMark={false} size="large">
-          <Form.Item
-            name="username"
-            label="Username"
-            rules={[{ required: true, message: 'Enter your username' }]}
-          >
-            <Input prefix={<UserOutlined />} autoComplete="username" />
-          </Form.Item>
-          <Form.Item
-            name="password"
-            label="Password"
-            rules={[{ required: true, message: 'Enter your password' }]}
-          >
-            <Input.Password prefix={<LockOutlined />} autoComplete="current-password" />
-          </Form.Item>
-          <Button type="primary" htmlType="submit" block loading={submitting}>
-            Sign in
-          </Button>
-        </Form>
-
-        <p className="auth-page__notice">
-          For authorised agents, bank officers and IIFT staff only. Sign-in attempts and activity
-          are recorded. Accounts are locked after repeated failed attempts; contact the IIFT support
-          desk to unlock.
-        </p>
-      </section>
-    </div>
+        </Form.Item>
+        <Button type="primary" htmlType="submit" block loading={submitting}>
+          Sign in
+        </Button>
+      </Form>
+      <p className="auth-card__notice">Authorised users only. Activity is recorded.</p>
+    </AuthLayout>
   );
 }

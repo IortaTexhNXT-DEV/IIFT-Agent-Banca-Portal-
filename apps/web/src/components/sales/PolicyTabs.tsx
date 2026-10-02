@@ -59,54 +59,72 @@ function count(label: string, total: number): string {
   return total > 0 ? `${label} (${total})` : label;
 }
 
+/** A tab's content in a card; the overview tab lays out its own cards. */
+function TabCard({ children }: { children: ReactNode }) {
+  return <Card className="content-card">{children}</Card>;
+}
+
 /** Tabs of the policy page, shared by the portal and the back-office (AP-24, AP-30/31, AP-44..47). */
 export function PolicyTabs({ policy, activeKey, onChange, uploadTypes, claimsAction }: Props) {
   return (
-    <Card className="content-card" styles={{ body: { paddingTop: 4 } }}>
-      <Tabs
-        activeKey={activeKey}
-        onChange={(key) => onChange(key as PolicyTabKey)}
-        items={[
-          { key: 'overview', label: 'Overview', children: <PolicyOverview policy={policy} /> },
-          {
-            key: 'documents',
-            label: count('Documents', policy.documents.length),
-            children: (
+    <Tabs
+      className="page-tabs"
+      activeKey={activeKey}
+      onChange={(key) => onChange(key as PolicyTabKey)}
+      items={[
+        { key: 'overview', label: 'Overview', children: <PolicyOverview policy={policy} /> },
+        {
+          key: 'documents',
+          label: count('Documents', policy.documents.length),
+          children: (
+            <TabCard>
               <DocumentPanel
                 ownerType="POLICY"
                 ownerId={policy.id}
                 uploadTypes={uploadTypes}
                 canUpload={uploadTypes !== undefined}
               />
-            ),
-          },
-          {
-            key: 'payments',
-            label: count('Payments & receipts', policy.allocations.length),
-            children: <PolicyPayments policy={policy} />,
-          },
-          {
-            key: 'history',
-            label: 'History',
-            children: <PolicyEventsTimeline events={policy.events} />,
-          },
-          {
-            key: 'approvals',
-            label: count('Approvals', policy.approvals.length),
-            children: <ApprovalHistory approvals={policy.approvals} />,
-          },
-          {
-            key: 'claims',
-            label: count('Claims', policy.claims.length),
-            children: (
-              <>
-                {claimsAction && <div className="tab-actions">{claimsAction}</div>}
-                <PolicyClaims claims={policy.claims} />
-              </>
-            ),
-          },
-        ]}
-      />
-    </Card>
+            </TabCard>
+          ),
+        },
+        {
+          key: 'payments',
+          label: count('Payments & receipts', policy.allocations.length),
+          children: (
+            <TabCard>
+              <PolicyPayments policy={policy} />
+            </TabCard>
+          ),
+        },
+        {
+          key: 'history',
+          label: 'History',
+          children: (
+            <TabCard>
+              <PolicyEventsTimeline events={policy.events} />
+            </TabCard>
+          ),
+        },
+        {
+          key: 'approvals',
+          label: count('Approvals', policy.approvals.length),
+          children: (
+            <TabCard>
+              <ApprovalHistory approvals={policy.approvals} />
+            </TabCard>
+          ),
+        },
+        {
+          key: 'claims',
+          label: count('Claims', policy.claims.length),
+          children: (
+            <TabCard>
+              {claimsAction && <div className="tab-actions">{claimsAction}</div>}
+              <PolicyClaims claims={policy.claims} />
+            </TabCard>
+          ),
+        },
+      ]}
+    />
   );
 }

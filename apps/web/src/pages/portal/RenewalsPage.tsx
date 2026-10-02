@@ -48,7 +48,6 @@ export default function RenewalsPage() {
     <>
       <PageHeader
         title="Renewals"
-        subtitle="Renewable policies ending soon or expired in the last 30 days"
         breadcrumb={[{ title: 'Home', to: '/portal' }, { title: 'Renewals' }]}
       />
       <ErrorAlert error={renew.error} className="mb-16" />

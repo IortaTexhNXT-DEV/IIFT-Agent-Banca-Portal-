@@ -1,4 +1,4 @@
-import { BACKOFFICE_MENU, PORTAL_MENU, selectedMenuKeys } from './menus';
+import { BACKOFFICE_MENU, groupOfPath, PORTAL_MENU, selectedMenuKeys } from './menus';
 
 describe('selectedMenuKeys', () => {
   it('highlights the dashboard only on the module root', () => {
@@ -41,5 +41,17 @@ describe('selectedMenuKeys', () => {
   it('ignores a trailing slash', () => {
     expect(selectedMenuKeys(PORTAL_MENU, '/portal/')).toEqual(['/portal']);
     expect(selectedMenuKeys(PORTAL_MENU, '/portal/claims/')).toEqual(['/portal/claims']);
+  });
+});
+
+describe('groupOfPath', () => {
+  it('returns the group holding the highlighted entry', () => {
+    expect(groupOfPath(BACKOFFICE_MENU, '/backoffice/agents/a1')).toBe('group:Distribution');
+    expect(groupOfPath(PORTAL_MENU, '/portal/billing/payments/p1')).toBe('group:Servicing');
+  });
+
+  it('returns nothing for top-level entries and pages outside the menu', () => {
+    expect(groupOfPath(BACKOFFICE_MENU, '/backoffice')).toBeUndefined();
+    expect(groupOfPath(PORTAL_MENU, '/portal/profile')).toBeUndefined();
   });
 });

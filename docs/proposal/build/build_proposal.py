@@ -153,14 +153,16 @@ def document_control(w: ProposalWriter):
             widths=[6.0, 6.0, 5.0])
     w.h3("Distribution")
     w.table(["Recipient", "Organisation", "Format"],
-            [["Tender / Evaluation Committee", brand.CLIENT, "Signed PDF and editable DOCX; pricing workbook (XLSX)"],
+            [["Tender / Evaluation Committee", brand.CLIENT,
+              "Signed PDF and editable DOCX; pricing workbook and Bill of Materials (XLSX)"],
              ["Bid file", brand.BIDDER, "Archive copy"]],
             widths=[6.0, 6.0, 5.0])
     w.h3("Companion documents")
     w.bullets([
-        "IIFT-Commercial-Pricing-iorta-TechNXT.xlsx: the commercial workbook (summary in the format "
-        "requested by IIFT, RFP section 10 breakdown, integration per interface, five-year maintenance, "
-        "rate card, payment milestones, third-party charges and assumptions).",
+        f"{brand.XLSX_OUTPUT.name}: the pricing workbook (options summary, fees in IIFT's format, Options A, B and "
+        "C, RFP section 10 breakdown, OPE, rate card, payment schedules and assumptions).",
+        f"{brand.BOM_OUTPUT.name}: the Bill of Materials (on-premise infrastructure, cloud services, software "
+        "licences and third-party services, with indicative costs and who pays).",
         "Enclosure B: corporate profile and relevant experience (attached separately).",
         "Enclosure C: business registration certificate (attached separately).",
         "Technical document pack in docs/technical: solution architecture, data dictionary, code standards and "
@@ -169,33 +171,39 @@ def document_control(w: ProposalWriter):
 
 
 def response_map(w: ProposalWriter):
-    w.h1("How this Proposal Responds to the Invitation", numbered=False)
-    w.para("The invitation asked for items (a) to (i). The table shows where each is answered and lists the "
-           "additional chapters we included.")
-    w.table(["Invitation item", "Where addressed"], [
-        ["(a) Cover letter", "Cover Letter, directly after the cover page"],
-        ["(b) Corporate profile and relevant experience", f"Enclosure B, attached separately (Section {sec('enclosure_b')})"],
-        ["(c) Business registration certificate", f"Enclosure C, attached separately (Section {sec('enclosure_c')})"],
-        ["(d) Detailed scope of work and methodology",
-         f"Sections {sec('scope')} (scope of work), {sec('fitment')} (fitment) and {sec('methodology')} (methodology)"],
-        ["(e) Detailed fee and pricing structure (WHT, OPE, third-party charges)",
-         f"Section {sec('commercials')}: Commercial Proposal; pricing workbook"],
-        ["(f) Delivery and implementation timeline with key milestones", f"Section {sec('timeline')}"],
-        ["(g) Quotation validity period", f"Section {sec('validity')}"],
-        ["(h) Other supporting information",
-         f"Section {sec('supporting')}, plus personas, journeys, screens and the technical document pack"],
-        ["(i) Terms and conditions", f"Section {sec('terms')}"],
+    w.h1("Response Checklist", numbered=False)
+    w.para("The invitation asked for items (a) to (i). The checklist shows where each is answered and whether it is "
+           "in this document or attached separately.")
+    w.table(["Item", "Invitation requirement", "Where addressed", "Status"], [
+        ["(a)", "Cover letter", "Cover Letter, after the cover page", "Included"],
+        ["(b)", "Corporate profile and relevant experience",
+         f"Enclosure B (Section {sec('enclosure_b')})", "To be attached by iorta"],
+        ["(c)", "Business registration certificate", f"Enclosure C (Section {sec('enclosure_c')})",
+         "To be attached by iorta"],
+        ["(d)", "Detailed scope of work and methodology",
+         f"Sections {sec('scope')} (scope), {sec('fitment')} (fitment), {sec('methodology')} (methodology)",
+         "Included"],
+        ["(e)", "Detailed fees and pricing structure, stating WHT, OPE and third-party charges",
+         f"Section {sec('commercials')}; pricing workbook; Bill of Materials workbook; Annex C", "Included"],
+        ["(f)", "Delivery and implementation timeline with key milestones", f"Section {sec('timeline')}", "Included"],
+        ["(g)", "Quotation validity period",
+         f"Section {sec('validity')}: {price.QUOTATION_VALIDITY_DAYS} days", "Included"],
+        ["(h)", "Other supporting information",
+         f"Sections {sec('personas')} to {sec('screens')}, {sec('techdocs')} and {sec('supporting')}; technical "
+         "document pack", "Included"],
+        ["(i)", "Terms and conditions", f"Section {sec('terms')}", "Included"],
         ("GROUP", "Additional chapters"),
-        ["Personas and user journeys", f"Sections {sec('personas')} and {sec('journeys')}"],
-        ["Functional rules, products and screen catalogue",
-         f"Sections {sec('functional')}, {sec('products')} and {sec('screens')}"],
-        ["Architecture, security, deployment, infrastructure",
-         f"Sections {sec('architecture')} to {sec('infrastructure')}"],
-        ["Technical document pack", f"Section {sec('techdocs')}"],
-        ["Five-year maintenance and support, SLA", f"Section {sec('maintenance')}"],
-        ["Team, assumptions and risks", f"Sections {sec('team')} to {sec('risks')}"],
-        ["Compliance and fitment matrix (every RFP requirement ID)", "Annex A"],
-    ], widths=[7.4, 9.6], font_size=8, bold_first_col=True)
+        ["", "Personas and user journeys", f"Sections {sec('personas')} and {sec('journeys')}", ""],
+        ["", "Functional rules, products and screen catalogue",
+         f"Sections {sec('functional')}, {sec('products')} and {sec('screens')}", ""],
+        ["", "Architecture, security, deployment, infrastructure",
+         f"Sections {sec('architecture')} to {sec('infrastructure')}", ""],
+        ["", "Technical document pack", f"Section {sec('techdocs')}", ""],
+        ["", "Five-year maintenance and support, SLA", f"Section {sec('maintenance')}", ""],
+        ["", "Team, assumptions and risks", f"Sections {sec('team')} to {sec('risks')}", ""],
+        ["", "Compliance and fitment matrix (every RFP requirement ID)", "Annex A", ""],
+        ["", "Bill of Materials summary, software components, network flows", "Annex C", ""],
+    ], widths=[1.2, 6.6, 6.0, 3.2], font_size=8, center_cols=(0,))
 
 
 def table_of_contents(w: ProposalWriter):
@@ -206,10 +214,12 @@ def table_of_contents(w: ProposalWriter):
 ABBREVIATIONS = [
     ("AD / LDAP", "Active Directory / Lightweight Directory Access Protocol, used for single sign-on"),
     ("AMBD", "Autoriti Monetari Brunei Darussalam, the central bank and financial regulator of Brunei Darussalam"),
+    ("AMC", "Annual maintenance charge"),
     ("AML / KYC", "Anti-Money Laundering / Know Your Customer screening and due diligence"),
     ("API", "Application Programming Interface"),
     ("ASVS", "OWASP Application Security Verification Standard"),
     ("BRR", "The issuance register / report referenced in RFP Appendix 3 against which daily issuance and FIN postings are tallied"),
+    ("BOM / SBOM", "Bill of materials / software bill of materials (open-source components and licences)"),
     ("BRS / FRS", "Business Requirement Specification / Functional Requirement Specification"),
     ("B$ / BND", "Brunei Dollar"),
     ("CI/CD", "Continuous Integration / Continuous Delivery"),
@@ -223,8 +233,10 @@ ABBREVIATIONS = [
     ("IIFT", "Insurans Islam Family Takaful Sendirian Berhad"),
     ("IIGT", "Insurans Islam General Takaful, the sister company that operates the IIGT Agent Portal"),
     ("IITH", "Insurans Islam TAIB Holding, the group holding company"),
+    ("KT", "Knowledge transfer"),
+    ("L1 / L2 / L3", "First-, second- and third-line support"),
     ("MFA / OTP / TOTP", "Multi-Factor Authentication / One-Time Password / Time-based One-Time Password"),
-    ("OPE", "Out-of-Pocket Expenses (travel, accommodation, subsistence)"),
+    ("OPE", "Out-of-Pocket Expenses (travel, accommodation, per diem, insurance, transfers, visas)"),
     ("OWASP", "Open Worldwide Application Security Project"),
     ("PDPO", "Personal Data Protection Order 2025 (Brunei Darussalam)"),
     ("PITR", "Point-in-Time Recovery"),
@@ -264,15 +276,23 @@ COVER_LETTER_BODY = [
     "RFP, the B$150,000 referral rule, the seven-day grace-period agency block, maker-checker approvals, AML "
     "watch-list screening, e-signature, e-Policy and e-Receipt issuance and the end-of-day FIN interface file. The "
     "remaining work (integration with IIFT's systems, IIFT's rates and templates, testing, migration and "
-    "training) is set out in this proposal at a fixed fee. Our offer in summary:",
+    "training) is set out in this proposal at a fixed fee. We offer two commercial models and one add-on:",
 ]
 COVER_LETTER_BULLETS = [
-    f"Fixed implementation price of **{price.bnd(price.one_time_total())}** (Agent/Banca Portal "
-    f"{price.bnd(price.one_time_portal())}; Back-office solution {price.bnd(price.one_time_backoffice())}), "
-    "inclusive of withholding tax and planned out-of-pocket expenses.",
-    f"Licence fee of **B$0**: a perpetual, royalty-free, enterprise-wide licence to {brand.PRODUCT} for unlimited "
-    "users, with the source code of the deployed solution.",
-    f"Maintenance and support at **{price.bnd(price.maintenance_annual())} a year**, fixed for five years.",
+    f"**Option A, on-premise perpetual licence (recommended):** one-time {price.bnd(price.one_time_total('A'))} "
+    f"(licence {price.bnd(price.licence_fee())}; implementation services {price.bnd(price.services_fee())}); annual "
+    f"maintenance {price.bnd(price.amc(1))} in Year 1, being 22% of licence and customisation, +5% a year.",
+    f"**Option B, subscription hosted and managed by iorta on cloud:** one-time "
+    f"{price.bnd(price.option_b_one_time())} (implementation services {price.bnd(price.services_fee())}; cloud "
+    f"set-up {price.bnd(price.CLOUD_SETUP_FEE)}); subscription {price.bnd(price.subscription_monthly(1))} a month in "
+    f"Year 1, +5% a year, minimum term {price.SUBSCRIPTION_MINIMUM_MONTHS} months; managed services "
+    f"{price.bnd(price.managed_monthly(1))} a month; cloud infrastructure recharged at cost.",
+    f"**Option C, source code handover:** the core platform source code after go-live and hypercare, with an "
+    f"{price.KNOWLEDGE_TRANSFER_WEEKS}-week knowledge transfer and transition plan, for "
+    f"{price.bnd(price.option_c_total())}.",
+    "Fees are inclusive of withholding tax. Out-of-pocket expenses (estimated at "
+    f"{price.bnd(price.ope_total())}) and cloud infrastructure are recharged at cost as disbursements, and "
+    "third-party and infrastructure charges, listed in the Bill of Materials, are excluded.",
     "Go-live in **week 24**, then four weeks of hypercare.",
 ]
 ENCLOSURES = [
@@ -327,12 +347,23 @@ def what_iift_receives():
         ("Scope", "All 29 in-scope components of RFP section 3.1, the seven Appendix 3 products, and integration "
                   "with IIFT's core system, FIN, AML provider, Active Directory, SMS gateway and e-mail."),
         ("Timeline", "Go-live in week 24. Hypercare in weeks 25 to 28. Warranty for six months from go-live."),
-        ("One-time price", f"{price.bnd_usd(price.one_time_total())}, fixed. WHT inclusive; planned OPE included."),
-        ("Support", f"{price.bnd(price.maintenance_annual())} a year, flat for five years "
-                    f"({price.bnd(price.maintenance_total())} in total)."),
-        ("Licence", "B$0. Perpetual, royalty-free, enterprise-wide, unlimited users."),
-        ("Source code", "Source code of the deployed solution at go-live and with every release; escrow optional."),
-        ("Five-year cost", f"{price.bnd_usd(price.tco_on_prem())} with on-premise hosting."),
+        ("Option A (recommended)", f"On-premise perpetual licence: {price.bnd_usd(price.one_time_total('A'))} "
+                                   f"one-time; AMC {price.bnd(price.amc(1))} in Year 1 (22% of licence and "
+                                   "customisation), +5% a year."),
+        ("Option B", f"Subscription on iorta-managed cloud: {price.bnd_usd(price.option_b_one_time())} one-time "
+                     f"(including cloud set-up {price.bnd(price.CLOUD_SETUP_FEE)}); "
+                     f"{price.bnd(price.subscription_monthly(1))} a month in Year 1, +5% a year, minimum "
+                     f"{price.SUBSCRIPTION_MINIMUM_MONTHS} months; managed services "
+                     f"{price.bnd(price.managed_monthly(1))} a month; cloud recharged at cost."),
+        ("Option C (add-on)", f"Core source code handover with {price.KNOWLEDGE_TRANSFER_WEEKS} weeks of knowledge "
+                              f"transfer after hypercare: {price.bnd(price.option_c_total())}."),
+        ("Five-year cost", f"Option A {price.bnd_usd(price.tco_option_a())}; Option B "
+                           f"{price.bnd_usd(price.tco_option_b())}, including estimated OPE and cloud charges."),
+        ("Fee basis", "Inclusive of WHT. OPE and cloud infrastructure recharged at cost as disbursements. "
+                      "Third-party and infrastructure charges excluded (Bill of Materials)."),
+        ("Licence and users", "Unlimited named users for IIFT under both options; no per-user or per-policy fees."),
+        ("Source code", "IIFT-specific source code at go-live and every release under every option; core platform "
+                        "source through Option C or escrow."),
         ("Compliance", f"234 of 234 RFP requirement IDs addressed (Annex A); fitment in Section {sec('fitment')}."),
     ]
 
@@ -343,21 +374,23 @@ WHY_IORTA = [
     "report and FIN interface file all run today. Discovery workshops start from working screens, which is why "
     "requirements and design take five weeks.",
     "**The price follows IIFT's scale.** The RFP describes 26 named users and about 600 policies a year. There is no "
-    "per-user or per-policy fee, so more bank branches, agents or other IITH companies do not change the licence "
-    "cost.",
+    "per-user or per-policy fee, so more bank branches or agents do not change the price.",
     "**Controls sit in the data layer.** The API enforces maker-checker, a database trigger makes the audit table "
     "append-only, and IC and passport numbers are encrypted field by field with AES-256-GCM. These controls cannot "
     "be bypassed from a screen.",
-    "**Delivery risk is shared.** The price is fixed, 95% of it is paid against signed milestones, and maintenance "
-    "carries no escalation for five years.",
+    "**IIFT keeps its options open.** It can own a perpetual licence or subscribe, convert from subscription to "
+    "licence, and take the platform source code with a structured handover once the solution is stable.",
+    "**Delivery risk is shared.** Implementation is a fixed price, 85% of the services fee is paid against signed "
+    "deliverables, and yearly increases are capped at 5%.",
 ]
 
 
 def executive_summary(w: ProposalWriter):
     w.h1("Executive Summary")
-    w.para(f"IIFT will receive {brand.PRODUCT}, configured as the {brand.SOLUTION_NAME}, live in 24 weeks for a "
-           f"fixed {price.bnd(price.one_time_total())}. Banca submissions, approvals, payments and reporting move from "
-           "paper and e-mail to one controlled system.")
+    w.para(f"IIFT will receive {brand.PRODUCT}, configured as the {brand.SOLUTION_NAME}, live in 24 weeks at a "
+           "fixed implementation price. Banca submissions, approvals, payments and reporting move from paper and "
+           "e-mail to one controlled system. We recommend Option A, an on-premise perpetual licence in the IITH data "
+           "centre, which keeps data in Brunei and has the lowest five-year cost.")
     w.key_value_table(what_iift_receives(), widths=(3.6, 13.4), caption="What IIFT receives")
     w.h2("Why iorta TechNXT")
     w.paras(WHY_IORTA)

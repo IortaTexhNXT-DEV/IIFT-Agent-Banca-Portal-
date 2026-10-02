@@ -1,13 +1,15 @@
-import { Card, Flex } from 'antd';
+/**
+ * FilterBar – list filters (search, selects, date range) shown above a table.
+ * Placed directly before a `.content-card` it joins that card as its toolbar; inside a
+ * card prefer <TableCard toolbar={…}>, which does the same without a separate card.
+ */
+import { Card } from 'antd';
 import type { ReactNode } from 'react';
 
-/** Compact row of list filters placed above a table. */
 export function FilterBar({ children }: { children: ReactNode }) {
   return (
-    <Card size="small" className="filter-bar">
-      <Flex gap={12} wrap align="center">
-        {children}
-      </Flex>
+    <Card className="filter-bar">
+      <div className="table-toolbar__filters">{children}</div>
     </Card>
   );
 }

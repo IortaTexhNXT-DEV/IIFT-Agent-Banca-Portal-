@@ -17,10 +17,10 @@ from pathlib import Path
 from docx import Document
 from docx.enum.section import WD_ORIENT, WD_SECTION
 from docx.enum.table import WD_TABLE_ALIGNMENT, WD_CELL_VERTICAL_ALIGNMENT
-from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_COLOR_INDEX, WD_BREAK
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_COLOR_INDEX, WD_BREAK, WD_TAB_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from docx.shared import Pt, Cm, RGBColor
+from docx.shared import Pt, Cm, RGBColor, Twips
 
 import brand
 
@@ -293,19 +293,42 @@ class ProposalWriter:
         props.created = props.modified = datetime.now(timezone.utc).replace(microsecond=0, tzinfo=None)
         props.revision = 1
 
-    def header_footer(self, section=None, header_text=brand.HEADER_TEXT):
-        """Branded running header and 'Page X of Y' footer; blank on the cover."""
+    def header_footer(self, section=None, header_text=brand.HEADER_TEXT, width_cm=None, first_page_blank=True):
+        """Branded running header (small iorta logo left, title right) and 'Page X of Y' footer.
+
+        The first section keeps a blank first page for the cover. Later sections
+        (landscape annexes) get their own header so the right tab stop matches
+        the page width."""
         section = section or self.doc.sections[0]
-        section.different_first_page_header_footer = True
+        width_cm = width_cm or self.CONTENT_WIDTH_CM
+        section.different_first_page_header_footer = first_page_blank
+        section.header.is_linked_to_previous = False
+        section.footer.is_linked_to_previous = False
 
         header = section.header.paragraphs[0]
-        header.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        for run in list(header.runs):
+            run._r.getparent().remove(run._r)
+        header.paragraph_format.space_after = Pt(0)
+        if brand.IORTA_LOGO.exists():
+            header.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            tabs = header.paragraph_format.tab_stops
+            for inherited in (4680, 9360):      # centre and right tabs of the built-in Header style
+                tabs.add_tab_stop(Twips(inherited), WD_TAB_ALIGNMENT.CLEAR)
+            tabs.add_tab_stop(Cm(width_cm), WD_TAB_ALIGNMENT.RIGHT)
+            header.add_run().add_picture(str(brand.IORTA_LOGO), height=Cm(0.62))
+            header.add_run("\t")
+        else:
+            header.alignment = WD_ALIGN_PARAGRAPH.RIGHT
         add_rich_text(header, header_text, size=8, colour=brand.TEXT_MUTED)
-        _paragraph_border(header, "bottom", brand.ORANGE, size=6)
+        if header._p.pPr is None or header._p.pPr.find(qn("w:pBdr")) is None:
+            _paragraph_border(header, "bottom", brand.ORANGE, size=6)
 
         footer = section.footer.paragraphs[0]
+        for run in list(footer.runs):
+            run._r.getparent().remove(run._r)
         footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        _paragraph_border(footer, "top", brand.MAGENTA, size=6)
+        if footer._p.pPr is None or footer._p.pPr.find(qn("w:pBdr")) is None:
+            _paragraph_border(footer, "top", brand.MAGENTA, size=6)
         add_rich_text(footer, f"{brand.CLASSIFICATION} | Page ", size=8, colour=brand.TEXT_MUTED)
         add_field(footer, "PAGE", "1", size=8, colour=brand.TEXT_MUTED)
         add_rich_text(footer, " of ", size=8, colour=brand.TEXT_MUTED)
@@ -536,11 +559,13 @@ class ProposalWriter:
     def landscape_section(self):
         section = self.doc.add_section(WD_SECTION.NEW_PAGE)
         self._configure_page(section, landscape=True)
+        self.header_footer(section, width_cm=self.LANDSCAPE_WIDTH_CM, first_page_blank=False)
         return section
 
     def portrait_section(self):
         section = self.doc.add_section(WD_SECTION.NEW_PAGE)
         self._configure_page(section, landscape=False)
+        self.header_footer(section, width_cm=self.CONTENT_WIDTH_CM, first_page_blank=False)
         return section
 
     def save(self, path: Path):

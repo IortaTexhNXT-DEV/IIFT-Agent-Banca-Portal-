@@ -1,12 +1,15 @@
-"""Build the commercial pricing workbook for the IIFT proposal (.xlsx).
+"""Build the client-facing commercial pricing workbook (.xlsx).
 
 Usage:
-    python docs/proposal/build/build_pricing.py
+    python3 docs/proposal/build/build_pricing.py
 
-All figures come from pricing_data.py. Totals are real Excel formulas, so the
-workbook stays consistent if a reviewer changes an input cell. After writing,
-the script recomputes every total in Python and checks it against the
-approved figures.
+All figures come from pricing_data.py. Totals, annualisations, milestone
+amounts, OPE trip costs and USD conversions are live Excel formulas. Yearly
+escalated amounts (AMC, subscription, managed services, rate card for Years 2
+to 5) are entered as values rounded to the nearest B$, exactly as in the
+proposal. After writing, the script recomputes the workbook and checks every
+key total against pricing_data.py, and (if LibreOffice is installed)
+recalculates it to confirm no cell evaluates to an error.
 """
 
 import sys
@@ -14,452 +17,854 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from openpyxl import Workbook                                      # noqa: E402
-from openpyxl.styles import Alignment, Border, Font, PatternFill, Side  # noqa: E402
-from openpyxl.utils import get_column_letter                      # noqa: E402
+from openpyxl import Workbook       # noqa: E402
 
-import brand                     # noqa: E402
-import pricing_data as price     # noqa: E402
+import brand                        # noqa: E402
+import pricing_data as price        # noqa: E402
+from xlsx_kit import (MONEY, PERCENT, FormulaEvaluator, SheetWriter, add_logo, finish,  # noqa: E402
+                      recalc_errors, recalculated_values, set_widths)
 
-HEADER_FILL = PatternFill("solid", fgColor=brand.MAGENTA)
-TOTAL_FILL = PatternFill("solid", fgColor=brand.GROUP_ROW)
-ZEBRA_FILL = PatternFill("solid", fgColor=brand.ZEBRA)
-INPUT_FILL = PatternFill("solid", fgColor="FFF9DB")
-HEADER_FONT = Font(name=brand.BODY_FONT, bold=True, color=brand.WHITE, size=10)
-TITLE_FONT = Font(name=brand.BODY_FONT, bold=True, color=brand.MAGENTA, size=14)
-SUBTITLE_FONT = Font(name=brand.BODY_FONT, bold=True, color=brand.ORANGE, size=11)
-BODY_FONT = Font(name=brand.BODY_FONT, color=brand.TEXT_DARK, size=10)
-BOLD_FONT = Font(name=brand.BODY_FONT, color=brand.TEXT_DARK, size=10, bold=True)
-NOTE_FONT = Font(name=brand.BODY_FONT, color=brand.TEXT_MUTED, size=9, italic=True)
-THIN = Side(style="thin", color=brand.BORDER_GREY)
-BORDER = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
-MONEY = '#,##0;(#,##0);"0"'
-WRAP = Alignment(wrap_text=True, vertical="top")
-
-FX_CELL = "'Summary (RFP format)'!$C$6"
+FX = "Summary!$C$11"
+YEARS = list(range(1, price.CONTRACT_YEARS + 1))
+REFS = {}          # name -> "'Sheet'!$X$n"
 
 
-# --- Styling helpers ------------------------------------------------------------------
-def title_block(ws, title, subtitle=None):
-    ws["A1"] = title
-    ws["A1"].font = TITLE_FONT
-    ws["A2"] = subtitle or f"{brand.BIDDER}, proposal to {brand.CLIENT}, {brand.SUBMISSION_DATE}"
-    ws["A2"].font = NOTE_FONT
+def ref(sheet, col, row, absolute=True):
+    cell = f"${col}${row}" if absolute else f"{col}{row}"
+    return f"'{sheet}'!{cell}" if " " in sheet else f"{sheet}!{cell}"
 
 
-def header_row(ws, row, headers):
-    for col, text in enumerate(headers, start=1):
-        cell = ws.cell(row=row, column=col, value=text)
-        cell.font = HEADER_FONT
-        cell.fill = HEADER_FILL
-        cell.border = BORDER
-        cell.alignment = Alignment(wrap_text=True, vertical="center")
+def usd(cell):
+    return f"=ROUND({cell}/{FX},0)"
 
 
-def body_row(ws, row, values, money_cols=(), bold=False, fill=None):
-    for col, value in enumerate(values, start=1):
-        cell = ws.cell(row=row, column=col, value=value)
-        cell.font = BOLD_FONT if bold else BODY_FONT
-        cell.border = BORDER
-        cell.alignment = WRAP
-        if col in money_cols:
-            cell.number_format = MONEY
-            cell.alignment = Alignment(horizontal="right", vertical="top")
-        if fill:
-            cell.fill = fill
+# =============================================================================
+# Option A
+# =============================================================================
+def option_a_sheet(wb):
+    name = "Option A"
+    ws = wb.create_sheet(name)
+    set_widths(ws, [7, 50, 16, 15, 15, 15, 13, 80])
+    s = SheetWriter(ws, 8)
+    s.title(price.OPTION_TITLES["A"] + ": licence, implementation and annual maintenance")
 
+    s.section("1. One-time fees (RFP section 10 numbering)")
+    s.header(["No", "Component", "Basis", "Agent/Banca Portal (B$)", "Back-office (B$)", "Total (B$)",
+              "In AMC base", "Scope"])
+    first = s.row
+    flagged = []
+    for i, (no, key, component, basis, portal, backoffice, in_base, note) in enumerate(price.ONE_TIME_ITEMS):
+        r = s.row
+        s.line([no, component, basis, portal, backoffice, f"=D{r}+E{r}", "Yes" if in_base else "No", note],
+               money=(4, 5, 6), center=(1, 7), zebra=i % 2 == 1)
+        if in_base:
+            flagged.append(r)
+        if key == "licence":
+            REFS["a_licence"] = ref(name, "F", r)
+            REFS["a_licence_p"], REFS["a_licence_b"] = ref(name, "D", r), ref(name, "E", r)
+    last = s.row - 1
+    r = s.line(["", "Total one-time fees, Option A", "", f"=SUM(D{first}:D{last})", f"=SUM(E{first}:E{last})",
+                f"=SUM(F{first}:F{last})", "", "Fixed price; inclusive of WHT; exclusive of OPE and third-party "
+                                               "charges"], money=(4, 5, 6), total=True)
+    REFS["a_one_portal"], REFS["a_one_bo"], REFS["a_one_total"] = ref(name, "D", r), ref(name, "E", r), ref(name, "F", r)
+    s.line(["", "of which licence (item 1)", "", f"={REFS['a_licence_p']}", f"={REFS['a_licence_b']}",
+            f"={REFS['a_licence']}", "", "Paid against licence milestones L1–L3"], money=(4, 5, 6))
+    r2 = s.line(["", "of which services (items 2–10)", "", f"=D{r}-D{r + 1}", f"=E{r}-E{r + 1}", f"=F{r}-F{r + 1}",
+                 "", "Paid against service milestones M1–M7; same under Option B"], money=(4, 5, 6))
+    REFS["a_services"] = ref(name, "F", r2)
+    s.skip()
 
-def zebra(ws, first_row, last_row, columns):
-    for row in range(first_row, last_row + 1):
-        if (row - first_row) % 2 == 1:
-            for col in range(1, columns + 1):
-                ws.cell(row=row, column=col).fill = ZEBRA_FILL
+    s.section("2. Integration per interface (item 3, COM-05)")
+    s.header(["No", "Interface", "Basis", "Agent/Banca Portal (B$)", "Back-office (B$)", "Total (B$)", "", "Scope"])
+    first = s.row
+    for i, (iface, scope, portal, backoffice) in enumerate(price.INTERFACES, start=1):
+        r = s.row
+        s.line([f"3.{i}", iface, "Per interface", portal, backoffice, f"=D{r}+E{r}", "", scope],
+               money=(4, 5, 6), center=(1,), zebra=i % 2 == 0)
+    last = s.row - 1
+    s.line(["", "Total integration (agrees with item 3)", "", f"=SUM(D{first}:D{last})", f"=SUM(E{first}:E{last})",
+            f"=SUM(F{first}:F{last})", "", ""], money=(4, 5, 6), total=True)
+    s.skip()
 
-
-def widths(ws, values):
-    for index, width in enumerate(values, start=1):
-        ws.column_dimensions[get_column_letter(index)].width = width
-
-
-def note(ws, row, text, columns=6):
-    ws.cell(row=row, column=1, value=text).font = NOTE_FONT
-    ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=columns)
-    ws.cell(row=row, column=1).alignment = Alignment(wrap_text=True, vertical="top")
-    ws.row_dimensions[row].height = 30
-
-
-def usd(cell_ref):
-    return f"=ROUND({cell_ref}/{FX_CELL},0)"
-
-
-# --- Sheets -------------------------------------------------------------------------------
-def one_time_sheet(wb):
-    """RFP section 10 items 1–21; returns cell references of the key totals."""
-    ws = wb.create_sheet("One-time breakdown")
-    title_block(ws, "Commercial pricing breakdown, RFP section 10 (items 1–21)")
-    header_row(ws, 4, ["No", "Commercial component", "Pricing basis", "Agent/Banca Portal (B$)",
-                       "Back-office (B$)", "Total (B$)", "Rate / treatment", "Remarks"])
-    row = 5
-    one_time_rows, maintenance_rows, refs = [], [], {}
-    for item in price.rfp_section10_rows():
-        if item["portal"] is not None:
-            values = [item["no"], item["component"], item["basis"], item["portal"], item["backoffice"],
-                      f"=D{row}+E{row}", "Included" if item["no"] == 11 else "", item["remark"]]
-            (one_time_rows if item["category"] == "one-time" else maintenance_rows).append(row)
-        else:
-            values = [item["no"], item["component"], item["basis"], None, None, None, item["text"], item["remark"]]
-        body_row(ws, row, values, money_cols=(4, 5, 6))
-        row += 1
-        if item["no"] == 11:
-            first, last = one_time_rows[0], one_time_rows[-1]
-            body_row(ws, row, ["", "Subtotal one-time (items 1–11)", "One-off", f"=SUM(D{first}:D{last})",
-                               f"=SUM(E{first}:E{last})", f"=SUM(F{first}:F{last})",
-                               "Fixed price; WHT inclusive; planned OPE included", ""],
-                     money_cols=(4, 5, 6), bold=True, fill=TOTAL_FILL)
-            refs["one_time"] = row
-            row += 1
-        if item["no"] == 16:
-            first, last = maintenance_rows[0], maintenance_rows[-1]
-            body_row(ws, row, ["", "Subtotal maintenance Years 1–5 (items 12–16)", "Annual",
-                               f"=SUM(D{first}:D{last})", f"=SUM(E{first}:E{last})", f"=SUM(F{first}:F{last})",
-                               "Flat, 0% escalation", ""], money_cols=(4, 5, 6), bold=True, fill=TOTAL_FILL)
-            refs["maintenance"] = row
-            row += 1
-    note(ws, row + 1, "Integration (item 3) is itemised per interface on the 'Integration per interface' sheet. "
-                      "Infrastructure, database and third-party items (5, 6, 20) are not part of iorta's fees under "
-                      "the recommended on-premise option.", columns=8)
-    widths(ws, [6, 44, 15, 18, 16, 14, 34, 60])
-    ws.freeze_panes = "C5"
-    return refs
-
-
-def integration_sheet(wb):
-    ws = wb.create_sheet("Integration per interface")
-    title_block(ws, "Integration cost per interface (RFP section 10 item 3, COM-05)")
-    header_row(ws, 4, ["Interface", "Scope", "Agent/Banca Portal (B$)", "Back-office (B$)", "Total (B$)"])
-    row = 5
-    for name, scope, portal, backoffice in price.INTERFACES:
-        body_row(ws, row, [name, scope, portal, backoffice, f"=C{row}+D{row}"], money_cols=(3, 4, 5))
-        row += 1
-    zebra(ws, 5, row - 1, 5)
-    body_row(ws, row, ["Total integration", "", f"=SUM(C5:C{row - 1})", f"=SUM(D5:D{row - 1})",
-                       f"=SUM(E5:E{row - 1})"], money_cols=(3, 4, 5), bold=True, fill=TOTAL_FILL)
-    widths(ws, [26, 70, 22, 18, 14])
-    return row
-
-
-def maintenance_sheet(wb):
-    ws = wb.create_sheet("Maintenance 5 years")
-    title_block(ws, "Five-year maintenance & support (RFP sections 8 and 9)")
-    ws["A3"] = "Annual escalation"
-    ws["A3"].font = BOLD_FONT
-    ws["C3"] = price.MAINTENANCE_ESCALATION
-    ws["C3"].number_format = "0.0%"
-    ws["C3"].fill = INPUT_FILL
-    header_row(ws, 5, ["Year", "Focus", "Activities", "Agent/Banca Portal (B$)", "Back-office (B$)",
-                       "Total (B$)", "Cumulative (B$)"])
-    row = 6
+    s.section("3. Annual maintenance charge (AMC): 22% of licence and customisation, +5% a year")
+    base = s.line(["", "AMC base: licence, implementation and integration (items flagged Yes)", "",
+                   "=" + "+".join(f"D{r}" for r in flagged), "=" + "+".join(f"E{r}" for r in flagged),
+                   "=" + "+".join(f"F{r}" for r in flagged), "", "Items 1, 2 and 3"], money=(4, 5, 6), bold=True)
+    REFS["amc_base"] = ref(name, "F", base)
+    rate = s.line(["", "AMC rate", "", None, None, price.AMC_RATE, "", "Applied to the AMC base"], pct=(6,),
+                  inputs=(6,))
+    s.line(["", "Yearly increase (capped, COM-18)", "", None, None, price.ESCALATION, "",
+            "Years 2–5 are escalated from Year 1 and rounded to the nearest B$"], pct=(6,))
+    s.header(["Year", "Focus (RFP section 9)", "Basis", "Agent/Banca Portal (B$)", "Back-office (B$)", "AMC (B$)",
+              "Per quarter (B$)", "Activities"])
+    first = s.row
     for _, year, focus, description in price.MAINTENANCE_PLAN:
-        body_row(ws, row, [f"Year {year}", focus, description,
-                           f"=ROUND({price.MAINTENANCE_ANNUAL_PORTAL}*(1+$C$3)^{year - 1},0)",
-                           f"=ROUND({price.MAINTENANCE_ANNUAL_BACKOFFICE}*(1+$C$3)^{year - 1},0)",
-                           f"=D{row}+E{row}", f"=SUM($F$6:F{row})"], money_cols=(4, 5, 6, 7))
-        row += 1
-    zebra(ws, 6, row - 1, 7)
-    body_row(ws, row, ["Total", "Five years", "", f"=SUM(D6:D{row - 1})", f"=SUM(E6:E{row - 1})",
-                       f"=SUM(F6:F{row - 1})", ""], money_cols=(4, 5, 6), bold=True, fill=TOTAL_FILL)
-    total_row = row
-    row += 2
-    ws.cell(row=row, column=1, value="Included in the annual fee").font = SUBTITLE_FONT
-    for inclusion in price.MAINTENANCE_INCLUSIONS:
-        row += 1
-        ws.cell(row=row, column=1, value=f"• {inclusion}").font = BODY_FONT
-    row += 2
-    note(ws, row, f"Billing: {price.MAINTENANCE_BILLING}. Warranty: {price.WARRANTY_MONTHS} months from go-live "
-                  "(defects corrected free of charge); Year 1 maintenance starts at go-live.", columns=7)
-    widths(ws, [10, 28, 70, 22, 18, 14, 16])
-    return total_row
+        r = s.row
+        portal = f"=ROUND(D{base}*$F${rate},0)" if year == 1 else price.amc_portal(year)
+        backoffice = f"=ROUND(E{base}*$F${rate},0)" if year == 1 else price.amc_backoffice(year)
+        s.line([f"Year {year}", focus, "Annual", portal, backoffice, f"=D{r}+E{r}", f"=F{r}/4", description],
+               money=(4, 5, 6), money2=(7,), zebra=year % 2 == 0)
+        REFS[f"amc_{year}"] = ref(name, "F", r)
+        REFS[f"amc_{year}_p"], REFS[f"amc_{year}_b"] = ref(name, "D", r), ref(name, "E", r)
+    last = s.row - 1
+    r = s.line(["Total", "Five years", "", f"=SUM(D{first}:D{last})", f"=SUM(E{first}:E{last})",
+                f"=SUM(F{first}:F{last})", "", ""], money=(4, 5, 6), total=True)
+    REFS["amc_total"] = ref(name, "F", r)
+    s.skip()
+    s.section("AMC inclusions")
+    s.bullets(price.MAINTENANCE_INCLUSIONS)
+    s.skip()
+    s.section("Licence terms (COM-02)")
+    s.bullets([
+        f"Perpetual, non-exclusive, non-transferable enterprise licence to {brand.PRODUCT} (Agent/Banca Portal and "
+        "Back-office) for IIFT's internal business; no renewal fee.",
+        "Unlimited named and concurrent users; production, DR and non-production environments included.",
+        "Use by another IITH group company (e.g. IIGT) needs an additional entity licence, priced separately.",
+        f"Billing of the AMC: {price.AMC_BILLING.lower()}. Warranty: {price.WARRANTY_MONTHS} months from go-live.",
+    ])
+    ws.freeze_panes = "C4"
 
 
+# =============================================================================
+# Option B
+# =============================================================================
+def option_b_sheet(wb):
+    name = "Option B"
+    ws = wb.create_sheet(name)
+    set_widths(ws, [9, 50, 16, 15, 15, 15, 15, 70])
+    s = SheetWriter(ws, 8)
+    s.title(price.OPTION_TITLES["B"] + ": implementation, subscription, managed services and cloud at actuals")
+
+    s.section("1. Implementation fee (same scope and fees as Option A items 2–10)")
+    s.header(["No", "Component", "Basis", "Agent/Banca Portal (B$)", "Back-office (B$)", "Total (B$)", "", "Scope"])
+    first = s.row
+    for i, (no, key, component, basis, portal, backoffice, _, note) in enumerate(
+            [item for item in price.ONE_TIME_ITEMS if item[1] != "licence"]):
+        r = s.row
+        s.line([no, component, basis, portal, backoffice, f"=D{r}+E{r}", "", note], money=(4, 5, 6), center=(1,),
+               zebra=i % 2 == 1)
+    last = s.row - 1
+    r = s.line(["", "Total implementation fee, Option B", "", f"=SUM(D{first}:D{last})", f"=SUM(E{first}:E{last})",
+                f"=SUM(F{first}:F{last})", "", "Paid against service milestones M1–M7"], money=(4, 5, 6), total=True)
+    REFS["b_one_portal"], REFS["b_one_bo"], REFS["b_one_total"] = ref(name, "D", r), ref(name, "E", r), ref(name, "F", r)
+    setup = s.line(["5", "Cloud set-up: landing zone, PROD/DR/UAT environments, monitoring, backups, DR", "One-off",
+                    None, None, price.CLOUD_SETUP_FEE, "",
+                    "RFP item 5 (one-off part); payable at contract signing; not part of the AMC base"],
+                   money=(4, 5, 6), center=(1,))
+    REFS["b_setup"] = ref(name, "F", setup)
+    r = s.line(["", "Total one-time fees, Option B", "", None, None, f"=F{r}+F{setup}", "",
+                "Inclusive of WHT; exclusive of OPE, cloud infrastructure and third-party charges"],
+               money=(4, 5, 6), total=True)
+    REFS["b_one_all"] = ref(name, "F", r)
+    s.skip()
+
+    s.section(f"2. Subscription (+5% a year; minimum term {price.SUBSCRIPTION_MINIMUM_MONTHS} months from go-live)")
+    s.header(["Year", "Item", "Basis", "Portal per month (B$)", "Back-office per month (B$)", "Total per month (B$)",
+              "Per year (B$)", "Notes"])
+    first = s.row
+    for year in YEARS:
+        r = s.row
+        s.line([f"Year {year}", "Subscription: right to use, maintenance and support, application management",
+                "Monthly in advance", price.subscription_monthly_portal(year),
+                price.subscription_monthly_backoffice(year), f"=D{r}+E{r}", f"=F{r}*12",
+                "Year 1 rates as quoted; later years escalated by 5% and rounded to the nearest B$" if year == 1
+                else ""], money=(4, 5, 6, 7), zebra=year % 2 == 0)
+        REFS[f"sub_{year}"] = ref(name, "G", r)
+        REFS[f"sub_{year}_m"] = ref(name, "F", r)
+        REFS[f"sub_{year}_p"] = f"={ref(name, 'D', r)}*12"
+        REFS[f"sub_{year}_b"] = f"={ref(name, 'E', r)}*12"
+    last = s.row - 1
+    r = s.line(["Total", "Five years", "", "", "", "", f"=SUM(G{first}:G{last})", ""], money=(7,), total=True)
+    REFS["sub_total"] = ref(name, "G", r)
+    s.line(["", f"Minimum term value ({price.SUBSCRIPTION_MINIMUM_MONTHS} months)", "", "", "", "",
+            f"=SUM(G{first}:G{first + price.SUBSCRIPTION_MINIMUM_MONTHS // 12 - 1})",
+            "Payable if IIFT ends the subscription early other than for iorta's breach"], money=(7,))
+    s.skip()
+
+    s.section("3. Managed services by iorta (+5% a year)")
+    s.header(["Year", "Item", "Basis", "Per month (B$)", "Per year (B$)", "Inclusions"], merge_from=6)
+    first = s.row
+    for year in YEARS:
+        r = s.row
+        s.line([f"Year {year}", "Managed services: cloud operations, monitoring, patching, backups, DR, security",
+                "Monthly in advance", price.managed_monthly(year), f"=D{r}*12",
+                price.MANAGED_SERVICES_INCLUSIONS[year - 1]], money=(4, 5), zebra=year % 2 == 0, merge_from=6)
+        REFS[f"ms_{year}"] = ref(name, "E", r)
+        REFS[f"ms_{year}_m"] = ref(name, "D", r)
+    last = s.row - 1
+    r = s.line(["Total", "Five years", "", None, f"=SUM(E{first}:E{last})", price.MANAGED_SERVICES_INCLUSIONS[-1]],
+               money=(4, 5), total=True, merge_from=6)
+    REFS["ms_total"] = ref(name, "E", r)
+    s.skip()
+
+    s.section(f"4. Cloud infrastructure recharged at cost (disbursement) – estimate ({price.CLOUD_REGION})")
+    s.header(["No", "Service", "Billing basis", "B$ per month", "B$ per year", "Reference sizing"], merge_from=6)
+    first = s.row
+    for i, ((service, purpose, monthly), sizing) in enumerate(zip(price.CLOUD_MONTHLY_ITEMS, price.CLOUD_SIZING),
+                                                               start=1):
+        r = s.row
+        s.line([i, f"{service} ({purpose})", "At cost (disbursement)", monthly, f"=D{r}*12", sizing],
+               money=(4, 5), center=(1,), zebra=i % 2 == 0, merge_from=6)
+    last = s.row - 1
+    r = s.line(["", "Total, production run", "", f"=SUM(D{first}:D{last})", f"=SUM(E{first}:E{last})",
+                "Recharged monthly in arrears as a disbursement with provider invoices; no mark-up"], money=(4, 5),
+               total=True,
+               merge_from=6)
+    REFS["cloud_month"], REFS["cloud_year"] = ref(name, "D", r), ref(name, "E", r)
+    r = s.line(["", f"Project environments before go-live (DEV, SIT, UAT), {price.CLOUD_IMPLEMENTATION_MONTHS} months",
+                "At cost (disbursement)", price.CLOUD_IMPLEMENTATION_MONTHLY,
+                f"=D{s.row}*{price.CLOUD_IMPLEMENTATION_MONTHS}", "One-off, during implementation; scaled down"],
+               money=(4, 5), merge_from=6)
+    REFS["cloud_project"] = ref(name, "E", r)
+    r = s.line(["", "Cloud estimate, project plus five years", "", None,
+                f"=E{r}+{price.CONTRACT_YEARS}*{REFS['cloud_year']}", "Estimate only; IIFT pays actual charges"],
+               money=(4, 5), total=True, merge_from=6)
+    REFS["cloud_total"] = ref(name, "E", r)
+    s.skip()
+
+    s.section("5. Option B over five years")
+    s.header(["", "Element", "Treatment", "B$", "Notes"], merge_from=5)
+    rows = [
+        ("Implementation fee", "iorta fee", f"={REFS['b_one_total']}", "Fixed price"),
+        ("Cloud set-up fee", "iorta fee", f"={REFS['b_setup']}", "One-off, at contract signing"),
+        ("Subscription, Years 1–5", "iorta fee", f"={REFS['sub_total']}", "+5% a year"),
+        ("Managed services, Years 1–5", "iorta fee", f"={REFS['ms_total']}", "+5% a year"),
+        ("OPE, core onsite phases (estimate)", "Disbursement", "='OPE'!$L$" + "{core}", "At cost; per diem fixed"),
+        ("Cloud infrastructure (estimate)", "Disbursement", f"={REFS['cloud_total']}",
+         "At cost, no mark-up, or paid by IIFT directly"),
+    ]
+    first = s.row
+    for label, treatment, formula, notes in rows:
+        s.line(["", label, treatment, formula, notes], money=(4,), merge_from=5)
+    REFS["b_summary_rows"] = (first, s.row - 1)
+    r = s.line(["", "Five-year total, Option B", "", f"=SUM(D{first}:D{s.row - 1})", ""], money=(4,),
+               total=True, merge_from=5)
+    REFS["b_tco"] = ref(name, "D", r)
+    s.skip()
+    s.section("Subscription inclusions")
+    s.bullets(price.SUBSCRIPTION_INCLUSIONS)
+    s.note("Hosting in a cloud account dedicated to IIFT: held by iorta with charges recharged at cost as "
+           "disbursements (provider invoices attached), or held in IIFT's name with IIFT paying the provider "
+           "directly. IIFT makes the AMBD "
+           "outsourcing and cloud notification; a Brunei-hosted alternative can be priced on request. Data is "
+           "returned in open formats at exit and then deleted with a certificate.")
+    ws.freeze_panes = "C4"
+    return ws
+
+
+# =============================================================================
+# OPE
+# =============================================================================
+def ope_sheet(wb):
+    name = "OPE"
+    ws = wb.create_sheet(name)
+    set_widths(ws, [44, 26, 12, 9, 8, 11, 11, 11, 11, 11, 9, 13, 11])
+    s = SheetWriter(ws, 13)
+    s.title("Out-of-pocket expenses (OPE): onsite plan and estimate, recharged at cost as disbursements")
+    s.section("1. Unit rates (B$)")
+    s.header(["Cost item", "From Malaysia", "From India", "Basis"], height=20, merge_from=(4, 9))
+    origins = list(price.ORIGINS)
+    unit = {}
+    for label, idx, basis in (("Return airfare (economy)", 0, "Per trip, at actuals"),
+                              ("Travel insurance", 1, "Per trip, at actuals"),
+                              ("Airport transfers", 2, "Per trip, at actuals"),
+                              ("Visa", 3, "Per trip, at actuals")):
+        r = s.line([label, *[price.ORIGINS[o][idx] for o in origins], basis], money=(2, 3), inputs=(2, 3), merge_from=(4, 9))
+        unit[idx] = r
+    hotel = s.line(["Accommodation per night", price.HOTEL_PER_NIGHT, price.HOTEL_PER_NIGHT, "Per night, at actuals"],
+                   money=(2, 3), inputs=(2, 3), merge_from=(4, 9))
+    per_diem_usd = s.line(["Per diem (USD per day)", price.PER_DIEM_USD, price.PER_DIEM_USD,
+                           "Fixed; per day onsite including travel days"], money=(2, 3), inputs=(2, 3), merge_from=(4, 9))
+    per_diem = s.line(["Per diem (B$ per day)", f"=ROUND(B{per_diem_usd}*{FX},0)", f"=ROUND(C{per_diem_usd}*{FX},0)",
+                       "Converted at the indicative rate on the Summary sheet"], money=(2, 3), merge_from=(4, 9))
+    s.skip()
+    s.section("2. Onsite plan and estimate")
+    s.header(["Phase", "Role", "From", "Nights", "Days", "Airfare", "Hotel", "Per diem", "Insurance", "Transfers",
+              "Visa", "Total (B$)", "Type"])
+    col = {"Malaysia": "B", "India": "C"}
+    rows = {"core": [], "optional": []}
+    for i, trip in enumerate(price.ONSITE_PLAN):
+        r = s.row
+        c = col[trip.origin]
+        s.line([trip.phase, trip.role, trip.origin, trip.nights, f"=D{r}+1", f"=${c}${unit[0]}",
+                f"=D{r}*${c}${hotel}", f"=E{r}*${c}${per_diem}", f"=${c}${unit[1]}", f"=${c}${unit[2]}",
+                f"=${c}${unit[3]}", f"=SUM(F{r}:K{r})", "Optional (Option C)" if trip.optional else "Core"],
+               money=(6, 7, 8, 9, 10, 11, 12), center=(4, 5), zebra=i % 2 == 1)
+        rows["optional" if trip.optional else "core"].append(r)
+    core = s.line(["Core onsite phases", "", "", f"=SUM(D{rows['core'][0]}:D{rows['core'][-1]})", "", "", "", "",
+                   "", "", "", f"=SUM(L{rows['core'][0]}:L{rows['core'][-1]})", ""], money=(12,), center=(4,),
+                  total=True)
+    optional = s.line(["Option C knowledge transfer (optional)", "", "",
+                       f"=SUM(D{rows['optional'][0]}:D{rows['optional'][-1]})", "", "", "", "", "", "", "",
+                       f"=SUM(L{rows['optional'][0]}:L{rows['optional'][-1]})", ""], money=(12,), center=(4,))
+    total = s.line(["Total including Option C", "", "", "", "", "", "", "", "", "", "", f"=L{core}+L{optional}", ""],
+                   money=(12,), total=True)
+    ceiling = s.line([f"Ceiling without IIFT's prior approval: estimate + {price.OPE_TOLERANCE:.0%} (core phases)",
+                      "", "", "", "", "", "", "", "", "", "", f"=ROUND(L{core}*{1 + price.OPE_TOLERANCE},0)", ""],
+                     money=(12,))
+    REFS["ope_core"], REFS["ope_optional"], REFS["ope_total"] = (ref(name, "L", core), ref(name, "L", optional),
+                                                                 ref(name, "L", total))
+    REFS["ope_ceiling"] = ref(name, "L", ceiling)
+    s.skip()
+    s.section("3. Rules")
+    s.bullets([
+        "Recharged monthly in arrears at cost as disbursements, with travel invoices and receipts attached and no "
+        "mark-up, outside the fees to which WHT applies; the per diem is fixed and needs no receipts.",
+        f"Total OPE will not exceed the estimate by more than {price.OPE_TOLERANCE:.0%} without IIFT's prior written "
+        "approval.",
+        "Economy-class flights; business hotels near IIFT's office. Accommodation or transport provided by IIFT "
+        "reduces the OPE.",
+        "Trips agreed with IIFT's project manager two weeks ahead; all other work is remote from Malaysia and India.",
+        f"Extra onsite days requested by IIFT outside these phases: rate card (B$ {price.ONSITE_DAY_RATE} a day in "
+        "Year 1) plus OPE.",
+    ], columns=12)
+    ws.freeze_panes = "C4"
+    return core
+
+
+# =============================================================================
+# Option C
+# =============================================================================
+def option_c_sheet(wb):
+    name = "Option C"
+    ws = wb.create_sheet(name)
+    set_widths(ws, [9, 62, 26, 15, 15, 15, 60])
+    s = SheetWriter(ws, 7)
+    s.title(price.OPTION_TITLES["C"] + ": core source code with knowledge transfer and transition")
+    s.section("1. Price")
+    s.header(["", "Component", "Basis", "Amount (B$)", "Amount (USD)", "Notes"], merge_from=6)
+    lic = s.line(["", "Source code licence (SalesVerse 2.0 core platform)", "One-off", price.SOURCE_CODE_LICENCE,
+                  usd(f"D{s.row}"), "Use, modify and maintain for IIFT and IITH group internal use; no resale"],
+                 money=(4, 5), merge_from=6)
+    kt = s.line(["", f"Knowledge transfer and transition ({price.KNOWLEDGE_TRANSFER_WEEKS} weeks)", "One-off",
+                 price.KNOWLEDGE_TRANSFER, usd(f"D{s.row}"), "After go-live and hypercare exit"], money=(4, 5),
+                merge_from=6)
+    total = s.line(["", "Total Option C", "", f"=D{lic}+D{kt}", usd(f"D{s.row}"),
+                    "Exclusive of OPE (onsite weeks at actuals)"], money=(4, 5), total=True, merge_from=6)
+    REFS["c_total"] = ref(name, "D", total)
+    s.line(["", "OPE for onsite knowledge transfer (estimate)", "At cost (disbursement)", f"={REFS['ope_optional']}",
+            usd(f"D{s.row}"), "Solution Architect and Senior Developer onsite for the walkthrough weeks"],
+           money=(4, 5), merge_from=6)
+    s.note("Price held if Option C is exercised within 12 months of go-live; later exercise adds 5% for each further "
+           "contract year.", columns=7)
+    s.skip()
+    s.section("2. Payment milestones")
+    s.header(["Code", "Payment trigger", "Component", "Share", "Amount (B$)"], merge_from=(5, 5))
+    first = s.row
+    for code, trigger, component, share in price.SOURCE_CODE_MILESTONES:
+        base = lic if component == "Source code licence" else kt
+        s.line([code, trigger, component, share, f"=ROUND(D{s.row}*$D${base},0)"], money=(5,), pct=(4,),
+               center=(1,))
+    s.line(["", "Total", "", None, f"=SUM(E{first}:E{s.row - 1})"], money=(5,), total=True)
+    s.skip()
+    s.section("3. Knowledge transfer and transition plan")
+    s.header(["Week", "Activity", "Outcome"], merge_from=(3, 3))
+    for wk, activity, outcome in price.KT_PLAN:
+        s.line([wk, activity, outcome], center=(1,), zebra=wk % 2 == 0)
+    s.note("Acceptance: handover certificate signed when IIFT's team builds and deploys a release to SIT from the "
+           "delivered repository without iorta's help, resolves tickets in the reverse-shadow weeks and receives the "
+           "documentation set.")
+    s.skip()
+    s.section("4. Deliverables")
+    s.bullets(price.SOURCE_CODE_DELIVERABLES)
+    s.note("Source code of IIFT-specific components (configuration, adapters, reports, templates, migration and "
+           "build scripts) is delivered under every option (RFP DEL-11); Option C adds the core platform.")
+    s.skip()
+    s.section("5. Support after handover – choice 2: platform updates and L3 support at 10% of the AMC base")
+    base = s.line(["", "AMC base (Option A sheet)", "", f"={REFS['amc_base']}"], money=(4,))
+    rate = s.line(["", "Rate", "In place of the AMC", price.POST_HANDOVER_SUPPORT_RATE], pct=(4,), inputs=(4,))
+    s.header(["Year", "Support after handover", "Basis", "Choice 2 (B$)", "Full AMC (B$)", "Difference (B$)",
+              "Notes"])
+    first = s.row
+    for year in YEARS:
+        r = s.row
+        value = f"=ROUND(D{base}*D{rate},0)" if year == 1 else price.post_handover_support(year)
+        s.line([f"Year {year}", "Platform updates, security patches, L3 support for the core", "Quarterly in advance",
+                value, f"={REFS[f'amc_{year}']}", f"=E{r}-D{r}",
+                "Pro rata from the month after the handover certificate" if year == 1 else ""],
+               money=(4, 5, 6), zebra=year % 2 == 0)
+    last = s.row - 1
+    r = s.line(["Total", "Five years", "", f"=SUM(D{first}:D{last})", f"=SUM(E{first}:E{last})",
+                f"=SUM(F{first}:F{last})", ""], money=(4, 5, 6), total=True)
+    REFS["ph_total"] = ref(name, "D", r)
+    REFS["ph_1"] = ref(name, "D", first)
+    s.note("Choice 1: continue the full AMC. Choice 3: rate card only, no retainer.")
+    s.skip()
+    s.section("6. Escrow alternative (instead of Option C)")
+    s.header(["", "Item", "Basis", "B$ per year", "Notes"], merge_from=5)
+    s.line(["", "Escrow agent fees, indicative (low)", "Pass-through at cost", price.ESCROW_ANNUAL_ESTIMATE[0],
+            "Paid by IIFT; iorta's deposits included"], money=(4,), merge_from=5)
+    s.line(["", "Escrow agent fees, indicative (high)", "Pass-through at cost", price.ESCROW_ANNUAL_ESTIMATE[1],
+            "Release on insolvency, ceasing to trade or to support the product, or uncured material breach"],
+           money=(4,), merge_from=5)
+    ws.freeze_panes = "C4"
+
+
+# =============================================================================
+# RFP section 10
+# =============================================================================
+def rfp10_sheet(wb):
+    name = "RFP Section 10"
+    ws = wb.create_sheet(name)
+    set_widths(ws, [6, 40, 18, 13, 13, 13, 13, 13, 13, 36, 36, 64])
+    s = SheetWriter(ws, 12)
+    s.title("Commercial pricing breakdown, RFP section 10 (items 1–21), Option A and Option B")
+    s.header(["No", "Commercial component", "Pricing basis", "A: Portal (B$)", "A: Back-office (B$)", "A: Total (B$)",
+              "B: Portal (B$)", "B: Back-office (B$)", "B: Total (B$)", "Option A: rate / treatment",
+              "Option B: rate / treatment", "Remarks"], height=32)
+    rows_a = {r["no"]: r for r in price.rfp_section10_rows("A")}
+    rows_b = {r["no"]: r for r in price.rfp_section10_rows("B")}
+    one_time, recurring = [], []
+    for no in range(1, 22):
+        a, b = rows_a[no], rows_b[no]
+        r = s.row
+        values = [no, a["component"] if no != 1 else "Software / application licence", a["basis"],
+                  a["portal"], a["backoffice"], f"=D{r}+E{r}" if a["portal"] is not None else None,
+                  b["portal"], b["backoffice"],
+                  f"=G{r}+H{r}" if b["portal"] is not None else b["amount"],
+                  a["text"] or "", b["text"] or "", a["remark"] if no not in range(12, 17) else
+                  f"{a['remark']} Option B: subscription for the year."]
+        s.line(values, money=(4, 5, 6, 7, 8, 9), center=(1,), zebra=no % 2 == 0)
+        if a["category"] == "one-time" or b["category"] == "one-time":
+            one_time.append(r)
+        if a["category"] == "recurring":
+            recurring.append(r)
+        if no == 11:
+            cols = "DEFGHI"
+            s.line(["", "Subtotal one-time (items 1–11)", "One-off",
+                    *[f"=SUM({c}{one_time[0]}:{c}{one_time[-1]})" for c in cols], "Fixed price",
+                    "Fixed price; includes the cloud set-up (item 5)",
+                    "Inclusive of WHT; exclusive of OPE and third-party charges"], money=(4, 5, 6, 7, 8, 9), total=True)
+            REFS["r10_one"] = s.row - 1
+        if no == 16:
+            cols = "DEFGHI"
+            s.line(["", "Subtotal Years 1–5 (items 12–16)", "Annual",
+                    *[f"=SUM({c}{recurring[0]}:{c}{recurring[-1]})" for c in cols], "AMC, +5% a year",
+                    "Subscription, +5% a year", "Managed services (item 5, Option B) are shown on the Option B sheet"],
+                   money=(4, 5, 6, 7, 8, 9), total=True)
+            REFS["r10_rec"] = s.row - 1
+    s.skip()
+    s.note("Rates for items 17–19 are Year 1 rates and rise by 5% a year (Rate card sheet). Third-party charges (item "
+           "20) are detailed in the Bill of Materials workbook.", columns=12)
+    ws.freeze_panes = "C4"
+
+
+# =============================================================================
+# Rate card
+# =============================================================================
 def rate_card_sheet(wb):
     ws = wb.create_sheet("Rate card")
-    title_block(ws, "Rate card (RFP section 10 items 17–19, 21; COM-16)")
-    header_row(ws, 4, ["Item", "Unit", "Rate (B$)", "Notes"])
+    set_widths(ws, [46, 14, 12, 12, 12, 12, 12, 64])
+    s = SheetWriter(ws, 8)
+    s.title("Rate card (RFP section 10 items 17–19 and 21; COM-16), +5% a year")
+    s.header(["Service", "Unit", *[f"Year {y} (B$)" for y in YEARS], "Notes"])
     rows = [
-        ("Enhancements / change requests", "Per man-day", price.ENHANCEMENT_DAY_RATE,
-         f"{price.ENHANCEMENT_HOURS_PER_YEAR} hours per year included in maintenance"),
-        ("Enhancements / change requests", "Per hour", price.ENHANCEMENT_HOUR_RATE, "Blended rate, all roles"),
-        ("Onsite support, unplanned", "Per day", price.ONSITE_DAY_RATE,
-         f"Plus travel at cost; {price.PLANNED_ONSITE_VISITS} planned visits included in the fixed price"),
-        ("After-hours support, P1 Critical", "Per incident", 0, "Included"),
-        ("After-hours support, other", "Per hour", price.AFTER_HOURS_HOUR_RATE, "Only at IIFT's request"),
-        ("Exit / transition", "Fixed", 0, "Included in Year 5 maintenance"),
+        ("Enhancements and change requests", "Per man-day", price.ENHANCEMENT_DAY_RATE,
+         f"Blended rate, all roles; {price.ENHANCEMENT_HOURS_PER_YEAR} hours a year included in AMC / subscription"),
+        ("Enhancements and change requests", "Per hour", price.ENHANCEMENT_HOUR_RATE, "Blended rate, all roles"),
+        ("Onsite support, unplanned visit", "Per day", price.ONSITE_DAY_RATE, "Plus OPE at actuals"),
+        ("After-hours support other than P1", "Per hour", price.AFTER_HOURS_HOUR_RATE, "Only at IIFT's request"),
     ]
-    for offset, values in enumerate(rows):
-        body_row(ws, 5 + offset, list(values), money_cols=(3,))
-    zebra(ws, 5, 4 + len(rows), 4)
-    widths(ws, [36, 14, 12, 70])
+    for i, (item, unit, amount, notes) in enumerate(rows):
+        s.line([item, unit, *[price.rate(amount, y) for y in YEARS], notes], money=(3, 4, 5, 6, 7), zebra=i % 2)
+    s.line(["After-hours support for P1 (Critical) incidents", "Per incident", *["Included"] * 5, "24x7"],
+           center=(3, 4, 5, 6, 7))
+    s.line(["Exit and transition at contract end", "Fixed", *["Included"] * 5,
+            "Included in Year 5 AMC or at the end of the subscription"], center=(3, 4, 5, 6, 7), zebra=True)
+    s.skip()
+    s.note("Change requests: written request, impact assessment within five business days, quotation at these rates, "
+           "written approval before work starts. Quotations remain valid for 90 days.")
+    ws.freeze_panes = "C4"
 
 
-def milestones_sheet(wb, one_time_ref):
-    ws = wb.create_sheet("Payment milestones")
-    title_block(ws, "Payment milestones, one-time fee")
-    header_row(ws, 4, ["Milestone", "Payment trigger", "Share", "Amount (B$)", "Amount (USD, indicative)"])
-    row = 5
-    for code, trigger, share in price.PAYMENT_MILESTONES:
-        body_row(ws, row, [code, trigger, share, f"=ROUND(C{row}*{one_time_ref},0)", usd(f"D{row}")],
-                 money_cols=(4, 5))
-        ws.cell(row=row, column=3).number_format = "0%"
-        row += 1
-    zebra(ws, 5, row - 1, 5)
-    body_row(ws, row, ["Total", "", f"=SUM(C5:C{row - 1})", f"=SUM(D5:D{row - 1})", usd(f"D{row}")],
-             money_cols=(4, 5), bold=True, fill=TOTAL_FILL)
-    ws.cell(row=row, column=3).number_format = "0%"
-    note(ws, row + 2, f"Invoices payable within 30 days. Maintenance: {price.MAINTENANCE_BILLING.lower()} "
-                      f"(B$ {price.maintenance_annual() / 4:,.0f} per quarter).", columns=5)
-    widths(ws, [12, 70, 10, 16, 22])
-    return row
+# =============================================================================
+# Payment schedules
+# =============================================================================
+def payments_sheet(wb):
+    ws = wb.create_sheet("Payment schedules")
+    set_widths(ws, [12, 62, 22, 14, 16, 16, 44])
+    s = SheetWriter(ws, 7)
+    s.title(f"Payment schedules (invoices payable within {price.PAYMENT_TERMS_DAYS} days)")
+    s.section("1. Option A licence fee")
+    s.header(["Milestone", "Payment trigger", "Target", "Share", "Amount (B$)", "Amount (USD)", "Notes"])
+    first = s.row
+    licence_targets = {"L1": "Signature", "L2": "About week 8", "L3": "Week 24"}
+    for code, trigger, share in price.LICENCE_MILESTONES:
+        r = s.row
+        s.line([code, trigger, licence_targets.get(code, ""), share, f"=ROUND(D{r}*{REFS['a_licence']},0)", usd(f"E{r}"), ""],
+               money=(5, 6), pct=(4,), center=(1,))
+    r = s.line(["", "Total licence fee", "", f"=SUM(D{first}:D{s.row - 1})", f"=SUM(E{first}:E{s.row - 1})",
+                usd(f"E{s.row}"), ""], money=(5, 6), pct=(4,), total=True)
+    REFS["pay_licence"] = ref("Payment schedules", "E", r)
+    s.skip()
+    s.section("2. Services fee (Options A and B)")
+    s.header(["Milestone", "Payment trigger", "Target", "Share", "Amount (B$)", "Amount (USD)", "Notes"])
+    weeks = {"M1": 2, "M2": 6, "M4": 19, "M5": 22, "M6": 24, "M7": 28}
+    first = s.row
+    for code, trigger, share in price.SERVICE_MILESTONES:
+        r = s.row
+        s.line([code, trigger, f"Week {weeks[code]}", share, f"=ROUND(D{r}*{REFS['b_one_total']},0)", usd(f"E{r}"),
+                ""], money=(5, 6), pct=(4,), center=(1, 3))
+    r = s.line(["", "Total services fee", "", f"=SUM(D{first}:D{s.row - 1})", f"=SUM(E{first}:E{s.row - 1})",
+                usd(f"E{s.row}"), "M3 (build complete, week 16) carries no payment"], money=(5, 6), pct=(4,),
+               total=True)
+    REFS["pay_services"] = ref("Payment schedules", "E", r)
+    s.skip()
+    s.section("3. Recurring charges")
+    s.header(["Year", "Charge", "Option", "Per invoice (B$)", "Per year (B$)", "Billing"], merge_from=6)
+    for year in YEARS:
+        s.line([f"Year {year}", "Annual maintenance (AMC)", "A", f"={REFS[f'amc_{year}']}/4",
+                f"={REFS[f'amc_{year}']}", "Quarterly in advance from go-live"], money=(5,), money2=(4,),
+               center=(3,), merge_from=6)
+    for year in YEARS:
+        s.line([f"Year {year}", "Subscription", "B", f"={REFS[f'sub_{year}_m']}", f"={REFS[f'sub_{year}']}",
+                "Monthly in advance from go-live"], money=(4, 5), center=(3,), zebra=True, merge_from=6)
+    for year in YEARS:
+        s.line([f"Year {year}", "Managed services", "B", f"={REFS[f'ms_{year}_m']}", f"={REFS[f'ms_{year}']}",
+                "Monthly in advance from go-live"], money=(4, 5), center=(3,), merge_from=6)
+    s.line(["At signing", "Cloud set-up fee", "B", f"={REFS['b_setup']}", None, "Once, at contract signing"],
+           money=(4, 5), center=(3,), merge_from=6)
+    s.line(["Each month", "Cloud infrastructure (estimate)", "B", f"={REFS['cloud_month']}", f"={REFS['cloud_year']}",
+            "Monthly in arrears, disbursement at cost with provider invoices (or paid by IIFT directly)"],
+           money=(4, 5), center=(3,), zebra=True, merge_from=6)
+    s.line(["As incurred", "OPE", "A and B", None, None, "Monthly in arrears, disbursement at cost with travel invoices"],
+           center=(3,), merge_from=6)
+    s.skip()
+    s.section("4. Option C")
+    s.header(["Milestone", "Payment trigger", "Component", "Share", "Amount (B$)", "Amount (USD)", "Notes"])
+    for code, trigger, component, share, _ in price.source_code_milestone_amounts():
+        base = price.SOURCE_CODE_LICENCE if component == "Source code licence" else price.KNOWLEDGE_TRANSFER
+        r = s.line([code, trigger, component, share, f"=ROUND(D{s.row}*{base},0)", usd(f"E{s.row}"), ""],
+                   money=(5, 6), pct=(4,), center=(1,))
+    s.line(["Quarterly", "Post-handover support, choice 2 (Year 1)", "Support", None, f"={REFS['ph_1']}/4",
+            None, "Quarterly in advance, in place of the AMC"], money2=(5,))
+    ws.freeze_panes = "C4"
 
 
-def third_party_sheet(wb):
-    ws = wb.create_sheet("3rd-party & infra (indicative)")
-    title_block(ws, "Optional cloud hosting and third-party charges (indicative, excluded from iorta fees)")
-    ws["A3"] = "Option B: cloud hosting (AWS Singapore / Azure Southeast Asia), pass-through at cost"
-    ws["A3"].font = SUBTITLE_FONT
-    header_row(ws, 4, ["Service", "Purpose", "B$ per month", "B$ per year"])
-    row = 5
-    for service, purpose, monthly in price.CLOUD_MONTHLY_ITEMS:
-        body_row(ws, row, [service, purpose, monthly, f"=C{row}*12"], money_cols=(3, 4))
-        row += 1
-    zebra(ws, 5, row - 1, 4)
-    body_row(ws, row, ["Cloud infrastructure total", "", f"=SUM(C5:C{row - 1})", f"=SUM(D5:D{row - 1})"],
-             money_cols=(3, 4), bold=True, fill=TOTAL_FILL)
-    cloud_total_row = row
-    row += 1
-    body_row(ws, row, ["Managed cloud operations by iorta (optional)", "Patching, monitoring, backups, cost "
-                       "management", f"=ROUND(D{row}/12,0)", price.CLOUD_MANAGED_OPERATIONS_ANNUAL],
-             money_cols=(3, 4))
-    ops_row = row
-    row += 1
-    body_row(ws, row, ["Option B annual total", "", "", f"=D{cloud_total_row}+D{ops_row}"], money_cols=(4,),
-             bold=True, fill=TOTAL_FILL)
-    row += 2
-    ws.cell(row=row, column=1, value="Option A: on-premise (recommended). B$ 0 hosting from iorta; servers, OS, "
-                                     "network and DR site provided by IIFT/IITH.").font = BOLD_FONT
-    row += 2
-    ws.cell(row=row, column=1, value="Third-party charges: excluded, payable at cost (COM-17)").font = SUBTITLE_FONT
-    row += 1
-    header_row(ws, row, ["Item", "Basis", "Provider / note", "Indicative amount"])
-    first = row + 1
-    for item, basis, provider, amount in price.THIRD_PARTY_CHARGES:
-        row += 1
-        body_row(ws, row, [item, basis, provider, amount])
-    zebra(ws, first, row, 4)
-    note(ws, row + 2, "Cloud prices are indicative, vary with usage and exchange rates, and are confirmed before "
-                      "provisioning. Use of cloud is subject to IIFT data-residency approval and AMBD outsourcing / "
-                      "cloud notification.", columns=4)
-    widths(ws, [52, 40, 30, 48])
-    return cloud_total_row, ops_row
+# =============================================================================
+# Client format and summary
+# =============================================================================
+def client_format_sheet(wb):
+    name = "Client format"
+    ws = wb.create_sheet(name, 1)
+    set_widths(ws, [62, 15, 15, 13, 13, 15, 15])
+    s = SheetWriter(ws, 7)
+    s.title("Fees in IIFT's requested format (Description | Fee | WHT | OPE | Total)")
+    s.note("All fees are inclusive of WHT, exclusive of OPE (recharged at cost as disbursements; estimate shown) and "
+           "exclusive of "
+           "third-party charges and infrastructure (Bill of Materials). USD indicative at the rate on the Summary "
+           "sheet.", columns=7)
+    s.skip()
+    headers = ["Description", "Fee (B$)", "Fee (USD)", "WHT", "OPE", "Total (B$)", "Total (USD)"]
+
+    def fee(label, formula, total=False):
+        r = s.row
+        return s.line([label, formula, usd(f"B{r}"), "Inclusive", "Excluded", f"=B{r}", usd(f"F{r}")],
+                      money=(2, 3, 6, 7), center=(4, 5), total=total)
+
+    def sum_row(label, rows):
+        r = s.row
+        return s.line([label, "=" + "+".join(f"B{x}" for x in rows), usd(f"B{r}"), "Inclusive", "Excluded",
+                       "=" + "+".join(f"F{x}" for x in rows), usd(f"F{r}")], money=(2, 3, 6, 7), center=(4, 5),
+                      total=True)
+
+    def ope_row():
+        r = s.row
+        return s.line(["OPE estimate for the onsite phases (travel, accommodation, per diem, insurance, transfers, "
+                       "visas)", None, None, "–", f"={REFS['ope_core']}", f"=E{r}", usd(f"F{r}")],
+                      money=(2, 3, 5, 6, 7), center=(4,))
+
+    s.section(price.OPTION_TITLES["A"])
+    s.header(headers, height=20)
+    s.group("One-time fees (licence and services)")
+    p = fee("Agent/Banca Portal", f"={REFS['a_one_portal']}")
+    b = fee("Back-office solution", f"={REFS['a_one_bo']}")
+    REFS["cf_a_one"] = ref(name, "B", sum_row("Total one-time fees", [p, b]))
+    s.group("Annual maintenance (AMC), Year 1 – 22% of licence and customisation, +5% a year")
+    p = fee("Agent/Banca Portal", f"={REFS['amc_1_p']}")
+    b = fee("Back-office solution", f"={REFS['amc_1_b']}")
+    REFS["cf_a_amc"] = ref(name, "B", sum_row("Total AMC, Year 1", [p, b]))
+    s.group("Out-of-pocket expenses – disbursements at cost")
+    ope_row()
+    s.skip()
+
+    s.section(price.OPTION_TITLES["B"])
+    s.header(headers, height=20)
+    s.group("One-time fees (services)")
+    p = fee("Agent/Banca Portal", f"={REFS['b_one_portal']}")
+    b = fee("Back-office solution", f"={REFS['b_one_bo']}")
+    c = fee("Cloud set-up, platform (landing zone, environments, monitoring, backups, DR)", f"={REFS['b_setup']}")
+    REFS["cf_b_one"] = ref(name, "B", sum_row("Total one-time fees", [p, b, c]))
+    s.group("Recurring fees, Year 1 – +5% a year")
+    p = fee(f"Agent/Banca Portal subscription (B$ {price.subscription_monthly_portal(1):,} a month)",
+            REFS["sub_1_p"])
+    b = fee(f"Back-office solution subscription (B$ {price.subscription_monthly_backoffice(1):,} a month)",
+            REFS["sub_1_b"])
+    m = fee(f"Managed services, platform (B$ {price.managed_monthly(1):,} a month)", f"={REFS['ms_1']}")
+    REFS["cf_b_rec"] = ref(name, "B", sum_row("Total recurring fees, Year 1", [p, b, m]))
+    s.group("Out-of-pocket expenses – disbursements at cost")
+    ope_row()
+    s.skip()
+    s.note(f"Cloud infrastructure (Option B) is excluded and recharged at cost as a disbursement (or paid by IIFT "
+           f"directly): estimate B$ {price.cloud_monthly():,} "
+           f"a month plus B$ {price.CLOUD_IMPLEMENTATION_MONTHLY * price.CLOUD_IMPLEMENTATION_MONTHS:,} for project "
+           "environments (Option B sheet). Option C (source code handover) is on its own sheet.", columns=7)
+    ws.freeze_panes = "A4"
+
+
+def summary_sheet(ws):
+    ws.title = "Summary"
+    set_widths(ws, [52, 16, 16, 16, 16, 16, 16, 16])
+    for r in (1, 2, 3):
+        ws.row_dimensions[r].height = 16
+    add_logo(ws, "A1", height_px=56)
+    s = SheetWriter(ws, 8)
+    s.title(f"{brand.PROPOSAL_TITLE}: commercial summary", row=4)
+    assert s.row == 7
+    s.label_value("Client", brand.CLIENT)
+    s.label_value("Bidder", brand.BIDDER)
+    s.label_value("Solution", f"{brand.PRODUCT}, configured as the {brand.SOLUTION_NAME}")
+    s.label_value("Currency", "Brunei Dollar (B$); USD indicative")
+    fx = s.label_value("Indicative FX (B$ per USD 1)", price.FX_BND_PER_USD, number_format="0.00", input_cell=True)
+    assert fx.coordinate == "C11", fx.coordinate
+    s.label_value("Quotation validity", f"{price.QUOTATION_VALIDITY_DAYS} days from submission")
+    s.skip()
+
+    s.section("1. Commercial options at a glance (B$)")
+    s.header(["Item", "Option A: on-premise perpetual licence", "Option B: subscription, iorta-hosted cloud",
+              "Option C: source code handover (add-on)", "Notes"], height=44, merge_from=5)
+    one = s.line(["One-time iorta fees", f"={REFS['a_one_total']}", f"={REFS['b_one_all']}", f"={REFS['c_total']}",
+                  "A: licence + services; B: services + cloud set-up; C: source code + knowledge transfer"],
+                 money=(2, 3, 4), merge_from=5)
+    s.line(["Recurring iorta fees, Year 1", f"={REFS['amc_1']}", f"={REFS['sub_1']}+{REFS['ms_1']}",
+            f"={REFS['ph_1']}", "A: AMC; B: subscription + managed services; C: support choice 2 "
+                                                  "in place of the AMC"], money=(2, 3, 4), merge_from=5)
+    rec = s.line(["Recurring iorta fees, Years 1–5", f"={REFS['amc_total']}",
+                  f"={REFS['sub_total']}+{REFS['ms_total']}", f"={REFS['ph_total']}",
+                  "+5% a year (capped)"], money=(2, 3, 4), merge_from=5)
+    fees = s.line(["iorta fees, five years", f"=B{one}+B{rec}", f"=C{one}+C{rec}", None, ""],
+                  money=(2, 3, 4), bold=True, merge_from=5)
+    ope = s.line(["OPE estimate, core onsite phases (disbursements at cost)", f"={REFS['ope_core']}", f"={REFS['ope_core']}",
+                  f"={REFS['ope_optional']}", "C: optional onsite knowledge transfer"],
+                 money=(2, 3, 4), merge_from=5)
+    cloud = s.line(["Cloud infrastructure at cost, estimate (project + five years)", 0, f"={REFS['cloud_total']}",
+                    None, "Disbursement at cost without mark-up, or paid by IIFT directly"], money=(2, 3, 4),
+                   merge_from=5)
+    total = s.line(["Five-year total (B$)", f"=B{fees}+B{ope}+B{cloud}", f"=C{fees}+C{ope}+C{cloud}", None,
+                    "Excludes infrastructure procured by IIFT and third-party charges (BOM)"],
+                   money=(2, 3), total=True, merge_from=5)
+    REFS["sum_total_row"] = total
+    s.line(["Five-year total (USD, indicative)", usd(f"B{total}"), usd(f"C{total}"), None, ""],
+           money=(2, 3), total=True, merge_from=5)
+    low, high = price.bom_onprem_totals()
+    s.line(["Infrastructure procured by IIFT (Option A, indicative one-time, not included above)",
+            f"B$ {low:,}–{high:,}", "–", None, "See the Bill of Materials workbook"], merge_from=5)
+    s.skip()
+
+    s.section("2. Cash view by contract year (B$)")
+    s.header(["Period", "A: iorta fees", "A: OPE", "A: total", "B: iorta fees", "B: cloud at cost", "B: OPE",
+              "B: total"], height=30)
+    first = s.row
+    for year in range(0, price.CONTRACT_YEARS + 1):
+        r = s.row
+        if year == 0:
+            values = ["Year 0 (implementation, weeks 1–28)", f"={REFS['a_one_total']}", f"={REFS['ope_core']}",
+                      f"=B{r}+C{r}", f"={REFS['b_one_all']}", f"={REFS['cloud_project']}", f"={REFS['ope_core']}",
+                      f"=E{r}+F{r}+G{r}"]
+        else:
+            values = [f"Year {year}", f"={REFS[f'amc_{year}']}", 0, f"=B{r}+C{r}",
+                      f"={REFS[f'sub_{year}']}+{REFS[f'ms_{year}']}", f"={REFS['cloud_year']}", 0,
+                      f"=E{r}+F{r}+G{r}"]
+        s.line(values, money=(2, 3, 4, 5, 6, 7, 8), zebra=year % 2 == 1)
+    last = s.row - 1
+    s.line(["Total", *[f"=SUM({c}{first}:{c}{last})" for c in "BCDEFGH"]], money=(2, 3, 4, 5, 6, 7, 8), total=True)
+    s.skip()
+
+    s.section("3. Fee basis")
+    s.bullets([
+        "WHT: inclusive. Where Brunei law requires IIFT to withhold tax from iorta's fees, IIFT deducts and remits "
+        "it; iorta bears the tax and invoices are not grossed up.",
+        "Cloud infrastructure (Option B) and OPE are recharged at cost as disbursements with the provider and travel "
+        "invoices attached, outside the fees to which WHT applies. IIFT may instead hold the cloud account in its "
+        "own name and pay the provider directly.",
+        f"OPE: exclusive. Recharged at cost for the onsite phases (OPE sheet); per diem fixed at USD "
+        f"{price.PER_DIEM_USD} a day; not more than {price.OPE_TOLERANCE:.0%} above the estimate without IIFT's "
+        "approval.",
+        "Third-party charges and infrastructure: exclusive. Listed in the Bill of Materials; paid by IIFT or passed "
+        "through at cost without mark-up.",
+        "Recurring fees (AMC, subscription, managed services, rate card) rise by 5% a year, capped at 5% (COM-18).",
+        "No GST or VAT applies in Brunei Darussalam at present; any indirect tax introduced by law is added at the "
+        "statutory rate.",
+        "Recommended: Option A (data stays in Brunei; lowest five-year cost). Option B for a lower upfront payment; "
+        "convertible to Option A during the term.",
+    ], columns=8)
+    ws.freeze_panes = "A7"
 
 
 def assumptions_sheet(wb):
     ws = wb.create_sheet("Assumptions")
-    title_block(ws, "Commercial assumptions")
+    set_widths(ws, [6, 150])
+    s = SheetWriter(ws, 2)
+    s.title("Commercial assumptions and exclusions")
+    s.header(["#", "Assumption"], height=20)
     items = [
-        f"Currency: Brunei Dollars (B$). USD equivalents indicative at USD 1 = B$ {price.FX_BND_PER_USD:.2f}, rounded to the nearest dollar; B$ figures are binding.",
-        "Withholding tax (WHT): Inclusive; fees quoted gross; any Brunei WHT deducted by IIFT is borne by iorta TechNXT.",
-        f"Out-of-pocket expenses (OPE): Included for {price.PLANNED_ONSITE_VISITS} planned onsite visits (kick-off, design workshop, UAT/training, go-live).",
-        "Third-party charges: Excluded; SMS, AML data subscription, SSL certificates, e-mail relay, infrastructure; payable at cost.",
-        f"{brand.PRODUCT} licence bundled at B$ 0: perpetual, royalty-free, enterprise-wide, unlimited users. The core platform remains iorta TechNXT IP; source code of the deployed solution is delivered; escrow optional.",
-        "Implementation is a fixed price for the scope in the proposal; changes follow the change request process at the rate card.",
-        f"Maintenance: flat for five years ({price.MAINTENANCE_ESCALATION:.0%} escalation), billed {price.MAINTENANCE_BILLING.lower()}.",
-        f"Warranty: {price.WARRANTY_MONTHS} months from go-live, included.",
-        "Sizing basis: 26 named users (Appendix 1) and ~628 policies per year (Appendix 2); designed for 100 concurrent / 500 named users without redesign.",
-        "Recommended hosting: on-premise in the IIFT/IITH data centre (no hosting charge from iorta). Cloud costs shown are optional and indicative.",
-        "Data migration: agent, agency, bank, branch, participant and reference data, estimated below 10,000 records from up to three source extracts.",
-        f"Quotation validity: {price.QUOTATION_VALIDITY_DAYS} days from the date of submission.",
+        f"Currency: Brunei Dollars. USD equivalents are indicative at USD 1 = B$ {price.FX_BND_PER_USD:.2f}, rounded "
+        "to the nearest dollar; the B$ amounts are binding.",
+        "Scope is the RFP (sections 3–8, Appendices 1–4) as described in the proposal; changes follow the change "
+        "request process at the rate card.",
+        "Implementation fees are fixed prices; recurring fees follow the yearly schedule with increases capped at 5%.",
+        "Sizing basis: 26 named users (Appendix 1) and about 628 policies a year (Appendix 2); designed for 100 "
+        "concurrent and 500 named users. Unlimited named users for IIFT under both options.",
+        "Option A: IIFT procures infrastructure to iorta's sizing (Bill of Materials) and provides SIT and UAT by weeks "
+        "8 and 16 and production and DR by week 20.",
+        f"Option B: hosting in {price.CLOUD_REGION}; IIFT approves the region and makes the AMBD outsourcing and "
+        f"cloud notification; one-off cloud set-up fee B$ {price.CLOUD_SETUP_FEE:,} payable at contract signing.",
+        "Cloud infrastructure and OPE are recharged at cost as disbursements with provider and travel invoices "
+        "attached, outside the fees to which WHT applies; IIFT may instead hold the cloud account in its own name "
+        "and pay the provider directly (iorta then operates it under the managed services).",
+        f"Option B minimum term {price.SUBSCRIPTION_MINIMUM_MONTHS} months from go-live.",
+        f"Option C: after go-live and hypercare; {price.KNOWLEDGE_TRANSFER_WEEKS} weeks of knowledge transfer for up "
+        "to six IIFT/IITH or nominated contractor staff; price held for exercise within 12 months of go-live.",
+        "Data migration: agent, agency, bank, branch, participant and reference data, below 10,000 records from no "
+        "more than three source extracts.",
+        "OPE: onsite presence for requirements gathering, training and UAT support, go-live with one month of "
+        "support and (Option C) knowledge transfer; all other work remote from Malaysia and India.",
+        "Use by other IITH group companies (e.g. IIGT) is priced separately.",
+        f"Quotation validity: {price.QUOTATION_VALIDITY_DAYS} days from submission. Invoices payable within "
+        f"{price.PAYMENT_TERMS_DAYS} days.",
+        "Exclusions: infrastructure (Option A), cloud charges (Option B, at cost), third-party charges, OPE, changes "
+        "to IIFT's other systems, Malay translation, payment gateway, native mobile apps, post-go-live penetration "
+        "tests beyond the pre-go-live VAPT and re-test.",
     ]
-    header_row(ws, 4, ["#", "Assumption"])
-    for index, text in enumerate(items, start=1):
-        body_row(ws, 4 + index, [index, text])
-    zebra(ws, 5, 4 + len(items), 2)
-    widths(ws, [5, 130])
+    for i, text in enumerate(items, start=1):
+        s.line([i, text], center=(1,), zebra=i % 2 == 0)
+    ws.freeze_panes = "A4"
 
 
-def summary_sheet(ws, one_time_refs, maintenance_total_row, cloud_rows):
-    """Sheet 1: the fee table in the exact format requested by IIFT, plus maintenance and TCO."""
-    ws.title = "Summary (RFP format)"
-    title_block(ws, f"{brand.PROPOSAL_TITLE}: {brand.PRODUCT} commercial summary")
-    rows = [("Client", brand.CLIENT), ("Bidder", brand.BIDDER), ("Currency", "Brunei Dollar (B$)")]
-    for offset, (label, value) in enumerate(rows):
-        ws.cell(row=3 + offset, column=1, value=label).font = BOLD_FONT
-        ws.cell(row=3 + offset, column=3, value=value).font = BODY_FONT
-    ws.cell(row=6, column=1, value="Indicative FX (B$ per USD 1)").font = BOLD_FONT
-    fx = ws.cell(row=6, column=3, value=price.FX_BND_PER_USD)
-    fx.fill = INPUT_FILL
-    fx.number_format = "0.00"
-
-    bd = "'One-time breakdown'"
-    mt = "'Maintenance 5 years'"
-    tp = "'3rd-party & infra (indicative)'"
-    headers = ["Description", "Fee (B$)", "Fee (USD)", "WHT", "OPE", "Total (B$)", "Total (USD)"]
-
-    def fee_table(start_row, heading, lines, total_label):
-        ws.cell(row=start_row, column=1, value=heading).font = SUBTITLE_FONT
-        header_row(ws, start_row + 1, headers)
-        row = start_row + 2
-        for label, ref in lines:
-            body_row(ws, row, [label, f"={ref}", usd(f"B{row}"), "Inclusive", "Included", f"=B{row}",
-                               usd(f"F{row}")], money_cols=(2, 3, 6, 7))
-            row += 1
-        body_row(ws, row, [total_label, f"=SUM(B{start_row + 2}:B{row - 1})", usd(f"B{row}"), "Inclusive",
-                           "Included", f"=SUM(F{start_row + 2}:F{row - 1})", usd(f"F{row}")],
-                 money_cols=(2, 3, 6, 7), bold=True, fill=TOTAL_FILL)
-        return row
-
-    one_time_row = one_time_refs["one_time"]
-    one_time_total = fee_table(8, "A. One-time implementation fee (fixed price)", [
-        ("Agent/Banca Portal", f"{bd}!D{one_time_row}"),
-        ("Back-office solution", f"{bd}!E{one_time_row}"),
-    ], "Total one-time fee")
-    maintenance_total = fee_table(one_time_total + 2, "B. Annual maintenance & support fee (Years 1–5, flat)", [
-        ("Agent/Banca Portal", f"{mt}!D6"),
-        ("Back-office solution", f"{mt}!E6"),
-    ], "Total per year")
-
-    row = maintenance_total + 2
-    ws.cell(row=row, column=1, value="C. Five-year total cost of ownership").font = SUBTITLE_FONT
-    header_row(ws, row + 1, ["Cost element", "Option A: on-premise (B$)", "Option A (USD)", "",
-                             "", "Option B: cloud (B$)", "Option B (USD)"])
-    cloud_total_row, ops_row = cloud_rows
-    tco = [
-        ("One-time implementation", f"=B{one_time_total}", f"=B{one_time_total}"),
-        ("Software licence (5 years)", 0, 0),
-        ("Maintenance & support (5 years)", f"={mt}!F{maintenance_total_row}", f"={mt}!F{maintenance_total_row}"),
-        ("Cloud infrastructure pass-through (5 years)", 0, f"=5*{tp}!D{cloud_total_row}"),
-        ("Managed cloud operations (5 years)", 0, f"=5*{tp}!D{ops_row}"),
-    ]
-    first = row + 2
-    for offset, (label, on_prem, cloud) in enumerate(tco):
-        r = first + offset
-        body_row(ws, r, [label, on_prem, usd(f"B{r}"), "", "", cloud, usd(f"F{r}")], money_cols=(2, 3, 6, 7))
-    last = first + len(tco) - 1
-    total = last + 1
-    body_row(ws, total, ["Five-year TCO", f"=SUM(B{first}:B{last})", usd(f"B{total}"), "", "",
-                         f"=SUM(F{first}:F{last})", usd(f"F{total}")], money_cols=(2, 3, 6, 7), bold=True,
-             fill=TOTAL_FILL)
-
-    notes = [
-        "WHT inclusive: fees are quoted gross; any Brunei withholding tax deducted by IIFT is borne by iorta TechNXT.",
-        f"OPE included: travel and subsistence for the {price.PLANNED_ONSITE_VISITS} planned onsite visits are included.",
-        "Third-party charges excluded: SMS, AML data subscription, SSL certificates, e-mail relay and infrastructure, at cost.",
-        f"Both fee lines are modules of {brand.PRODUCT}: Agent/Banca Portal ({brand.PRODUCT}) and Back-office solution ({brand.PRODUCT}).",
-        f"{brand.PRODUCT} licence bundled at B$ 0: perpetual, royalty-free, enterprise-wide, unlimited users. The core platform remains iorta TechNXT IP; source code of the deployed solution is delivered; escrow optional.",
-        "USD figures are indicative and rounded per cell; the B$ amounts are binding.",
-        f"Quotation validity: {price.QUOTATION_VALIDITY_DAYS} days from submission.",
-    ]
-    row = total + 2
-    for text in notes:
-        note(ws, row, text, columns=7)
-        ws.row_dimensions[row].height = 16
-        row += 1
-    widths(ws, [44, 18, 14, 12, 12, 18, 14])
-    return {"one_time_total": one_time_total, "maintenance_total": maintenance_total, "tco_total": total}
-
-
+# =============================================================================
+# Build and verify
+# =============================================================================
 def build(output: Path = brand.XLSX_OUTPUT) -> Path:
     price.verify()
+    REFS.clear()
     wb = Workbook()
     summary = wb.active
-    one_time_refs = one_time_sheet(wb)
-    integration_sheet(wb)
-    maintenance_total_row = maintenance_sheet(wb)
+    summary.title = "Summary"
+    option_a_sheet(wb)
+    option_b = option_b_sheet(wb)
+    core_row = ope_sheet(wb)
+    # the Option B five-year block references the OPE total written after it
+    first, last = REFS["b_summary_rows"]
+    for row in range(first, last + 1):
+        cell = option_b.cell(row=row, column=4)
+        if isinstance(cell.value, str) and "{core}" in cell.value:
+            cell.value = cell.value.format(core=core_row)
+    option_c_sheet(wb)
+    rfp10_sheet(wb)
     rate_card_sheet(wb)
-    milestones_sheet(wb, f"'One-time breakdown'!F{one_time_refs['one_time']}")
-    cloud_rows = third_party_sheet(wb)
+    payments_sheet(wb)
     assumptions_sheet(wb)
-    summary_sheet(summary, one_time_refs, maintenance_total_row, cloud_rows)
-    for ws in wb.worksheets:
-        ws.sheet_properties.tabColor = brand.MAGENTA if ws is summary else brand.ORANGE
-        ws.sheet_view.showGridLines = False
-        ws.page_setup.orientation = "landscape"
-        ws.page_setup.fitToWidth = 1
-        ws.oddFooter.center.text = f"{brand.CLASSIFICATION} | Page &P of &N"
-    props = wb.properties
-    props.creator = brand.BIDDER
-    props.lastModifiedBy = brand.BIDDER
-    props.title = f"{brand.PROPOSAL_TITLE}: Commercial Pricing"
-    props.subject = f"Commercial proposal to {brand.CLIENT}"
+    client_format_sheet(wb)
+    summary_sheet(summary)
+    order = ["Summary", "Client format", "Option A", "Option B", "Option C", "RFP Section 10", "OPE", "Rate card",
+             "Payment schedules", "Assumptions"]
+    wb._sheets = [wb[name] for name in order]
+    finish(wb, f"{brand.PROPOSAL_TITLE}: Commercial Pricing", f"Commercial proposal to {brand.CLIENT}", summary)
+    summary.page_setup.fitToHeight = 1
     wb.save(str(output))
     return output
 
 
-# --- Verification ---------------------------------------------------------------------------
-def verify_workbook(path: Path) -> None:
-    """Recompute the workbook's totals in Python and compare with approved figures.
-
-    Formulas are evaluated with a small resolver that handles the functions
-    this workbook uses (SUM, ROUND, arithmetic, cross-sheet references).
-    """
-    import re
-    from openpyxl import load_workbook
-
-    wb = load_workbook(str(path))
-    cache = {}
-
-    def value(sheet, ref):
-        key = (sheet, ref.replace("$", ""))
-        if key not in cache:
-            raw = wb[sheet][key[1]].value
-            cache[key] = evaluate(sheet, raw) if isinstance(raw, str) and raw.startswith("=") else (raw or 0)
-        return cache[key]
-
-    def cell_range(sheet, start, end):
-        ws = wb[sheet]
-        return [value(sheet, c.coordinate) for row in ws[start:end] for c in row]
-
-    def evaluate(sheet, formula):
-        expr = formula[1:]
-        ref = r"(?:'([^']+)'!)?\$?([A-Z]+)\$?(\d+)"
-        expr = re.sub(r"SUM\(" + ref + r":\$?([A-Z]+)\$?(\d+)\)",
-                      lambda m: str(sum(cell_range(m.group(1) or sheet, f"{m.group(2)}{m.group(3)}",
-                                                   f"{m.group(4)}{m.group(5)}"))), expr)
-        expr = re.sub(ref, lambda m: repr(value(m.group(1) or sheet, f"{m.group(2)}{m.group(3)}")), expr)
-        expr = expr.replace("ROUND", "_round").replace("^", "**")
-        return eval(expr, {"_round": lambda x, d: round(x, int(d))})  # formulas are written by this script
-
-    def row_of(sheet, label, column="A"):
-        return next(c.row for c in wb[sheet][column] if c.value == label)
-
-    summary = "Summary (RFP format)"
-    one_time = row_of(summary, "Total one-time fee")
-    per_year = row_of(summary, "Total per year")
-    tco = row_of(summary, "Five-year TCO")
-    integration = row_of("Integration per interface", "Total integration")
-    milestones = row_of("Payment milestones", "Total")
-    cloud = row_of("3rd-party & infra (indicative)", "Cloud infrastructure total")
-    breakdown = row_of("One-time breakdown", "Subtotal one-time (items 1–11)", column="B")
-    checks = {
-        "one-time total (B$)": (value(summary, f"B{one_time}"), price.one_time_total()),
-        "one-time portal (B$)": (value(summary, f"B{one_time - 2}"), price.one_time_portal()),
-        "one-time back-office (B$)": (value(summary, f"B{one_time - 1}"), price.one_time_backoffice()),
-        "one-time total (USD)": (value(summary, f"C{one_time}"), price.usd(price.one_time_total())),
-        "breakdown subtotal one-time (B$)": (value("One-time breakdown", f"F{breakdown}"), price.one_time_total()),
-        "maintenance per year (B$)": (value(summary, f"B{per_year}"), price.maintenance_annual()),
-        "maintenance 5 years (B$)": (value(summary, f"B{tco - 3}"), price.maintenance_total()),
-        "five-year TCO on-premise (B$)": (value(summary, f"B{tco}"), price.tco_on_prem()),
-        "five-year TCO on-premise (USD)": (value(summary, f"C{tco}"), price.usd(price.tco_on_prem())),
-        "five-year TCO cloud (B$)": (value(summary, f"F{tco}"), price.tco_cloud()),
-        "integration total (B$)": (value("Integration per interface", f"E{integration}"),
-                                   price.integration_portal() + price.integration_backoffice()),
-        "payment milestones total (B$)": (value("Payment milestones", f"D{milestones}"), price.one_time_total()),
-        "cloud per year (B$)": (value("3rd-party & infra (indicative)", f"D{cloud}"), price.cloud_annual()),
+def _expected():
+    one_a, one_b = price.one_time_total("A"), price.option_b_one_time()
+    return {
+        ("Summary", "B", "One-time iorta fees"): one_a,
+        ("Summary", "C", "One-time iorta fees"): one_b,
+        ("Summary", "D", "One-time iorta fees"): price.option_c_total(),
+        ("Summary", "B", "Recurring iorta fees, Year 1"): price.amc(1),
+        ("Summary", "C", "Recurring iorta fees, Year 1"): price.subscription_annual(1) + 12 * price.managed_monthly(1),
+        ("Summary", "D", "Recurring iorta fees, Year 1"): price.post_handover_support(1),
+        ("Summary", "B", "Recurring iorta fees, Years 1–5"): price.amc_total(),
+        ("Summary", "C", "Recurring iorta fees, Years 1–5"): price.subscription_total() + price.managed_total(),
+        ("Summary", "D", "Recurring iorta fees, Years 1–5"): price.post_handover_total(),
+        ("Summary", "B", "OPE estimate, core onsite phases (disbursements at cost)"): price.ope_total(),
+        ("Summary", "D", "OPE estimate, core onsite phases (disbursements at cost)"):
+            price.ope_total(True) - price.ope_total(),
+        ("Summary", "C", "Cloud infrastructure at cost, estimate (project + five years)"): price.cloud_total(),
+        ("Summary", "B", "Five-year total (B$)"): price.tco_option_a(),
+        ("Summary", "C", "Five-year total (B$)"): price.tco_option_b(),
+        ("Summary", "B", "Five-year total (USD, indicative)"): price.usd(price.tco_option_a()),
+        ("Summary", "C", "Five-year total (USD, indicative)"): price.usd(price.tco_option_b()),
+        ("Summary", "D", "Total"): price.tco_option_a(),
+        ("Summary", "H", "Total"): price.tco_option_b(),
+        ("Option A", "F", "Total one-time fees, Option A"): one_a,
+        ("Option A", "F", "Total integration (agrees with item 3)"): price.item_total("integration"),
+        ("Option A", "F", "AMC base: licence, implementation and integration (items flagged Yes)"): price.amc_base(),
+        ("Option A", "G", "Year 1"): price.amc(1) / 4,
+        ("Option B", "F", "Total implementation fee, Option B"): price.one_time_total("B"),
+        ("Option B", "F", "Total one-time fees, Option B"): one_b,
+        ("Option B", "D", "Five-year total, Option B"): price.tco_option_b(),
+        ("Option B", "G", f"Minimum term value ({price.SUBSCRIPTION_MINIMUM_MONTHS} months)"):
+            price.subscription_minimum_commitment(),
+        ("Option B", "E", "Cloud estimate, project plus five years"): price.cloud_total(),
+        ("Option B", "D", "Total, production run"): price.cloud_monthly(),
+        ("Option C", "D", "Total Option C"): price.option_c_total(),
+        ("OPE", "L", "Core onsite phases"): price.ope_total(),
+        ("OPE", "L", "Total including Option C"): price.ope_total(True),
+        ("RFP Section 10", "F", "Subtotal one-time (items 1–11)"): one_a,
+        ("RFP Section 10", "I", "Subtotal one-time (items 1–11)"): one_b,
+        ("RFP Section 10", "F", "Subtotal Years 1–5 (items 12–16)"): price.amc_total(),
+        ("RFP Section 10", "I", "Subtotal Years 1–5 (items 12–16)"): price.subscription_total(),
+        ("Payment schedules", "E", "Total licence fee"): price.licence_fee(),
+        ("Payment schedules", "E", "Total services fee"): price.services_fee(),
+        ("Client format", "B", "Total AMC, Year 1"): price.amc(1),
+        ("Client format", "B", "Total recurring fees, Year 1"): price.subscription_annual(1) + 12 * price.managed_monthly(1),
     }
-    failures = {k: v for k, v in checks.items() if v[0] != v[1]}
-    for name, (actual, expected) in checks.items():
-        print(f"  {'OK ' if actual == expected else 'ERR'} {name}: {actual:,} (expected {expected:,})")
+
+
+def _find(wb, sheet, label, occurrence=0):
+    hits = [c.row for row in wb[sheet].iter_rows() for c in row[:2] if c.value == label]
+    return hits[occurrence]
+
+
+def verify_workbook(path: Path) -> None:
+    """Recompute key totals (Python evaluator, then LibreOffice) and compare with pricing_data."""
+    evaluator = FormulaEvaluator(path)
+    failures = []
+    checks = _expected()
+    # Client format: one-time totals appear twice (Option A first, Option B second)
+    cf = "Client format"
+    checks_extra = {
+        (cf, "B", 0): price.one_time_total("A"),
+        (cf, "B", 1): price.option_b_one_time(),
+    }
+    for (sheet, col, label), expected in checks.items():
+        row = _find(evaluator.wb, sheet, label)
+        actual = evaluator.value(sheet, f"{col}{row}")
+        ok = abs(actual - expected) < 0.005
+        failures += [] if ok else [f"{sheet}!{col}{row} {label}: {actual} != {expected}"]
+    for (sheet, col, occurrence), expected in checks_extra.items():
+        row = _find(evaluator.wb, sheet, "Total one-time fees", occurrence)
+        actual = evaluator.value(sheet, f"{col}{row}")
+        failures += [] if actual == expected else [f"{sheet}!{col}{row}: {actual} != {expected}"]
+    print(f"  Python evaluator: {len(checks) + len(checks_extra) - len(failures)} of "
+          f"{len(checks) + len(checks_extra)} totals match pricing_data")
+
+    errors = recalc_errors(path)
+    if errors:
+        failures.append(f"LibreOffice errors: {errors[:10]}")
+    values = recalculated_values(path)
+    if values is not None:
+        lo_fail = 0
+        for (sheet, col, label), expected in checks.items():
+            row = _find(evaluator.wb, sheet, label)
+            actual = values[sheet][f"{col}{row}"].value
+            if actual is None or abs(actual - expected) >= 0.005:
+                lo_fail += 1
+                failures.append(f"LibreOffice {sheet}!{col}{row} {label}: {actual} != {expected}")
+        print(f"  LibreOffice recalculation: no error cells; {len(checks) - lo_fail} of {len(checks)} totals match")
     if failures:
-        raise AssertionError(f"Workbook totals do not match: {failures}")
+        raise AssertionError("Workbook check failed:\n  " + "\n  ".join(failures))
 
 
 if __name__ == "__main__":

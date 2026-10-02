@@ -53,8 +53,7 @@ export default function EodPage() {
     <>
       <PageHeader
         title="End of day"
-        subtitle="Daily close: policies issued, receipts, EOD report and the FIN interface file"
-        breadcrumb={[{ title: 'Dashboard', to: '/backoffice' }, { title: 'End of day' }]}
+        breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'End of day' }]}
         extra={
           <Button type="primary" icon={<PlayCircleOutlined />} onClick={() => setRunning(true)}>
             Run end of day

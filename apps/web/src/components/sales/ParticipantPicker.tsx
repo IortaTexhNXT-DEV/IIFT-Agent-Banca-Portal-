@@ -1,22 +1,12 @@
-import {
-  Alert,
-  Button,
-  Card,
-  Descriptions,
-  Flex,
-  Input,
-  Segmented,
-  Select,
-  Space,
-  Table,
-} from 'antd';
+import { Alert, Button, Input, Segmented, Select, Space } from 'antd';
 import { useState } from 'react';
 import { api } from '../../api/client';
 import { useApiMutation, useApiQuery } from '../../api/hooks';
 import type { ParticipantLookup, ParticipantMatch } from '../../api/sales-types';
 import type { Page, Participant } from '../../api/types';
-import { formatDate } from '../../utils/format';
+import { DataTable, dateColumn, statusColumn, textColumn } from '../DataTable';
 import { ErrorAlert } from '../ErrorAlert';
+import { FieldGrid } from '../FieldGrid';
 import { StatusTag } from '../StatusTag';
 import { ID_TYPE_LABELS } from './options';
 import type { ParticipantFormValues } from './ParticipantFields';
@@ -67,31 +57,24 @@ function ParticipantSearch({ onSelect }: Props) {
         onSearch={(value) => setSearch(value.trim())}
         className="mb-16"
       />
-      <Table<Participant>
+      <DataTable<Participant>
         size="small"
         rowKey="id"
         loading={results.isFetching}
         dataSource={results.data?.items ?? []}
         pagination={false}
-        scroll={{ x: 'max-content' }}
-        locale={{
-          emptyText: search
-            ? 'No participants found. Try the ID lookup or register a new participant.'
-            : 'No participants registered by your agency yet',
-        }}
+        scroll={{}}
+        locale={{ emptyText: search ? 'No match – try Look up by ID' : 'No participants yet' }}
         columns={[
-          { title: 'Participant no.', dataIndex: 'participantNo' },
-          { title: 'Name', dataIndex: 'fullName' },
-          { title: 'ID', dataIndex: 'idNumberMasked' },
-          { title: 'Date of birth', dataIndex: 'dateOfBirth', render: formatDate },
-          {
-            title: 'AML',
-            dataIndex: 'amlStatus',
-            render: (status: string) => <StatusTag status={status} />,
-          },
+          { title: 'Participant no.', dataIndex: 'participantNo', width: 140 },
+          textColumn('Name', 'fullName'),
+          { title: 'ID', dataIndex: 'idNumberMasked', width: 140 },
+          dateColumn('Date of birth', 'dateOfBirth'),
+          statusColumn('AML', 'amlStatus', 120),
           {
             key: 'select',
             align: 'right',
+            width: 90,
             render: (_, participant) => (
               <SelectButton participant={participant} onSelect={onSelect} />
             ),
@@ -143,31 +126,28 @@ function ParticipantIdLookup({
       </Space.Compact>
       <ErrorAlert error={lookup.error} />
       {result?.found && (
-        <Card size="small">
-          <Flex justify="space-between" align="center" gap={16} wrap>
-            <Descriptions
-              size="small"
-              column={{ xs: 1, md: 4 }}
-              items={[
-                { key: 'name', label: 'Name', children: result.participant.fullName },
-                { key: 'no', label: 'Participant no.', children: result.participant.participantNo },
-                { key: 'id', label: 'ID', children: result.participant.idNumberMasked },
-                {
-                  key: 'aml',
-                  label: 'AML',
-                  children: <StatusTag status={result.participant.amlStatus} />,
-                },
-              ]}
-            />
-            <SelectButton participant={result.participant} onSelect={onSelect} />
-          </Flex>
-        </Card>
+        <div className="selected-record">
+          <FieldGrid
+            columns={4}
+            items={[
+              { key: 'name', label: 'Name', value: result.participant.fullName },
+              { key: 'no', label: 'Participant no.', value: result.participant.participantNo },
+              { key: 'id', label: 'ID', value: result.participant.idNumberMasked },
+              {
+                key: 'aml',
+                label: 'AML',
+                value: <StatusTag status={result.participant.amlStatus} />,
+              },
+            ]}
+          />
+          <SelectButton participant={result.participant} onSelect={onSelect} />
+        </div>
       )}
       {result && !result.found && (
         <Alert
           type="info"
           showIcon
-          title="No participant is registered with this ID"
+          title="No participant registered with this ID"
           action={
             <Button
               size="small"

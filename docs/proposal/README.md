@@ -11,9 +11,10 @@ IIFT Agent/Banca Portal & Back-office. The technical document pack referenced in
 |---|---|
 | `IIFT-Agent-Banca-Portal-Proposal-iorta-TechNXT.docx` | Technical and commercial proposal (editable master) |
 | `IIFT-Agent-Banca-Portal-Proposal-iorta-TechNXT.pdf` | PDF export of the proposal with the table of contents filled in |
-| `IIFT-Commercial-Pricing-iorta-TechNXT.xlsx` | Pricing workbook: summary in IIFT's format, RFP section 10 breakdown, integration per interface, five-year maintenance, rate card, payment milestones, third-party and infrastructure costs, assumptions |
+| `IIFT-Commercial-Pricing-iorta-TechNXT.xlsx` | Pricing workbook: options summary and five-year cash view, fees in IIFT's format (Description / Fee / WHT / OPE / Total), Option A (licence, implementation, integration per interface, AMC), Option B (implementation, subscription, managed services, cloud at actuals), Option C (source code handover, knowledge transfer, post-handover support, escrow), RFP section 10 for both options, OPE, rate card, payment schedules, assumptions |
+| `IIFT-Bill-of-Materials-iorta-TechNXT.xlsx` | Bill of Materials: summary by category and option, on-premise infrastructure (Option A, sized as in the Solution Architecture), cloud services (Option B, at actuals), software components and licences, third-party services with treatment (included / pass-through / IIFT procures / not required) |
 | `assets/iift-logo.png` | Client logo, used only in the "Prepared for" block on the cover |
-| `assets/iorta-logo.png` | *Optional* iorta TechNXT logo (see below) |
+| `assets/iorta-logo.png` | iorta TechNXT logo: cover, running header of the proposal, Summary sheets of both workbooks |
 | `screenshots/` | Application screens inserted in Section 20.2 (see list below) |
 | `build/` | Scripts that produce all of the above |
 
@@ -27,12 +28,14 @@ IIFT Agent/Banca Portal & Back-office. The technical document pack referenced in
 | `build/sections_people.py` | Personas, user journeys (swim-lane diagrams and step tables) and the screen catalogue with sample screens |
 | `build/sections_solution.py` | Understanding, functional rules, products and flows, architecture, security, deployment, infrastructure |
 | `build/sections_delivery.py` | Technical document pack, methodology, timeline, maintenance, team, assumptions, risks |
-| `build/sections_commercial.py` | Commercials, validity, supporting information, terms and conditions, Annexes A–D |
+| `build/sections_commercial.py` | Commercial proposal (options A/B/C, client format, RFP section 10, OPE, BOM summary, rate card, payment schedules, commercial terms), validity, supporting information, terms and conditions, Annexes A–D |
 | `build/compliance_matrix.py` | Compliance and fitment data for every RFP requirement ID (Annex A, fitment chapter) |
-| `build/pricing_data.py` | **Single source of truth for all prices**; both the DOCX and XLSX read from it and it self-checks the totals |
+| `build/pricing_data.py` | **Single source of truth for all prices and the bill of materials**; the DOCX and both XLSX files read from it and it self-checks the totals |
 | `build/docx_kit.py` | Layout helpers (branded headings, tables, call-outs, figures, header/footer fields) |
 | `build/diagrams.py` | Architecture, deployment, integration, lifecycle, governance, Gantt and swim-lane diagrams (Pillow) |
-| `build/build_pricing.py` | Writes the pricing workbook with live Excel formulas and verifies every total |
+| `build/build_pricing.py` | Writes the pricing workbook with live Excel formulas and verifies every total (Python evaluator, then LibreOffice recalculation) |
+| `build/build_bom.py` | Writes the Bill of Materials workbook; checks the on-premise sizing against `docs/technical/build/sad_part2.py` and verifies the totals |
+| `build/xlsx_kit.py` | Shared styling, layout and verification helpers for both workbooks |
 | `build/export_pdf.py` | Converts the DOCX to PDF through LibreOffice, refreshing the table of contents and page numbers first |
 
 Text in the section modules is plain Python lists/tuples. Inline conventions: `**bold**`, and `[Placeholder]`
@@ -43,7 +46,8 @@ is rendered with yellow highlight.
 ```bash
 pip install python-docx openpyxl pillow
 python docs/proposal/build/build_proposal.py     # writes the .docx
-python docs/proposal/build/build_pricing.py      # writes the .xlsx and verifies totals
+python docs/proposal/build/build_pricing.py      # writes the pricing .xlsx and verifies totals
+python docs/proposal/build/build_bom.py          # writes the Bill of Materials .xlsx and verifies totals
 python3 docs/proposal/build/export_pdf.py        # writes the .pdf (needs LibreOffice Writer + python3-uno)
 ```
 
@@ -53,13 +57,13 @@ leaves the table of contents empty. When the DOCX is opened in Microsoft Word, a
 (or press Ctrl+A, then F9) to refresh the table of contents.
 
 To change a price, edit `build/pricing_data.py` (and the `EXPECTED` totals if the approved pricing changes), then
-rebuild all three files.
+rebuild all four files. If the infrastructure sizing in the Solution Architecture changes, update `ON_PREM_BOM` in
+`pricing_data.py` to match; `build_bom.py` stops with a message until the two agree.
 
 ## iorta logo
 
-The cover currently shows a text wordmark "iorta TechNXT". To use the official logo, save it as
-`docs/proposal/assets/iorta-logo.png` (transparent PNG, at least 600 px wide) and rebuild; the script picks it up
-automatically.
+`assets/iorta-logo.png` is used on the cover, in the running header (small, left) and on the Summary sheet of both
+workbooks. If the file is removed, the cover falls back to a text wordmark and the header to text only.
 
 ## Application screenshots
 
@@ -117,8 +121,8 @@ All placeholders appear in square brackets with yellow highlight in the DOCX. Se
 - `[Confirm or extend with iorta's corporate BCP details.]` (maintenance chapter)
 
 **Commercial and contractual decisions**
-- `[Bid owner to confirm the market comparison statement.]` (pricing basis)
+- `[bid owner to confirm any credit of subscription fees already paid]` (Option B conversion to Option A)
 - `[submission date]` and `[expiry date]` (quotation validity)
 - Terms: confidentiality survival `[five]` years; service credits `[e.g. 5% …]`; liability cap
-  `[the total contract value …]`; `[Confirm: rate card held without escalation …]`; termination for convenience
+  `[the total fees paid and payable in the twelve months before the claim …]`; termination for convenience
   `[90]` days; dispute forum `[mediation / arbitration in Brunei Darussalam]`

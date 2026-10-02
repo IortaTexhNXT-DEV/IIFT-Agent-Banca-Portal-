@@ -218,8 +218,17 @@ export default function AgentRegistrationPage() {
     <>
       <PageHeader
         title={title}
-        subtitle={agency.data && `Registering under ${agency.data.name} (${agency.data.code})`}
-        breadcrumb={[{ title: 'Team & hierarchy', to: '/portal/team' }, { title }]}
+        meta={[
+          agency.data && {
+            label: 'Agency / bank',
+            value: `${agency.data.name} (${agency.data.code})`,
+          },
+        ]}
+        breadcrumb={[
+          { title: 'Home', to: '/portal' },
+          { title: 'Team & hierarchy', to: '/portal/team' },
+          { title },
+        ]}
       />
       <Card className="content-card">
         <Steps

@@ -15,7 +15,6 @@ export default function ClaimListPage() {
     <>
       <PageHeader
         title="Claims"
-        subtitle="Claim notifications forwarded to IIFT"
         breadcrumb={[{ title: 'Home', to: '/portal' }, { title: 'Claims' }]}
         extra={
           can(P.portalClaimsSubmit) && (

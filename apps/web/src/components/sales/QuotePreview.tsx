@@ -1,10 +1,13 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Alert, Descriptions, Empty, Spin } from 'antd';
+import { CalculatorOutlined } from '@ant-design/icons';
+import { Alert, Spin } from 'antd';
 import { useEffect, useState } from 'react';
 import { api, ApiError } from '../../api/client';
 import type { QuoteRequest } from '../../api/sales-types';
 import type { Product, QuoteResult } from '../../api/types';
+import { EmptyState } from '../EmptyState';
 import { ErrorAlert } from '../ErrorAlert';
+import { FieldGrid } from '../FieldGrid';
 import { Money } from '../Money';
 import { ContributionBreakdown } from './ContributionBreakdown';
 import { type CoverageValues, isCoverageComplete, toQuoteOptions } from './CoverageForm';
@@ -55,12 +58,7 @@ type IndicativeQuote = ReturnType<typeof useIndicativeQuote>;
 export function QuotePreview({ quote }: { quote: IndicativeQuote }) {
   const { complete, query } = quote;
   if (!complete) {
-    return (
-      <Empty
-        image={Empty.PRESENTED_IMAGE_SIMPLE}
-        description="Complete the coverage details to see the indicative contribution"
-      />
-    );
+    return <EmptyState icon={<CalculatorOutlined />} label="Complete the cover details" />;
   }
   if (query.error instanceof ApiError && query.error.status === 422) {
     return (
@@ -87,22 +85,12 @@ export function QuotePreview({ quote }: { quote: IndicativeQuote }) {
   const result = query.data;
   return (
     <Spin spinning={query.isFetching} description="Recalculating">
-      <Descriptions
-        size="small"
-        column={1}
+      <FieldGrid
+        columns={2}
         className="mb-16"
         items={[
-          {
-            key: 'sum',
-            label: 'Sum covered',
-            children: <Money value={result.sumCovered} strong />,
-          },
-          { key: 'term', label: 'Term', children: formatTerm(result.termMonths) },
-          {
-            key: 'contribution',
-            label: 'Contribution',
-            children: <Money value={result.contribution} strong />,
-          },
+          { key: 'sum', label: 'Sum covered', value: <Money value={result.sumCovered} strong /> },
+          { key: 'term', label: 'Term', value: formatTerm(result.termMonths) },
         ]}
       />
       <ContributionBreakdown
@@ -116,7 +104,7 @@ export function QuotePreview({ quote }: { quote: IndicativeQuote }) {
           className="mt-16"
           type="warning"
           showIcon
-          title="This case will be referred to IIFT"
+          title="Referred to IIFT for approval"
           description={
             <ul className="plain-list">
               {result.referralReasons.map((reason) => (

@@ -112,8 +112,13 @@ export default function TeamPage() {
     <>
       <PageHeader
         title="Team & hierarchy"
-        subtitle={agency.data ? `${agency.data.name} (${agency.data.code})` : undefined}
-        breadcrumb={[{ title: 'Dashboard', to: '/portal' }, { title: 'Team & hierarchy' }]}
+        meta={[
+          agency.data && {
+            label: 'Agency / bank',
+            value: `${agency.data.name} (${agency.data.code})`,
+          },
+        ]}
+        breadcrumb={[{ title: 'Home', to: '/portal' }, { title: 'Team & hierarchy' }]}
         extra={
           can(P.portalAgentRegister) && (
             <Button

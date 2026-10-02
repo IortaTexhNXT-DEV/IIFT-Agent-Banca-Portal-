@@ -1,4 +1,4 @@
-import { Alert, Card, Col, Descriptions, Flex, Row, Table } from 'antd';
+import { Alert, Card, Col, Descriptions, Row, Table } from 'antd';
 import type { ReactNode } from 'react';
 import type { Money as MoneyValue, Payment } from '../../api/types';
 import { formatDate, formatDateTime, humanise } from '../../utils/format';
@@ -34,13 +34,12 @@ export function PaymentDetailView({ payment, actions }: Props) {
   return (
     <>
       <PageHeader
-        title={
-          <Flex align="center" gap={8}>
-            {payment.paymentNo}
-            <StatusTag status={payment.status} />
-          </Flex>
-        }
-        subtitle={`${payment.agency.name} · submitted ${formatDateTime(payment.createdAt)}`}
+        title={payment.paymentNo}
+        tags={<StatusTag status={payment.status} />}
+        meta={[
+          { label: 'Agency / bank', value: payment.agency.name },
+          { label: 'Submitted', value: formatDateTime(payment.createdAt) },
+        ]}
         breadcrumb={[...breadcrumb, { title: payment.paymentNo }]}
         extra={actions}
       />

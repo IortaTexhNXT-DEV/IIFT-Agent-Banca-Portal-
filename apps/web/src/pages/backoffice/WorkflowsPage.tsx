@@ -237,8 +237,7 @@ export default function WorkflowsPage() {
     <>
       <PageHeader
         title="Workflows"
-        subtitle="Approval levels for each type of request. A step with an amount applies only to requests at or above it; when no step applies the request is approved automatically."
-        breadcrumb={[{ title: 'Dashboard', to: '/backoffice' }, { title: 'Workflows' }]}
+        breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Workflows' }]}
       />
       <QueryState query={workflows}>
         {(items) => items.map((workflow) => <WorkflowCard key={workflow.id} workflow={workflow} />)}

@@ -1,4 +1,4 @@
-import { Card, Flex, Tabs } from 'antd';
+import { Card, Tabs } from 'antd';
 import { Link, useParams } from 'react-router';
 import { useApiQuery } from '../../api/hooks';
 import type { AgentDetail } from '../../api/types';
@@ -28,14 +28,15 @@ export default function TeamMemberPage() {
       {(data) => (
         <>
           <PageHeader
-            title={
-              <Flex gap={12} align="center" wrap>
-                {data.fullName}
-                <StatusTag status={data.status} />
-              </Flex>
-            }
-            subtitle={`${data.agentCode} · ${AGENT_TYPE_LABELS[data.agentType]} · ${data.agency.name}`}
+            title={data.fullName}
+            tags={<StatusTag status={data.status} />}
+            meta={[
+              { label: 'Code', value: data.agentCode },
+              { label: 'Type', value: AGENT_TYPE_LABELS[data.agentType] },
+              { label: 'Agency / bank', value: data.agency.name },
+            ]}
             breadcrumb={[
+              { title: 'Home', to: '/portal' },
               { title: 'Team & hierarchy', to: '/portal/team' },
               { title: data.agentCode },
             ]}

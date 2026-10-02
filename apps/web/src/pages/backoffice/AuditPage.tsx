@@ -55,8 +55,7 @@ export default function AuditPage() {
     <>
       <PageHeader
         title="Audit trail"
-        subtitle="Every change, decision, sign-in and download, with the values before and after"
-        breadcrumb={[{ title: 'Dashboard', to: '/backoffice' }, { title: 'Audit trail' }]}
+        breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Audit trail' }]}
       />
       <FilterBar>
         <DatePicker.RangePicker

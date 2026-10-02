@@ -100,6 +100,15 @@ describe('LoginPage', () => {
     expect(screen.getByLabelText('Username')).toBeInTheDocument();
   });
 
+  it('shows the product, release and vendor credit without marketing copy', () => {
+    renderLogin();
+
+    expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
+    expect(screen.getByText('SalesVerse 2.0')).toBeInTheDocument();
+    expect(screen.getByText(/^v\d+\.\d+\.\d+/)).toBeInTheDocument();
+    expect(screen.getByAltText('iorta TechNXT')).toBeInTheDocument();
+  });
+
   it('explains that the previous session ended', () => {
     renderLogin('/login?expired=1');
 

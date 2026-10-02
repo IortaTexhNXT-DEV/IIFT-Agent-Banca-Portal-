@@ -51,8 +51,7 @@ export default function AgentListPage() {
     <>
       <PageHeader
         title="Agents & bankers"
-        subtitle="Main agents, sub-agents and bank officers of every agency and bank"
-        breadcrumb={[{ title: 'Dashboard', to: '/backoffice' }, { title: 'Agents & bankers' }]}
+        breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Agents & bankers' }]}
         extra={
           can(P.boAgentsManage) && (
             <Button

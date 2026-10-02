@@ -1,4 +1,4 @@
-import { Card, Flex, Table, Tabs } from 'antd';
+import { Card, Table, Tabs } from 'antd';
 import { type ReactNode, useState } from 'react';
 import type { ParticipantDetail, ParticipantPolicy } from '../../api/sales-types';
 import type { Money as MoneyValue } from '../../api/types';
@@ -76,13 +76,12 @@ export function ParticipantDetailView({ participant, actions, canUpload = false 
   return (
     <>
       <PageHeader
-        title={
-          <Flex align="center" gap={8} wrap>
-            {participant.fullName}
-            <StatusTag status={participant.amlStatus} />
-          </Flex>
-        }
-        subtitle={`${participant.participantNo} · ${humanise(participant.type)}`}
+        title={participant.fullName}
+        tags={<StatusTag status={participant.amlStatus} />}
+        meta={[
+          { label: 'Participant no.', value: participant.participantNo },
+          { label: 'Type', value: humanise(participant.type) },
+        ]}
         breadcrumb={[
           { title: 'Home', to: home },
           { title: 'Participants', to: `${home}/participants` },

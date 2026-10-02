@@ -178,7 +178,7 @@ export default function RolesPage() {
     <>
       <PageHeader
         title="Roles & permissions"
-        breadcrumb={[{ title: 'Dashboard', to: '/backoffice' }, { title: 'Roles & permissions' }]}
+        breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Roles & permissions' }]}
         extra={
           <Button
             type="primary"

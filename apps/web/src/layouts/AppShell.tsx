@@ -1,18 +1,21 @@
 import {
-  BellOutlined,
-  DownOutlined,
-  LockOutlined,
-  LogoutOutlined,
   MenuFoldOutlined,
+  MenuOutlined,
   MenuUnfoldOutlined,
-  UserOutlined,
+  PlusOutlined,
 } from '@ant-design/icons';
-import { Avatar, Badge, Button, Dropdown, Layout, Menu, type MenuProps, Tooltip } from 'antd';
-import { useMemo, useState } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router';
-import { useApiQuery } from '../api/hooks';
+import { Button, Drawer, Grid, Layout, Tooltip } from 'antd';
+import { useEffect, useState } from 'react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
-import { type MenuGroup, selectedMenuKeys } from './menus';
+import { PoweredBy, ReleaseLabel } from '../components/Branding';
+import { COMPANY_NAME, COPYRIGHT_YEAR, PRODUCT_NAME } from '../config/app';
+import { P } from '../utils/permissions';
+import { GlobalSearch } from './GlobalSearch';
+import { type MenuGroup, menuTrail } from './menus';
+import { NotificationBell } from './NotificationBell';
+import { SideNav } from './SideNav';
+import { UserMenu } from './UserMenu';
 
 interface Props {
   basePath: '/portal' | '/backoffice';
@@ -21,141 +24,142 @@ interface Props {
   profilePath?: string;
 }
 
-const UNREAD_REFRESH_MS = 60_000;
+const COLLAPSED_KEY = 'salesverse.nav.collapsed';
 
-/** Header, navigation and content frame shared by the portal and the back-office. */
+function readCollapsed(): boolean {
+  try {
+    return window.localStorage.getItem(COLLAPSED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/** Header, navigation, content frame and footer shared by the portal and the back-office. */
 export function AppShell({ basePath, moduleName, menu, profilePath }: Props) {
-  const { user, can, logout } = useAuth();
+  const { can } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const [collapsed, setCollapsed] = useState(false);
-  const unread = useApiQuery<{ count: number }>('/common/notifications/unread-count', undefined, {
-    refetchInterval: UNREAD_REFRESH_MS,
-  });
+  const { pathname } = useLocation();
+  const screens = Grid.useBreakpoint();
+  const mobile = screens.md === false;
+  const [collapsed, setCollapsed] = useState(readCollapsed);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const canQuote = basePath === '/portal' && can(P.portalPoliciesQuote);
 
-  const items = useMemo<MenuProps['items']>(
-    () =>
-      menu
-        .map((group, index) => {
-          const entries = group.entries
-            .filter((entry) => !entry.anyOf || entry.anyOf.some((permission) => can(permission)))
-            .map((entry) => ({ key: entry.path, icon: entry.icon, label: entry.label }));
-          if (entries.length === 0) return null;
-          return group.label
-            ? {
-                type: 'group' as const,
-                key: `group-${index}`,
-                label: group.label,
-                children: entries,
-              }
-            : entries;
-        })
-        .flat()
-        .filter((item) => item !== null),
-    [menu, can],
-  );
+  useEffect(() => {
+    const { entry } = menuTrail(menu, pathname);
+    document.title = entry ? `${entry.label} · ${PRODUCT_NAME}` : PRODUCT_NAME;
+  }, [menu, pathname]);
 
-  const selected = useMemo(
-    () => selectedMenuKeys(menu, location.pathname),
-    [menu, location.pathname],
-  );
-
-  const userMenu: MenuProps['items'] = [
-    ...(profilePath
-      ? [
-          {
-            key: 'profile',
-            icon: <UserOutlined />,
-            label: 'My profile',
-            onClick: () => navigate(profilePath),
-          },
-        ]
-      : []),
-    {
-      key: 'password',
-      icon: <LockOutlined />,
-      label: 'Change password',
-      onClick: () => navigate('/change-password'),
-    },
-    { type: 'divider' as const },
-    {
-      key: 'logout',
-      icon: <LogoutOutlined />,
-      label: 'Sign out',
-      onClick: () => void logout().then(() => navigate('/login')),
-    },
-  ];
+  const toggleCollapsed = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    try {
+      window.localStorage.setItem(COLLAPSED_KEY, next ? '1' : '0');
+    } catch {
+      // Not remembered when storage is unavailable.
+    }
+  };
 
   return (
     <Layout className="app-shell">
       <Layout.Header className="app-header">
-        <div className="app-header__brand">
-          <img
-            src="/iift-logo.png"
-            alt="Insurans Islam Family Takaful"
-            className="app-header__logo"
-          />
-          <div className="app-header__titles">
-            <span className="app-header__product">SalesVerse 2.0</span>
-            <span className="app-header__module">{moduleName}</span>
-          </div>
-        </div>
-        <div className="app-header__actions">
-          <Tooltip title="Notifications">
-            <Badge count={unread.data?.count ?? 0} size="small" overflowCount={99}>
-              <Button
-                type="text"
-                shape="circle"
-                icon={<BellOutlined />}
-                aria-label="Notifications"
-                onClick={() => navigate(`${basePath}/notifications`)}
-              />
-            </Badge>
-          </Tooltip>
-          <Dropdown menu={{ items: userMenu }} trigger={['click']} placement="bottomRight">
-            <Button type="text" className="app-header__user">
-              <Avatar size="small" className="app-header__avatar">
-                {user?.fullName.charAt(0)}
-              </Avatar>
-              <span className="app-header__username">{user?.fullName}</span>
-              <DownOutlined />
-            </Button>
-          </Dropdown>
-        </div>
-      </Layout.Header>
-      <Layout>
-        <Layout.Sider
-          width={248}
-          collapsedWidth={64}
-          collapsed={collapsed}
-          className="app-sider"
-          breakpoint="lg"
-          onBreakpoint={setCollapsed}
-          trigger={null}
-        >
-          <Menu
-            mode="inline"
-            items={items}
-            selectedKeys={selected}
-            onClick={({ key }) => navigate(key)}
-            className="app-menu"
-          />
-          <div className="app-sider__footer">
+        <div className="app-header__left">
+          {mobile && (
             <Button
               type="text"
-              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-              onClick={() => setCollapsed(!collapsed)}
-              aria-label="Toggle navigation"
+              icon={<MenuOutlined />}
+              aria-label="Open navigation"
+              onClick={() => setDrawerOpen(true)}
             />
+          )}
+          <Link to={basePath} className="app-brand">
+            <img
+              src="/iift-logo.png"
+              alt="Insurans Islam Family Takaful"
+              className="app-brand__logo"
+            />
+            <span className="app-brand__titles">
+              <span className="app-brand__product">{PRODUCT_NAME}</span>
+              <span className="app-brand__module">{moduleName}</span>
+            </span>
+          </Link>
+        </div>
+        {!mobile && (
+          <div className="app-header__search">
+            <GlobalSearch basePath={basePath} />
           </div>
-        </Layout.Sider>
+        )}
+        <div className="app-header__right">
+          {canQuote && (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              disabled={pathname === '/portal/quotations/new'}
+              onClick={() => navigate('/portal/quotations/new')}
+              aria-label="New quotation"
+            >
+              {!mobile && 'New quotation'}
+            </Button>
+          )}
+          <NotificationBell basePath={basePath} />
+          {!mobile && <span className="app-header__divider" aria-hidden="true" />}
+          <UserMenu profilePath={profilePath} />
+        </div>
+      </Layout.Header>
+      <Layout hasSider={!mobile}>
+        {!mobile && (
+          <Layout.Sider
+            width={240}
+            collapsedWidth={64}
+            collapsed={collapsed}
+            className="app-sider"
+            trigger={null}
+          >
+            <SideNav menu={menu} basePath={basePath} collapsed={collapsed} />
+            <div className="app-sider__footer">
+              <Tooltip
+                title={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+                placement="right"
+              >
+                <Button
+                  type="text"
+                  size="small"
+                  icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                  onClick={toggleCollapsed}
+                  aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+                />
+              </Tooltip>
+            </div>
+          </Layout.Sider>
+        )}
         <Layout.Content className="app-content">
-          <Outlet />
+          <main className="app-page">
+            <Outlet />
+          </main>
           <footer className="app-footer">
-            SalesVerse 2.0 · Insurans Islam Family Takaful Sendirian Berhad
+            <span>
+              © {COPYRIGHT_YEAR} {COMPANY_NAME} · {PRODUCT_NAME} <ReleaseLabel />
+            </span>
+            <PoweredBy />
           </footer>
         </Layout.Content>
       </Layout>
+      {mobile && (
+        <Drawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          placement="left"
+          size={280}
+          title={moduleName}
+          className="mobile-nav"
+          destroyOnHidden
+        >
+          <div className="mobile-nav__search">
+            <GlobalSearch basePath={basePath} />
+          </div>
+          <SideNav menu={menu} basePath={basePath} onNavigate={() => setDrawerOpen(false)} />
+        </Drawer>
+      )}
     </Layout>
   );
 }

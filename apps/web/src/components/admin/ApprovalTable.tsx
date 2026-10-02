@@ -1,10 +1,16 @@
-import { Table, type TablePaginationConfig } from 'antd';
-import { Link } from 'react-router';
+import type { TablePaginationConfig } from 'antd';
+import type { ColumnType } from 'antd/es/table';
+import { Link, useNavigate } from 'react-router';
 import type { ApprovalRequest } from '../../api/types';
-import { formatDate, formatDateTime, humanise } from '../../utils/format';
-import { Money } from '../Money';
-import { StatusTag } from '../StatusTag';
-import { CellText } from './CellText';
+import {
+  DataTable,
+  dateColumn,
+  dateTimeColumn,
+  moneyColumn,
+  statusColumn,
+  textColumn,
+} from '../DataTable';
+import { humanise } from '../../utils/format';
 
 interface Props {
   items: ApprovalRequest[];
@@ -26,61 +32,43 @@ export function ApprovalTable({
   emptyText = 'No requests',
   compact = false,
 }: Props) {
+  const navigate = useNavigate();
+  const columns: ColumnType<ApprovalRequest>[] = [
+    {
+      title: 'Request no.',
+      dataIndex: 'requestNo',
+      width: 130,
+      render: (no: string, row) => <Link to={`/backoffice/approvals/${row.id}`}>{no}</Link>,
+    },
+    { title: 'Type', dataIndex: 'type', width: 170, render: humanise },
+    compact ? textColumn('Summary', 'summary') : textColumn('Summary', 'summary', 320),
+    moneyColumn('Amount', 'amount', 130),
+  ];
+  if (!compact) {
+    columns.push(textColumn('Submitted by', 'makerName', 180), {
+      title: 'Level',
+      key: 'level',
+      width: 80,
+      render: (_: unknown, row) =>
+        row.status === 'PENDING' ? `${row.currentLevel} of ${row.totalLevels}` : row.totalLevels,
+    });
+  }
+  columns.push(
+    compact ? dateColumn('Submitted', 'submittedAt') : dateTimeColumn('Submitted', 'submittedAt'),
+  );
+  if (showStatus) columns.push(statusColumn('Status', 'status', 120));
+
   return (
-    <Table<ApprovalRequest>
+    <DataTable<ApprovalRequest>
       size={compact ? 'small' : 'middle'}
       rowKey="id"
       loading={loading}
       dataSource={items}
       pagination={pagination}
-      scroll={{ x: 'max-content' }}
       locale={{ emptyText }}
-      columns={[
-        {
-          title: 'Request no.',
-          dataIndex: 'requestNo',
-          render: (no: string, row) => <Link to={`/backoffice/approvals/${row.id}`}>{no}</Link>,
-        },
-        { title: 'Type', dataIndex: 'type', render: humanise },
-        {
-          title: 'Summary',
-          dataIndex: 'summary',
-          render: (summary: string) => <CellText text={summary} width={compact ? 200 : 300} />,
-        },
-        {
-          title: 'Amount',
-          dataIndex: 'amount',
-          align: 'right',
-          render: (amount: string | null) => (amount === null ? '–' : <Money value={amount} />),
-        },
-        ...(compact
-          ? []
-          : [
-              { title: 'Submitted by', dataIndex: 'makerName' },
-              {
-                title: 'Level',
-                key: 'level',
-                render: (_: unknown, row: ApprovalRequest) =>
-                  row.status === 'PENDING'
-                    ? `${row.currentLevel} of ${row.totalLevels}`
-                    : row.totalLevels,
-              },
-            ]),
-        {
-          title: 'Submitted',
-          dataIndex: 'submittedAt',
-          render: (value: string) => (compact ? formatDate(value) : formatDateTime(value)),
-        },
-        ...(showStatus
-          ? [
-              {
-                title: 'Status',
-                dataIndex: 'status',
-                render: (status: string) => <StatusTag status={status} />,
-              },
-            ]
-          : []),
-      ]}
+      onRowClick={(row) => navigate(`/backoffice/approvals/${row.id}`)}
+      scroll={compact ? {} : undefined}
+      columns={columns}
     />
   );
 }

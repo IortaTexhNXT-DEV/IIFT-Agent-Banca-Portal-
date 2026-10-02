@@ -52,12 +52,7 @@ export default function IssueListPage() {
     <>
       <PageHeader
         title={manager ? 'Issues' : 'Support'}
-        subtitle={
-          manager
-            ? 'Issues reported by agents, bank officers and staff, with SLA targets'
-            : 'Issues you have reported to IIFT support'
-        }
-        breadcrumb={[{ title: 'Dashboard', to: base }, { title: manager ? 'Issues' : 'Support' }]}
+        breadcrumb={[{ title: 'Home', to: base }, { title: manager ? 'Issues' : 'Support' }]}
         extra={
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setReporting(true)}>
             Report an issue

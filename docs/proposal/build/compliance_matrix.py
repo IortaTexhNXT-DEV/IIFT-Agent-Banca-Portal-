@@ -6,7 +6,11 @@ Compliance codes:
     X = Compliant – custom        (met by IIFT-specific development within the fixed price)
 
 Priority codes follow RFP Appendix 4: M = Must Have, S = Should Have.
+Commercial rows read their figures from pricing_data so they always match the
+Commercial Proposal.
 """
+
+import pricing_data as price
 
 COMPLIANCE_LABELS = {
     "F": "Fully Compliant",
@@ -14,6 +18,10 @@ COMPLIANCE_LABELS = {
     "X": "Compliant – custom",
 }
 PRIORITY_LABELS = {"M": "Must", "S": "Should"}
+
+
+def _b(amount) -> str:
+    return f"B${amount:,.0f}"
 
 # (group title, [(id, requirement, priority, compliance, how addressed)])
 MATRIX = [
@@ -178,27 +186,27 @@ MATRIX = [
         ("NFR-30", "Data quality", "M", "F", "Validation on every DTO plus database constraints (FK, CHECK, UNIQUE)."),
     ]),
     ("RFP 6 – Commercial requirements", [
-        ("COM-01", "Implementation cost", "M", "F", "Fixed price B$166,000 for the full scope (Commercial Proposal)."),
-        ("COM-02", "Software licence", "M", "F", "SalesVerse 2.0 licence bundled at B$0: perpetual, royalty-free, enterprise-wide, unlimited users, no renewal fees."),
-        ("COM-03", "Subscription", "M", "F", "No SaaS or platform subscription; optional cloud hosting shown separately."),
-        ("COM-04", "Infrastructure", "M", "F", "On-premise and cloud infrastructure, database and third-party costs identified."),
-        ("COM-05", "Integration cost", "M", "F", "Cost per interface itemised (six interfaces, B$30,500)."),
-        ("COM-06", "Implementation services", "M", "F", "PM, BA, design, configuration, development and deployment within item 2."),
-        ("COM-07", "Data migration", "M", "F", "Scope, assumptions, tools and cost (B$7,500) stated."),
-        ("COM-08", "Testing", "M", "F", "SIT, UAT support, performance (B$10,000) and security testing (B$8,500) itemised."),
-        ("COM-09", "Training", "M", "F", "User, administrator and technical training included (B$4,500)."),
-        ("COM-10", "Documentation", "M", "F", "Preparation and maintenance of documentation included (B$5,000)."),
-        ("COM-11", "Warranty period", "M", "F", "6 months from production go-live, included."),
-        ("COM-12", "5-year maintenance", "M", "F", "Detailed five-year maintenance plan at B$21,600 per year, flat."),
+        ("COM-01", "Implementation cost", "M", "F", f"Fixed implementation price: Option A {_b(price.one_time_total('A'))} (licence {_b(price.licence_fee())}, services {_b(price.services_fee())}); Option B {_b(price.option_b_one_time())} (services {_b(price.services_fee())}, cloud set-up {_b(price.CLOUD_SETUP_FEE)})."),
+        ("COM-02", "Software licence", "M", "F", f"Option A: perpetual, non-exclusive enterprise licence for IIFT, unlimited named users, all environments, {_b(price.licence_fee())} one-off, no renewal fee. Option B: right to use within the subscription."),
+        ("COM-03", "Subscription", "M", "F", f"Option B: subscription {_b(price.subscription_monthly(1))} a month and managed services {_b(price.managed_monthly(1))} a month in Year 1 (+5% a year), minimum term {price.SUBSCRIPTION_MINIMUM_MONTHS} months; cloud recharged at cost. Option A has no subscription."),
+        ("COM-04", "Infrastructure", "M", "F", f"Option A: IIFT procures to iorta's sizing (BOM, indicative {_b(price.bom_onprem_totals()[0])}–{price.bom_onprem_totals()[1]:,}). Option B: one-off cloud set-up {_b(price.CLOUD_SETUP_FEE)}; cloud recharged at cost, about {_b(price.cloud_monthly())} a month, or paid by IIFT directly. PostgreSQL B$0; third-party costs in the BOM."),
+        ("COM-05", "Integration cost", "M", "F", f"Cost per interface itemised (six interfaces, {_b(price.item_total('integration'))})."),
+        ("COM-06", "Implementation services", "M", "F", f"PM, BA, design, configuration, customisation and deployment: {_b(price.item_total('implementation'))} (item 2)."),
+        ("COM-07", "Data migration", "M", "F", f"Scope, assumptions, tools and cost ({_b(price.item_total('migration'))}) stated."),
+        ("COM-08", "Testing", "M", "F", f"SIT, UAT support and performance testing ({_b(price.item_total('testing'))}) and security testing ({_b(price.item_total('security'))}) itemised."),
+        ("COM-09", "Training", "M", "F", f"User, administrator and technical training included ({_b(price.item_total('training'))})."),
+        ("COM-10", "Documentation", "M", "F", f"Preparation and maintenance of documentation included ({_b(price.item_total('documentation'))})."),
+        ("COM-11", "Warranty period", "M", "F", f"{price.WARRANTY_MONTHS} months from production go-live under both options, included."),
+        ("COM-12", "5-year maintenance", "M", "F", f"Detailed five-year plan. Option A AMC {_b(price.amc(1))} in Year 1 (22% of licence and customisation, +5% a year; {_b(price.amc_total())} over five years). Option B: included in the subscription."),
         ("COM-13", "Service level agreement", "M", "F", "Response, restoration and availability targets committed (Maintenance and Support chapter)."),
         ("COM-14", "Support hours", "M", "F", "Aligned to IIFT business hours with 24x7 for P1 incidents."),
         ("COM-15", "Critical incident escalation", "M", "F", "Four-level escalation matrix with time-based triggers."),
-        ("COM-16", "Change request", "M", "F", "Rate card and formal CR process (impact, quote, approval)."),
-        ("COM-17", "Third-party dependencies", "M", "F", "All third-party products and charges disclosed; open-source components listed."),
-        ("COM-18", "Annual increase", "S", "F", "0% escalation for five years."),
-        ("COM-19", "Exit assistance", "M", "F", "Transition, data extraction and knowledge transfer included in Year 5 or on termination."),
-        ("COM-20", "IP ownership", "M", "F", "SalesVerse 2.0 core remains iorta IP under a perpetual licence; IIFT-specific configuration, reports, documentation and data belong to IIFT."),
-        ("COM-21", "Source code", "S", "F", "Full source code of the deployed solution delivered for maintenance and enhancement; escrow optional."),
+        ("COM-16", "Change request", "M", "F", f"Rate card ({_b(price.ENHANCEMENT_DAY_RATE)} per man-day, {_b(price.ENHANCEMENT_HOUR_RATE)} per hour in Year 1, +5% a year) and formal CR process."),
+        ("COM-17", "Third-party dependencies", "M", "F", "All third-party products, licences, services and infrastructure disclosed in the Bill of Materials (Annex C and BOM workbook); runtime components open source, B$0; SBOM with every build."),
+        ("COM-18", "Annual increase", "S", "F", "AMC, subscription, managed services and rate card rise 5% a year, capped at 5%. Cloud and third-party items at actual cost."),
+        ("COM-19", "Exit assistance", "M", "F", "Transition, data extraction in open formats and knowledge transfer included in Year 5, at the end of the subscription or on termination."),
+        ("COM-20", "IP ownership", "M", "F", "SalesVerse 2.0 core remains iorta IP (perpetual licence under Option A, right to use under Option B); IIFT-specific configuration, reports, documentation and data belong to IIFT."),
+        ("COM-21", "Source code", "S", "F", f"Source code of IIFT-specific components delivered under every option (DEL-11); core platform source via Option C ({_b(price.option_c_total())} with {price.KNOWLEDGE_TRANSFER_WEEKS}-week knowledge transfer) or escrow."),
         ("COM-22", "Data ownership", "M", "F", "All business data remains the property of IITH/IIGT/IIFT."),
         ("COM-23", "Vendor liability", "M", "F", "Responsibilities, liability and service credits defined in Terms and Conditions."),
         ("COM-24", "Vendor BCP", "M", "F", "iorta business continuity arrangements: code repositories, backup staff, remote support."),
@@ -214,7 +222,7 @@ MATRIX = [
         ("DEL-08", "UI/UX design", "M", "F", "Week 5: clickable screen designs, navigation and user journeys."),
         ("DEL-09", "Interface specification", "M", "F", "Week 6: APIs, data mappings, methods, security and error handling per interface."),
         ("DEL-10", "Configured solution", "M", "F", "Week 16: complete portal and back-office, demonstrated sprint by sprint."),
-        ("DEL-11", "Source code", "M", "F", "Week 24 and every release: source code of the deployed solution, build scripts and migrations."),
+        ("DEL-11", "Source code", "M", "F", "Week 24 and every release, all options: source code of IIFT-specific components (configuration, adapters, reports, templates), build scripts and migrations. Core platform via Option C or escrow."),
         ("DEL-12", "Test strategy", "M", "F", "Week 6: levels, responsibilities, environments, entry/exit and acceptance criteria."),
         ("DEL-13", "SIT test cases", "M", "F", "Week 14: scenarios and expected results traced to requirements."),
         ("DEL-14", "SIT results", "M", "F", "Week 19: execution evidence, defect log and closure."),
@@ -264,7 +272,7 @@ MATRIX = [
         ("MNT-26", "Quarterly review", "S", "F", "Quarterly service review with improvement plan."),
         ("MNT-27", "Documentation updates", "M", "F", "System, technical and operational documents updated after material changes."),
         ("MNT-28", "Knowledge transfer", "M", "F", "Ongoing knowledge transfer sessions to IIFT/IITH support staff."),
-        ("MNT-29", "Onsite support", "S", "F", "Onsite support for major incidents/upgrades per rate card (planned visits included)."),
+        ("MNT-29", "Onsite support", "S", "F", "Onsite support for major incidents or upgrades at the rate card plus OPE; planned onsite phases per the OPE schedule."),
         ("MNT-30", "Transition support", "M", "F", "Year 5 knowledge transfer, documentation and technical assistance for transition."),
     ]),
 ]

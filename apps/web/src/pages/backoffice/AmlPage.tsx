@@ -9,8 +9,7 @@ export default function AmlPage() {
     <>
       <PageHeader
         title="AML / KYC"
-        subtitle="Screening results of agents and participants, and the watch-lists they are screened against"
-        breadcrumb={[{ title: 'Dashboard', to: '/backoffice' }, { title: 'AML / KYC' }]}
+        breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'AML / KYC' }]}
       />
       <Tabs
         destroyOnHidden

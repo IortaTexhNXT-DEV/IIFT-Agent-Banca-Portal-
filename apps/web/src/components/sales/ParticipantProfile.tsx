@@ -1,7 +1,7 @@
-import { Descriptions, type DescriptionsProps } from 'antd';
 import { Link } from 'react-router';
 import type { Participant } from '../../api/types';
 import { formatDate, formatDateTime, humanise } from '../../utils/format';
+import { type FieldItem, FieldGrid } from '../FieldGrid';
 import { StatusTag } from '../StatusTag';
 import { ID_TYPE_LABELS } from './options';
 import { useCodes } from './useCodes';
@@ -35,70 +35,68 @@ export function ParticipantProfile({ participant, compact = false }: Props) {
     .filter(Boolean)
     .join(', ');
 
-  const items: DescriptionsProps['items'] = [
+  const items: FieldItem[] = [
     {
       key: 'name',
       label: individual ? 'Name' : 'Company name',
-      children: compact ? (
+      value: compact ? (
         <Link to={links.participant(participant.id)}>{participant.fullName}</Link>
       ) : (
         participant.fullName
       ),
     },
-    { key: 'no', label: 'Participant no.', children: participant.participantNo },
+    { key: 'no', label: 'Participant no.', value: participant.participantNo },
     {
       key: 'id',
       label: ID_TYPE_LABELS[participant.idType] ?? participant.idType,
-      children: participant.idNumberMasked,
+      value: participant.idNumberMasked,
     },
     ...(individual
       ? [
           {
             key: 'dob',
             label: 'Date of birth',
-            children: `${formatDate(participant.dateOfBirth)}${participant.ageNextBirthday ? ` (age next birthday ${participant.ageNextBirthday})` : ''}`,
+            value: `${formatDate(participant.dateOfBirth)}${participant.ageNextBirthday ? ` (age next birthday ${participant.ageNextBirthday})` : ''}`,
           },
         ]
       : []),
-    { key: 'mobile', label: 'Mobile', children: participant.mobile },
-    { key: 'email', label: 'E-mail', children: participant.email ?? '–' },
-    { key: 'aml', label: 'AML screening', children: <StatusTag status={participant.amlStatus} /> },
+    { key: 'mobile', label: 'Mobile', value: participant.mobile },
+    { key: 'email', label: 'E-mail', value: participant.email, span: compact ? 2 : 1 },
+    { key: 'aml', label: 'AML screening', value: <StatusTag status={participant.amlStatus} /> },
   ];
 
   if (!compact) {
     items.push(
-      { key: 'type', label: 'Type', children: humanise(participant.type) },
+      { key: 'type', label: 'Type', value: humanise(participant.type) },
       ...(individual
         ? [
-            { key: 'gender', label: 'Gender', children: humanise(participant.gender) },
+            { key: 'gender', label: 'Gender', value: humanise(participant.gender) },
             {
               key: 'occupation',
               label: 'Occupation',
-              children: occupations.label(participant.occupation),
+              value: occupations.label(participant.occupation),
             },
             {
               key: 'class',
               label: 'Occupational class',
-              children: occupationClassLabel(participant.occupationClass),
+              value: occupationClassLabel(participant.occupationClass),
             },
           ]
-        : [
-            { key: 'contact', label: 'Contact person', children: participant.contactPerson ?? '–' },
-          ]),
+        : [{ key: 'contact', label: 'Contact person', value: participant.contactPerson ?? '–' }]),
       {
         key: 'nationality',
         label: individual ? 'Nationality' : 'Country of registration',
-        children: nationalities.label(participant.nationality),
+        value: nationalities.label(participant.nationality),
       },
-      { key: 'address', label: 'Address', children: address, span: 2 },
+      { key: 'address', label: 'Address', value: address, span: 2 },
       {
         key: 'screened',
         label: 'Last screened',
-        children: formatDateTime(participant.amlScreenedAt),
+        value: formatDateTime(participant.amlScreenedAt),
       },
-      { key: 'registered', label: 'Registered', children: formatDate(participant.createdAt) },
+      { key: 'registered', label: 'Registered', value: formatDate(participant.createdAt) },
     );
   }
 
-  return <Descriptions size="small" column={compact ? 1 : { xs: 1, md: 2, xl: 3 }} items={items} />;
+  return <FieldGrid columns={compact ? 2 : 3} items={items} />;
 }

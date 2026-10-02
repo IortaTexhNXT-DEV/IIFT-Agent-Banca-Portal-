@@ -129,8 +129,7 @@ export default function UsersPage() {
     <>
       <PageHeader
         title="Users"
-        subtitle="Staff accounts, and the portal logins created for approved agents and bank officers"
-        breadcrumb={[{ title: 'Dashboard', to: '/backoffice' }, { title: 'Users' }]}
+        breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Users' }]}
         extra={
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setEditing('new')}>
             New staff user

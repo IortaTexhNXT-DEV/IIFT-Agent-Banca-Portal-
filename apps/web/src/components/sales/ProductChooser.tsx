@@ -1,4 +1,4 @@
-import { Radio, Tag, Typography } from 'antd';
+import { Radio, Tag } from 'antd';
 import type { Product } from '../../api/types';
 
 interface Props {
@@ -21,24 +21,21 @@ export function ProductChooser({ products, value, onChange }: Props) {
     >
       {lines.map((line) => (
         <section key={line} className="product-chooser__group" aria-label={line}>
-          <Typography.Title level={5} className="form-section-title">
-            {line}
-          </Typography.Title>
+          <h3 className="form-section__title product-chooser__line">{line}</h3>
           <div className="choice-cards">
             {products
               .filter((product) => product.lineOfBusiness === line)
               .map((product) => (
                 <Radio key={product.id} value={product.id} className="choice-card">
                   <div className="choice-card__body">
-                    <div className="choice-card__title">
-                      {product.name} <Tag variant="filled">{product.code}</Tag>
-                    </div>
-                    <div className="muted">{product.description}</div>
-                    <div className="choice-card__meta">
-                      {product.paymentBeforeIssuance
-                        ? 'Issued after payment'
-                        : 'Issued on acceptance, pay within the grace period'}
-                      {product.allowRenewal ? ' · Renewable' : ''}
+                    <div className="choice-card__title">{product.name}</div>
+                    <div className="choice-card__description">{product.description}</div>
+                    <div className="choice-card__tags">
+                      <Tag>{product.code}</Tag>
+                      <Tag>
+                        {product.paymentBeforeIssuance ? 'Pay before issue' : 'Pay after issue'}
+                      </Tag>
+                      {product.allowRenewal && <Tag>Renewable</Tag>}
                     </div>
                   </div>
                 </Radio>

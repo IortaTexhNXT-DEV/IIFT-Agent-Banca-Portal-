@@ -1,5 +1,5 @@
-import { CheckCircleFilled, ExclamationCircleOutlined } from '@ant-design/icons';
-import { Button, Card, Flex, Typography } from 'antd';
+import { CheckCircleFilled, ClockCircleOutlined } from '@ant-design/icons';
+import { Button, Card, Flex, Progress, Typography } from 'antd';
 import type { ReactNode } from 'react';
 import type { PolicyDetail } from '../../api/types';
 import { formatDateTime, formatMoney } from '../../utils/format';
@@ -14,7 +14,7 @@ interface Item {
   title: string;
   done: boolean;
   optional?: boolean;
-  detail: ReactNode;
+  detail: string;
   actions: { action: DraftAction; label: string }[];
 }
 
@@ -31,7 +31,7 @@ function checklist(policy: PolicyDetail): Item[] {
       key: 'coverage',
       title: 'Coverage and contribution',
       done: true,
-      detail: `${formatTerm(policy.termMonths)} · sum covered ${formatMoney(policy.sumCovered)} · contribution ${formatMoney(policy.contribution)}`,
+      detail: `${formatTerm(policy.termMonths)} · ${formatMoney(policy.sumCovered)} covered · ${formatMoney(policy.contribution)}`,
       actions: [{ action: 'coverage', label: 'Edit coverage' }],
     },
   ];
@@ -45,9 +45,7 @@ function checklist(policy: PolicyDetail): Item[] {
       key: 'questionnaire',
       title: 'Declarations',
       done: answered,
-      detail: answered
-        ? 'All questions answered'
-        : `${product.questionnaire.length} questions to answer`,
+      detail: answered ? 'Answered' : `${product.questionnaire.length} questions`,
       actions: [{ action: 'questionnaire', label: answered ? 'Review answers' : 'Answer' }],
     });
   }
@@ -62,7 +60,7 @@ function checklist(policy: PolicyDetail): Item[] {
           ? policy.nominees
               .map((nominee) => `${nominee.fullName} (${Number(nominee.sharePercent)}%)`)
               .join(', ')
-          : 'At least one nominee, beneficiary or executor',
+          : 'None added',
       actions: [
         {
           action: 'nominees',
@@ -80,15 +78,9 @@ function checklist(policy: PolicyDetail): Item[] {
       title: 'Mandatory documents',
       done: missing.length === 0,
       detail:
-        missing.length === 0 ? (
-          `All ${mandatory.length} documents uploaded`
-        ) : (
-          <ul className="plain-list">
-            {missing.map((doc) => (
-              <li key={doc.docType}>{doc.label}</li>
-            ))}
-          </ul>
-        ),
+        missing.length === 0
+          ? `${mandatory.length} of ${mandatory.length} uploaded`
+          : `Missing: ${missing.map((doc) => doc.label).join(', ')}`,
       actions: [{ action: 'documents', label: 'Upload documents' }],
     });
   }
@@ -104,8 +96,8 @@ function checklist(policy: PolicyDetail): Item[] {
     detail: participantSigned
       ? 'Signed'
       : pendingLink
-        ? `Link sent to ${pendingLink.recipientEmail}, valid until ${formatDateTime(pendingLink.expiresAt)}`
-        : 'Sign on screen, send an e-signature link or upload the signed proposal form',
+        ? `Link sent to ${pendingLink.recipientEmail} · expires ${formatDateTime(pendingLink.expiresAt)}`
+        : 'Not signed',
     actions: participantSigned
       ? []
       : [
@@ -120,7 +112,7 @@ function checklist(policy: PolicyDetail): Item[] {
     title: 'Agent signature',
     done: agentSigned,
     optional: true,
-    detail: agentSigned ? 'Signed' : 'Confirms the product was explained to the participant',
+    detail: agentSigned ? 'Signed' : 'Not signed',
     actions: agentSigned ? [] : [{ action: 'sign-agent', label: 'Sign on screen' }],
   });
   return items;
@@ -141,50 +133,59 @@ export function CompletionChecklist({ policy, canEdit, onAction, submit }: Props
 
   return (
     <Card
-      className="content-card"
+      className="content-card content-card--flush"
       title="Application checklist"
       extra={
         <Flex align="center" gap={12}>
+          <Progress
+            percent={Math.round((complete / required.length) * 100)}
+            steps={required.length}
+            size="small"
+            showInfo={false}
+            aria-label="Required steps complete"
+          />
           <Typography.Text type="secondary">
-            {complete} of {required.length} required steps complete
+            {complete} of {required.length} required
           </Typography.Text>
           {submit}
         </Flex>
       }
     >
-      <div className="checklist__grid">
+      <ul className="checklist">
         {items.map((item) => (
-          <section
+          <li
             key={item.key}
             className={`checklist__item${item.done ? ' checklist__item--done' : ''}`}
             aria-label={item.title}
           >
-            <Typography.Text type={item.done ? 'success' : 'warning'} className="checklist__icon">
+            <span className="checklist__icon">
               {item.done ? (
                 <CheckCircleFilled aria-label="Complete" />
               ) : (
-                <ExclamationCircleOutlined aria-label="To do" />
+                <ClockCircleOutlined aria-label="To do" />
               )}
-            </Typography.Text>
-            <div className="checklist__body">
-              <div className="checklist__title">
-                {item.title}
-                {item.optional && <span className="muted"> (recommended)</span>}
-              </div>
-              <div className="checklist__detail">{item.detail}</div>
-              {canEdit && item.actions.length > 0 && (
-                <Flex gap={8} wrap className="checklist__actions">
-                  {item.actions.map(({ action, label }) => (
-                    <Button key={action} size="small" onClick={() => onAction(action)}>
-                      {label}
-                    </Button>
-                  ))}
-                </Flex>
-              )}
-            </div>
-          </section>
+            </span>
+            <span className="checklist__title">
+              {item.title}
+              {item.optional && <span className="muted"> (recommended)</span>}
+            </span>
+            <span
+              className="checklist__detail"
+              title={typeof item.detail === 'string' ? item.detail : undefined}
+            >
+              {item.detail}
+            </span>
+            <span className="checklist__actions">
+              {canEdit &&
+                item.actions.map(({ action, label }) => (
+                  <Button key={action} size="small" onClick={() => onAction(action)}>
+                    {label}
+                  </Button>
+                ))}
+            </span>
+          </li>
         ))}
-      </div>
+      </ul>
     </Card>
   );
 }

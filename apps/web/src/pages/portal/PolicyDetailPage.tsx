@@ -201,28 +201,21 @@ function PolicyView({ policy }: { policy: PolicyDetail }) {
           type="error"
           showIcon
           title="Rejected by IIFT"
-          description={policy.rejectedReason ?? 'No reason was recorded.'}
+          description={policy.rejectedReason ?? 'No reason recorded.'}
         />
       )}
       {status === 'PENDING_APPROVAL' && (
-        <Alert
-          className="mb-16"
-          type="info"
-          showIcon
-          title="Awaiting IIFT approval"
-          description="The application was referred for underwriting. You are notified when a decision is made."
-        />
+        <Alert className="mb-16" type="info" showIcon title="Awaiting IIFT underwriting decision" />
       )}
       {awaitingPayment && (
         <Alert
           className="mb-16"
           type="warning"
           showIcon
-          title={`Contribution of ${formatMoney(policy.outstandingAmount)} outstanding`}
-          description={
+          title={
             status === 'PENDING_PAYMENT'
-              ? 'The e-Policy is issued once the payment is verified.'
-              : `Payment is due by ${formatDate(policy.paymentDueDate)}. Overdue contributions block new business for the agency.`
+              ? `${formatMoney(policy.outstandingAmount)} outstanding – e-Policy issued once payment is verified`
+              : `${formatMoney(policy.outstandingAmount)} outstanding – due ${formatDate(policy.paymentDueDate)}`
           }
         />
       )}
@@ -231,12 +224,11 @@ function PolicyView({ policy }: { policy: PolicyDetail }) {
           className="mb-16"
           type="error"
           showIcon
-          title="New business is blocked for your agency"
-          description={
-            <>
-              Submission is not possible until overdue contributions are paid.{' '}
-              <Link to="/portal/billing">Go to billing</Link>
-            </>
+          title="Submission blocked – overdue contributions for your agency"
+          action={
+            <Link to="/portal/billing">
+              <Button size="small">Go to billing</Button>
+            </Link>
           }
         />
       )}

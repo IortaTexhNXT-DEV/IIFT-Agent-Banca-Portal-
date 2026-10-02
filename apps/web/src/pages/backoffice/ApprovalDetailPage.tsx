@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Descriptions, Flex, Popconfirm } from 'antd';
+import { Alert, Button, Card, Col, Popconfirm, Row } from 'antd';
 import { Link, useNavigate, useParams } from 'react-router';
 import { api } from '../../api/client';
 import { useApiMutation, useApiQuery } from '../../api/hooks';
@@ -13,6 +13,7 @@ import { RejectionAlert, RequestSummary } from '../../components/admin/RequestSu
 import { ApprovalHistory } from '../../components/ApprovalHistory';
 import { DocumentPanel } from '../../components/DocumentPanel';
 import { ErrorAlert } from '../../components/ErrorAlert';
+import { FieldGrid } from '../../components/FieldGrid';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryState } from '../../components/QueryState';
 import { StatusTag } from '../../components/StatusTag';
@@ -35,26 +36,21 @@ function AgentEvidence({ agentId }: { agentId: string }) {
     <QueryState query={agent} rows={3}>
       {(data) => (
         <>
-          <Descriptions
-            size="small"
+          <FieldGrid
+            columns={3}
             className="mb-16"
-            column={{ xs: 1, md: 3 }}
             items={[
               {
                 key: 'agent',
                 label: 'Agent',
-                children: (
-                  <Link
-                    to={`/backoffice/agents/${data.id}`}
-                  >{`${data.fullName} (${data.agentCode})`}</Link>
+                value: (
+                  <Link to={`/backoffice/agents/${data.id}`}>
+                    {data.fullName} ({data.agentCode})
+                  </Link>
                 ),
               },
-              {
-                key: 'status',
-                label: 'Agent status',
-                children: <StatusTag status={data.status} />,
-              },
-              { key: 'aml', label: 'AML status', children: <StatusTag status={data.amlStatus} /> },
+              { key: 'status', label: 'Agent status', value: <StatusTag status={data.status} /> },
+              { key: 'aml', label: 'AML status', value: <StatusTag status={data.amlStatus} /> },
             ]}
           />
           {data.amlStatus === 'FLAGGED' && (
@@ -62,12 +58,11 @@ function AgentEvidence({ agentId }: { agentId: string }) {
               className="mb-16"
               type="warning"
               showIcon
-              title="AML screening flagged a possible match"
-              description={
-                <>
-                  Compliance must clear the case under <Link to="/backoffice/aml">AML / KYC</Link>{' '}
-                  before the registration can be approved.
-                </>
+              title="AML screening flagged a possible match – clearance required before approval"
+              action={
+                <Link to="/backoffice/aml">
+                  <Button size="small">AML / KYC</Button>
+                </Link>
               }
             />
           )}
@@ -76,8 +71,7 @@ function AgentEvidence({ agentId }: { agentId: string }) {
               className="mb-16"
               type="error"
               showIcon
-              title="Compliance confirmed a watch-list match"
-              description="The applicant cannot be onboarded. Reject this request."
+              title="Watch-list match confirmed by Compliance – reject this request"
             />
           )}
           <AgentDocuments
@@ -137,14 +131,18 @@ export default function ApprovalDetailPage() {
         return (
           <>
             <PageHeader
-              title={
-                <Flex gap={12} align="center" wrap>
-                  {data.requestNo}
-                  <StatusTag status={data.status} />
-                </Flex>
-              }
-              subtitle={`${humanise(data.type)}${pending ? ` · level ${data.currentLevel} of ${data.totalLevels}` : ''}`}
+              title={data.requestNo}
+              tags={<StatusTag status={data.status} />}
+              meta={[
+                { label: 'Type', value: humanise(data.type) },
+                pending && {
+                  label: 'Level',
+                  value: `${data.currentLevel} of ${data.totalLevels}`,
+                },
+                { label: 'Submitted by', value: data.makerName },
+              ]}
               breadcrumb={[
+                { title: 'Home', to: '/backoffice' },
                 { title: 'Approvals', to: '/backoffice/approvals' },
                 { title: data.requestNo },
               ]}
@@ -177,7 +175,7 @@ export default function ApprovalDetailPage() {
                 className="mb-16"
                 type="info"
                 showIcon
-                title="You submitted this request, so another approver must decide it."
+                title="Submitted by you – another approver decides this request."
               />
             )}
             {pending && !isMaker && !canDecide && (
@@ -185,24 +183,30 @@ export default function ApprovalDetailPage() {
                 className="mb-16"
                 type="info"
                 showIcon
-                title="This request is waiting for an approver at its current level; you cannot decide it."
+                title={`Awaiting an approver at level ${data.currentLevel}.`}
               />
             )}
             <RejectionAlert request={data} />
-            <Card title="Request" className="content-card">
-              <RequestSummary request={data} />
-            </Card>
-            <Card title="Submitted details" className="content-card">
-              <PayloadView payload={data.payload} />
-            </Card>
-            {evidence && (
-              <Card title="Supporting evidence" className="content-card">
-                <RecordEvidence ownerType={evidence} ownerId={data.entityId} />
-              </Card>
-            )}
-            <Card title="Approval history" className="content-card">
-              <ApprovalHistory approvals={[data]} />
-            </Card>
+            <Row gutter={16}>
+              <Col xs={24} xl={16}>
+                <Card title="Request" className="content-card">
+                  <RequestSummary request={data} />
+                </Card>
+                <Card title="Submitted details" className="content-card">
+                  <PayloadView payload={data.payload} />
+                </Card>
+                {evidence && (
+                  <Card title="Supporting evidence" className="content-card">
+                    <RecordEvidence ownerType={evidence} ownerId={data.entityId} />
+                  </Card>
+                )}
+              </Col>
+              <Col xs={24} xl={8}>
+                <Card title="Approval history" className="content-card">
+                  <ApprovalHistory approvals={[data]} compact />
+                </Card>
+              </Col>
+            </Row>
           </>
         );
       }}

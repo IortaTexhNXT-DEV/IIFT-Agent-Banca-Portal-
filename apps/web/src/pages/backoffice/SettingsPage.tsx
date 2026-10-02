@@ -9,11 +9,7 @@ export default function SettingsPage() {
     <>
       <PageHeader
         title="Parameters & master data"
-        subtitle="Business rules, limits and the values offered in drop-down lists. Every change is audited."
-        breadcrumb={[
-          { title: 'Dashboard', to: '/backoffice' },
-          { title: 'Parameters & master data' },
-        ]}
+        breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Parameters & master data' }]}
       />
       <Tabs
         destroyOnHidden

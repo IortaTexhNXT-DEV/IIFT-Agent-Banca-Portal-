@@ -24,8 +24,7 @@ export default function RequestListPage() {
     <>
       <PageHeader
         title="My requests"
-        subtitle="Registrations, changes, cancellations and payments sent to IIFT for approval"
-        breadcrumb={[{ title: 'Dashboard', to: '/portal' }, { title: 'My requests' }]}
+        breadcrumb={[{ title: 'Home', to: '/portal' }, { title: 'My requests' }]}
       />
       <FilterBar>
         <Select

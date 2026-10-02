@@ -25,7 +25,6 @@ export default function ParticipantFormPage() {
     <>
       <PageHeader
         title="Register participant"
-        subtitle="Each participant has one profile shared across agencies, identified by IC, passport or business registration number"
         breadcrumb={[
           { title: 'Home', to: '/portal' },
           { title: 'Participants', to: '/portal/participants' },

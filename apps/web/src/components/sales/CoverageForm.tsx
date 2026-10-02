@@ -1,21 +1,19 @@
 import {
   Checkbox,
-  Col,
   DatePicker,
   Form,
   type FormInstance,
   Input,
   InputNumber,
   Radio,
-  Row,
   Switch,
-  Typography,
 } from 'antd';
 import type { Rule } from 'antd/es/form';
 import dayjs, { type Dayjs } from 'dayjs';
 import type { QuoteOptions } from '../../api/sales-types';
 import type { PolicyDetail, Product, ProductPlan, RiskField } from '../../api/types';
 import { formatMoney } from '../../utils/format';
+import { FormSection } from '../FormSection';
 import { formatTerm, ISO_DATE } from './options';
 
 type RiskValue = string | number | boolean | Dayjs | null | undefined;
@@ -109,16 +107,33 @@ function PlanOption({ plan, terms }: { plan: ProductPlan; terms: number[] }) {
   return (
     <div className="choice-card__body">
       <div className="choice-card__title">{plan.name}</div>
-      <div>Sum covered {formatMoney(plan.sumCovered)}</div>
-      <div className="muted">
-        {terms
-          .map((term) => `${formatMoney(plan.contributions[String(term)])} / ${formatTerm(term)}`)
-          .join(' · ')}
-      </div>
-      {plan.additionalCover && (
-        <div className="muted">Additional cover +{formatMoney(plan.additionalCover.amount)}</div>
-      )}
+      <dl className="choice-card__facts">
+        <dt>Sum covered</dt>
+        <dd className="money">{formatMoney(plan.sumCovered)}</dd>
+        {terms.map((term) => (
+          <FragmentRow
+            key={term}
+            label={formatTerm(term)}
+            value={formatMoney(plan.contributions[String(term)])}
+          />
+        ))}
+        {plan.additionalCover && (
+          <FragmentRow
+            label="Additional cover"
+            value={`+${formatMoney(plan.additionalCover.amount)}`}
+          />
+        )}
+      </dl>
     </div>
+  );
+}
+
+function FragmentRow({ label, value }: { label: string; value: string }) {
+  return (
+    <>
+      <dt>{label}</dt>
+      <dd className="money">{value}</dd>
+    </>
   );
 }
 
@@ -142,7 +157,7 @@ function RiskFieldInput({ field }: { field: RiskField }) {
                 : Promise.reject(new Error(`Eligibility: ${field.label} must be confirmed`)),
           },
         ]}
-        extra="Required for eligibility"
+        className="field--full"
       >
         <Checkbox>{field.label}</Checkbox>
       </Form.Item>
@@ -218,16 +233,15 @@ export function CoverageForm({ product, form, initialValues }: Props) {
   const planCode = Form.useWatch('planCode', form);
   const selectedPlan = plans.find((plan) => plan.code === planCode);
 
+  const riskFields = config.riskFields ?? [];
+  const fixedPlan = product.ratingEngine === 'FIXED_PLAN';
+
   return (
     <Form form={form} layout="vertical" requiredMark="optional" initialValues={initialValues}>
-      {product.ratingEngine === 'FIXED_PLAN' && (
-        <>
-          <Form.Item
-            name="planCode"
-            label="Plan"
-            rules={[{ required: true, message: 'Choose a plan' }]}
-          >
-            <Radio.Group className="choice-cards">
+      {fixedPlan && (
+        <FormSection title="Plan" columns={1}>
+          <Form.Item name="planCode" rules={[{ required: true, message: 'Choose a plan' }]}>
+            <Radio.Group className="choice-cards" aria-label="Plan">
               {plans.map((plan) => (
                 <Radio key={plan.code} value={plan.code} className="choice-card">
                   <PlanOption plan={plan} terms={terms} />
@@ -235,77 +249,66 @@ export function CoverageForm({ product, form, initialValues }: Props) {
               ))}
             </Radio.Group>
           </Form.Item>
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="termMonths"
-                label="Coverage period"
-                rules={[{ required: true, message: 'Choose the coverage period' }]}
-              >
-                <Radio.Group
-                  optionType="button"
-                  options={terms.map((term) => ({ value: term, label: formatTerm(term) }))}
-                />
-              </Form.Item>
-            </Col>
-            {coverageTypes.length > 0 && (
-              <Col xs={24} md={12}>
-                <Form.Item
-                  name="coverageType"
-                  label="Coverage type"
-                  rules={[{ required: true, message: 'Choose the coverage type' }]}
-                >
-                  <Radio.Group
-                    optionType="button"
-                    options={coverageTypes.map((type) => ({ value: type.code, label: type.name }))}
-                  />
-                </Form.Item>
-              </Col>
-            )}
-          </Row>
-          {selectedPlan?.additionalCover && (
-            <Form.Item
-              name="additionalCover"
-              label="Additional cover"
-              valuePropName="checked"
-              extra={`${selectedPlan.additionalCover.name}, +${formatMoney(selectedPlan.additionalCover.amount)}`}
-            >
-              <Switch checkedChildren="Included" unCheckedChildren="Not included" />
-            </Form.Item>
-          )}
-        </>
+        </FormSection>
       )}
 
-      {(config.riskFields ?? []).length > 0 && (
-        <>
-          <Typography.Title level={5} className="form-section-title">
-            {product.ratingEngine === 'FINANCING' ? 'Financing details' : 'Risk details'}
-          </Typography.Title>
-          <Row gutter={16}>
-            {(config.riskFields ?? []).map((field) => (
-              <Col key={field.key} xs={24} md={12}>
-                <RiskFieldInput field={field} />
-              </Col>
-            ))}
-          </Row>
-        </>
-      )}
-
-      <Row gutter={16}>
-        <Col xs={24} md={12}>
+      <FormSection title="Cover">
+        {fixedPlan && (
           <Form.Item
-            name="startDate"
-            label="Cover start date"
-            extra="Leave empty to start cover on the date of issue"
+            name="termMonths"
+            label="Coverage period"
+            rules={[{ required: true, message: 'Choose the coverage period' }]}
           >
-            <DatePicker
-              className="full-width"
-              format="DD MMM YYYY"
-              disabledDate={(date) => date.isBefore(dayjs(), 'day')}
+            <Radio.Group
+              optionType="button"
+              options={terms.map((term) => ({ value: term, label: formatTerm(term) }))}
             />
           </Form.Item>
-        </Col>
-      </Row>
+        )}
+        {fixedPlan && coverageTypes.length > 0 && (
+          <Form.Item
+            name="coverageType"
+            label="Coverage type"
+            rules={[{ required: true, message: 'Choose the coverage type' }]}
+          >
+            <Radio.Group
+              optionType="button"
+              options={coverageTypes.map((type) => ({ value: type.code, label: type.name }))}
+            />
+          </Form.Item>
+        )}
+        {fixedPlan && selectedPlan?.additionalCover && (
+          <Form.Item
+            name="additionalCover"
+            label={`${selectedPlan.additionalCover.name} (+${formatMoney(selectedPlan.additionalCover.amount)})`}
+            valuePropName="checked"
+          >
+            <Switch checkedChildren="Included" unCheckedChildren="Not included" />
+          </Form.Item>
+        )}
+        <Form.Item
+          name="startDate"
+          label="Cover start date"
+          tooltip="Empty: cover starts on the date of issue"
+        >
+          <DatePicker
+            className="full-width"
+            format="DD MMM YYYY"
+            placeholder="On issue"
+            disabledDate={(date) => date.isBefore(dayjs(), 'day')}
+          />
+        </Form.Item>
+      </FormSection>
+
+      {riskFields.length > 0 && (
+        <FormSection
+          title={product.ratingEngine === 'FINANCING' ? 'Financing details' : 'Risk details'}
+        >
+          {riskFields.map((field) => (
+            <RiskFieldInput key={field.key} field={field} />
+          ))}
+        </FormSection>
+      )}
     </Form>
   );
 }

@@ -1,11 +1,13 @@
-import { Alert, Button, Card, Col, Descriptions, Flex, Form, Row, Steps } from 'antd';
+import { Button, Card, Col, Form, Row, Steps } from 'antd';
 import { type ReactNode, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { api } from '../../api/client';
 import { useApiMutation, useApiQuery } from '../../api/hooks';
 import type { ParticipantMatch, QuoteRequest } from '../../api/sales-types';
 import type { Product } from '../../api/types';
+import { ActionBar } from '../../components/ActionBar';
 import { ErrorAlert } from '../../components/ErrorAlert';
+import { type FieldItem, FieldGrid } from '../../components/FieldGrid';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryState } from '../../components/QueryState';
 import { StatusTag } from '../../components/StatusTag';
@@ -24,11 +26,13 @@ import { riskDetailItems } from '../../components/sales/RiskDetails';
 import '../../styles/sales.css';
 
 const STEPS = [
-  { title: 'Product', content: 'Choose the plan' },
-  { title: 'Participant', content: 'Find or register' },
-  { title: 'Coverage', content: 'Indicative quote' },
-  { title: 'Save', content: 'Review the quotation' },
+  { title: 'Product' },
+  { title: 'Participant' },
+  { title: 'Coverage' },
+  { title: 'Review' },
 ];
+
+type IndicativeQuote = ReturnType<typeof useIndicativeQuote>;
 
 /** A participant passed in router state, e.g. from the participant page's "New quotation" action. */
 function presetParticipant(state: unknown): ParticipantMatch | null {
@@ -38,18 +42,118 @@ function presetParticipant(state: unknown): ParticipantMatch | null {
   return null;
 }
 
-function WizardFooter({ onBack, next }: { onBack?(): void; next: ReactNode }) {
+function participantItems(participant: ParticipantMatch): FieldItem[] {
+  return [
+    { key: 'name', label: 'Name', value: participant.fullName },
+    { key: 'no', label: 'Participant no.', value: participant.participantNo },
+    { key: 'id', label: 'ID', value: participant.idNumberMasked },
+    { key: 'aml', label: 'AML', value: <StatusTag status={participant.amlStatus} /> },
+  ];
+}
+
+function coverageItems(product: Product, coverage: CoverageValues): FieldItem[] {
+  const { config } = product;
+  const plan = config.plans?.find((candidate) => candidate.code === coverage.planCode);
+  const coverageType = config.coverageTypes?.find(
+    (candidate) => candidate.code === coverage.coverageType,
+  );
+  const fixedPlan = product.ratingEngine === 'FIXED_PLAN';
+  const items: (FieldItem | false | undefined)[] = [
+    plan && { key: 'plan', label: 'Plan', value: plan.name },
+    fixedPlan &&
+      coverage.termMonths !== undefined && {
+        key: 'term',
+        label: 'Coverage period',
+        value: formatTerm(coverage.termMonths),
+      },
+    coverageType && { key: 'type', label: 'Coverage type', value: coverageType.name },
+    plan?.additionalCover && {
+      key: 'additional',
+      label: 'Additional cover',
+      value: coverage.additionalCover ? plan.additionalCover.name : 'Not included',
+    },
+    {
+      key: 'start',
+      label: 'Cover starts',
+      value: coverage.startDate ? coverage.startDate.format('DD MMM YYYY') : 'On issue',
+    },
+  ];
+  return [
+    ...items.filter((item): item is FieldItem => Boolean(item)),
+    ...riskDetailItems(toQuoteOptions(product, coverage).riskDetails, config.riskFields),
+  ];
+}
+
+/** Sticky panel beside every step: what has been chosen so far and the live quote. */
+function QuotationSummary({
+  product,
+  participant,
+  quote,
+}: {
+  product: Product | null;
+  participant: ParticipantMatch | null;
+  quote?: IndicativeQuote;
+}) {
   return (
-    <Flex justify="space-between" className="wizard-footer">
-      <Button disabled={!onBack} onClick={onBack}>
-        Back
-      </Button>
-      {next}
-    </Flex>
+    <div className="wizard-summary">
+      <Card title="Quotation summary" className="content-card">
+        <FieldGrid
+          columns={1}
+          items={[
+            {
+              key: 'product',
+              label: 'Product',
+              value: product && `${product.name} (${product.code})`,
+            },
+            {
+              key: 'participant',
+              label: 'Participant',
+              value: participant && `${participant.fullName} · ${participant.participantNo}`,
+            },
+          ]}
+        />
+        {quote && (
+          <div className="wizard-summary__quote">
+            <h3 className="wizard-summary__heading">Indicative contribution</h3>
+            <QuotePreview quote={quote} />
+          </div>
+        )}
+      </Card>
+    </div>
   );
 }
 
-function ParticipantSummary({
+interface FrameProps {
+  step: number;
+  children: ReactNode;
+  actions: ReactNode;
+  onBack?(): void;
+  summary: ReactNode;
+}
+
+/** Step indicator, step content and the action bar, with the summary panel on the right. */
+function WizardFrame({ step, children, actions, onBack, summary }: FrameProps) {
+  const navigate = useNavigate();
+  return (
+    <Row gutter={16}>
+      <Col xs={24} xl={17}>
+        <Card className="content-card">
+          <Steps current={step} items={STEPS} size="small" className="wizard-steps" />
+          {children}
+          <ActionBar start={<Button onClick={() => navigate('/portal/policies')}>Cancel</Button>}>
+            {onBack && <Button onClick={onBack}>Back</Button>}
+            {actions}
+          </ActionBar>
+        </Card>
+      </Col>
+      <Col xs={24} xl={7}>
+        {summary}
+      </Col>
+    </Row>
+  );
+}
+
+function SelectedParticipant({
   participant,
   onChange,
 }: {
@@ -57,23 +161,10 @@ function ParticipantSummary({
   onChange?(): void;
 }) {
   return (
-    <Card
-      size="small"
-      title="Participant"
-      extra={onChange && <Button onClick={onChange}>Change participant</Button>}
-      className="content-card"
-    >
-      <Descriptions
-        size="small"
-        column={{ xs: 1, md: 4 }}
-        items={[
-          { key: 'name', label: 'Name', children: participant.fullName },
-          { key: 'no', label: 'Participant no.', children: participant.participantNo },
-          { key: 'id', label: 'ID', children: participant.idNumberMasked },
-          { key: 'aml', label: 'AML', children: <StatusTag status={participant.amlStatus} /> },
-        ]}
-      />
-    </Card>
+    <div className="selected-record">
+      <FieldGrid columns={4} items={participantItems(participant)} />
+      {onChange && <Button onClick={onChange}>Change</Button>}
+    </div>
   );
 }
 
@@ -85,7 +176,7 @@ interface CoverageStepProps {
   onReview(values: CoverageValues): void;
 }
 
-/** Step 3: product-driven coverage form beside the live indicative quote. */
+/** Step 3: product-driven coverage form; the summary shows the live indicative quote. */
 function CoverageStep({
   product,
   participant,
@@ -105,69 +196,18 @@ function CoverageStep({
     );
 
   return (
-    <>
-      <Row gutter={[24, 16]}>
-        <Col xs={24} xl={14}>
-          <CoverageForm product={product} form={form} initialValues={initialValues} />
-        </Col>
-        <Col xs={24} xl={10}>
-          <Card size="small" title="Indicative quote" className="quote-panel">
-            <QuotePreview quote={quote} />
-          </Card>
-        </Col>
-      </Row>
-      <WizardFooter
-        onBack={() => onBack(form.getFieldsValue(true))}
-        next={
-          <Button type="primary" disabled={!quoted} onClick={() => void review()}>
-            Review
-          </Button>
-        }
-      />
-    </>
-  );
-}
-
-function CoverageSummary({ product, coverage }: { product: Product; coverage: CoverageValues }) {
-  const plan = product.config.plans?.find((candidate) => candidate.code === coverage.planCode);
-  const coverageType = product.config.coverageTypes?.find(
-    (candidate) => candidate.code === coverage.coverageType,
-  );
-  return (
-    <Descriptions
-      size="small"
-      column={{ xs: 1, md: 2 }}
-      items={[
-        { key: 'product', label: 'Product', children: product.name },
-        ...(plan ? [{ key: 'plan', label: 'Plan', children: plan.name }] : []),
-        ...(coverage.termMonths && product.ratingEngine === 'FIXED_PLAN'
-          ? [{ key: 'term', label: 'Coverage period', children: formatTerm(coverage.termMonths) }]
-          : []),
-        ...(coverageType
-          ? [{ key: 'type', label: 'Coverage type', children: coverageType.name }]
-          : []),
-        ...(plan?.additionalCover
-          ? [
-              {
-                key: 'additional',
-                label: 'Additional cover',
-                children: coverage.additionalCover ? plan.additionalCover.name : 'Not included',
-              },
-            ]
-          : []),
-        {
-          key: 'start',
-          label: 'Cover starts',
-          children: coverage.startDate
-            ? coverage.startDate.format('DD MMM YYYY')
-            : 'On the date of issue',
-        },
-        ...riskDetailItems(
-          toQuoteOptions(product, coverage).riskDetails,
-          product.config.riskFields,
-        ),
-      ]}
-    />
+    <WizardFrame
+      step={2}
+      onBack={() => onBack(form.getFieldsValue(true))}
+      actions={
+        <Button type="primary" disabled={!quoted} onClick={() => void review()}>
+          Review
+        </Button>
+      }
+      summary={<QuotationSummary product={product} participant={participant} quote={quote} />}
+    >
+      <CoverageForm product={product} form={form} initialValues={initialValues} />
+    </WizardFrame>
   );
 }
 
@@ -197,43 +237,42 @@ function ReviewStep({
   );
 
   return (
-    <>
-      <ParticipantSummary participant={participant} />
-      <Row gutter={[16, 0]}>
-        <Col xs={24} xl={14}>
-          <Card size="small" title="Coverage" className="content-card">
-            <CoverageSummary product={product} coverage={coverage} />
-          </Card>
-        </Col>
-        <Col xs={24} xl={10}>
-          <Card size="small" title="Indicative quote" className="content-card">
-            <QuotePreview quote={quote} />
-          </Card>
-        </Col>
-      </Row>
-      <Alert
-        type="info"
-        showIcon
-        className="mb-16"
-        title="Next: complete the application"
-        description="After saving, answer the declarations, add nominees where required, upload the documents and collect signatures before submitting."
-      />
+    <WizardFrame
+      step={3}
+      onBack={onBack}
+      actions={
+        <Button
+          type="primary"
+          loading={save.isPending}
+          onClick={() =>
+            save.mutate({ productId: product.id, participantId: participant.id, ...options })
+          }
+        >
+          Save quotation
+        </Button>
+      }
+      summary={<QuotationSummary product={product} participant={participant} quote={quote} />}
+    >
+      <section className="form-section">
+        <div className="form-section__head">
+          <h3 className="form-section__title">Participant</h3>
+        </div>
+        <FieldGrid columns={4} items={participantItems(participant)} />
+      </section>
+      <section className="form-section">
+        <div className="form-section__head">
+          <h3 className="form-section__title">Coverage</h3>
+        </div>
+        <FieldGrid
+          columns={3}
+          items={[
+            { key: 'product', label: 'Product', value: product.name },
+            ...coverageItems(product, coverage),
+          ]}
+        />
+      </section>
       <ErrorAlert error={save.error} className="mb-16" />
-      <WizardFooter
-        onBack={onBack}
-        next={
-          <Button
-            type="primary"
-            loading={save.isPending}
-            onClick={() =>
-              save.mutate({ productId: product.id, participantId: participant.id, ...options })
-            }
-          >
-            Save quotation
-          </Button>
-        }
-      />
-    </>
+    </WizardFrame>
   );
 }
 
@@ -253,6 +292,7 @@ export default function QuotationWizardPage() {
     setProduct(next);
     setCoverage(null);
   };
+  const summary = <QuotationSummary product={product} participant={participant} />;
 
   return (
     <>
@@ -264,80 +304,79 @@ export default function QuotationWizardPage() {
           { title: 'New quotation' },
         ]}
       />
-      <Card className="content-card">
-        <Steps current={step} items={STEPS} className="wizard-steps" />
 
-        {step === 0 && (
-          <>
-            <QueryState query={products}>
-              {(items) => (
-                <ProductChooser products={items} value={product?.id} onChange={chooseProduct} />
-              )}
-            </QueryState>
-            <WizardFooter
-              next={
-                <Button type="primary" disabled={!product} onClick={() => setStep(1)}>
-                  Next
-                </Button>
-              }
-            />
-          </>
-        )}
-
-        {step === 1 && (
-          <>
-            {participant ? (
-              <>
-                <ParticipantSummary
-                  participant={participant}
-                  onChange={() => setParticipant(null)}
-                />
-                <AmlOutcome status={participant.amlStatus} />
-              </>
-            ) : (
-              <ParticipantPicker onSelect={setParticipant} />
+      {step === 0 && (
+        <WizardFrame
+          step={0}
+          summary={summary}
+          actions={
+            <Button type="primary" disabled={!product} onClick={() => setStep(1)}>
+              Next
+            </Button>
+          }
+        >
+          <QueryState query={products}>
+            {(items) => (
+              <ProductChooser products={items} value={product?.id} onChange={chooseProduct} />
             )}
-            <WizardFooter
-              onBack={() => setStep(0)}
-              next={
-                <Button
-                  type="primary"
-                  disabled={!participant || participant.amlStatus === 'REJECTED'}
-                  onClick={() => setStep(2)}
-                >
-                  Next
-                </Button>
-              }
-            />
-          </>
-        )}
+          </QueryState>
+        </WizardFrame>
+      )}
 
-        {step === 2 && product && participant && (
-          <CoverageStep
-            key={product.id}
-            product={product}
-            participant={participant}
-            initialValues={coverage ?? initialCoverage(product)}
-            onBack={(values) => {
-              setCoverage(values);
-              setStep(1);
-            }}
-            onReview={(values) => {
-              setCoverage(values);
-              setStep(3);
-            }}
-          />
-        )}
+      {step === 1 && (
+        <WizardFrame
+          step={1}
+          summary={summary}
+          onBack={() => setStep(0)}
+          actions={
+            <Button
+              type="primary"
+              disabled={!participant || participant.amlStatus === 'REJECTED'}
+              onClick={() => setStep(2)}
+            >
+              Next
+            </Button>
+          }
+        >
+          {participant ? (
+            <>
+              <SelectedParticipant
+                participant={participant}
+                onChange={() => setParticipant(null)}
+              />
+              <AmlOutcome status={participant.amlStatus} className="mb-16" />
+            </>
+          ) : (
+            <ParticipantPicker onSelect={setParticipant} />
+          )}
+        </WizardFrame>
+      )}
 
-        {step === 3 && product && participant && coverage && (
-          <ReviewStep
-            product={product}
-            participant={participant}
-            coverage={coverage}
-            onBack={() => setStep(2)}
-          />
-        )}
-      </Card>
+      {step === 2 && product && participant && (
+        <CoverageStep
+          key={product.id}
+          product={product}
+          participant={participant}
+          initialValues={coverage ?? initialCoverage(product)}
+          onBack={(values) => {
+            setCoverage(values);
+            setStep(1);
+          }}
+          onReview={(values) => {
+            setCoverage(values);
+            setStep(3);
+          }}
+        />
+      )}
+
+      {step === 3 && product && participant && coverage && (
+        <ReviewStep
+          product={product}
+          participant={participant}
+          coverage={coverage}
+          onBack={() => setStep(2)}
+        />
+      )}
     </>
   );
 }

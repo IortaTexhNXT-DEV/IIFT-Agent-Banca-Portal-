@@ -1,9 +1,9 @@
-import { Card } from 'antd';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { usePagedQuery } from '../../api/hooks';
 import type { PolicySummary } from '../../api/types';
 import { PageHeader } from '../../components/PageHeader';
+import { TableCard } from '../../components/TableCard';
 import {
   filtersFromUrl,
   type PolicyFilterValues,
@@ -23,18 +23,20 @@ export default function PolicyListPage() {
     <>
       <PageHeader
         title="Policies"
-        subtitle="Quotations and policies from all agencies and banks"
         breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Policies' }]}
       />
-      <PolicyFilters
-        value={filters}
-        showAgency
-        onChange={(next) => {
-          setFilters(next);
-          policies.resetPage();
-        }}
-      />
-      <Card className="content-card" styles={{ body: { padding: 0 } }}>
+      <TableCard
+        toolbar={
+          <PolicyFilters
+            value={filters}
+            showAgency
+            onChange={(next) => {
+              setFilters(next);
+              policies.resetPage();
+            }}
+          />
+        }
+      >
         <PolicyTable
           policies={policies.items}
           loading={policies.isFetching}
@@ -42,7 +44,7 @@ export default function PolicyListPage() {
           showAgent
           showAgency
         />
-      </Card>
+      </TableCard>
     </>
   );
 }

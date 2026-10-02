@@ -19,6 +19,7 @@ per diem fixed, for both options.
 """
 
 from dataclasses import dataclass
+from decimal import ROUND_HALF_UP, Decimal
 
 FX_BND_PER_USD = 1.30          # indicative: USD 1 = B$ 1.30
 QUOTATION_VALIDITY_DAYS = 90
@@ -288,8 +289,13 @@ def item_total(key: str) -> int:
 
 
 def escalate(amount: float, year: int) -> int:
-    """Amount for contract year `year` (1-based) after yearly escalation, rounded to B$1."""
-    return round(amount * (1 + ESCALATION) ** (year - 1))
+    """Amount for contract year `year` (1-based) after yearly escalation, rounded to B$1.
+
+    Half-cents round up, as a calculator or spreadsheet would, so the printed
+    figures can be checked by hand.
+    """
+    value = Decimal(str(amount)) * (1 + Decimal(str(ESCALATION))) ** (year - 1)
+    return int(value.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
 
 def one_time_portal(option: str = "A") -> int:
@@ -792,10 +798,10 @@ EXPECTED = {
     "integration_total": 30_500,
     "amc_base": 142_500,
     "amc_year1": 31_350,
-    "amc_5yr": 173_229,
+    "amc_5yr": 173_230,
     "subscription_year1": 40_800,
     "cloud_setup": 15_000,
-    "subscription_5yr": 225_456,
+    "subscription_5yr": 225_468,
     "managed_5yr": 72_936,
     "cloud_monthly": 1_330,
     "option_c": 88_000,

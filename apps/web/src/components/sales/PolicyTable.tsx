@@ -1,10 +1,8 @@
-import { Table, type TablePaginationConfig } from 'antd';
+import type { TablePaginationConfig } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import type { PolicySummary } from '../../api/types';
-import { formatDate } from '../../utils/format';
-import { Money } from '../Money';
-import { StatusTag } from '../StatusTag';
+import { DataTable, dateColumn, moneyColumn, statusColumn, textColumn } from '../DataTable';
 import { policyReference } from './options';
 import { useSalesLinks } from './useSalesLinks';
 
@@ -34,52 +32,36 @@ export function PolicyTable({
   showAgent = false,
   showAgency = false,
 }: Props) {
+  const links = useSalesLinks();
+  const navigate = useNavigate();
   const columns: ColumnsType<PolicySummary> = [
     {
       title: 'Policy / quotation no.',
       key: 'reference',
       fixed: 'left',
+      width: 170,
       render: (_, policy) => <PolicyLink policy={policy} />,
     },
-    { title: 'Product', dataIndex: ['product', 'name'] },
-    { title: 'Participant', dataIndex: ['participant', 'fullName'] },
-    ...(showAgent ? [{ title: 'Agent', dataIndex: ['agent', 'fullName'] }] : []),
-    ...(showAgency ? [{ title: 'Agency / bank', dataIndex: ['agency', 'name'] }] : []),
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      render: (status: string) => <StatusTag status={status} />,
-    },
-    {
-      title: 'Payment',
-      dataIndex: 'paymentStatus',
-      render: (status: string) => <StatusTag status={status} />,
-    },
-    {
-      title: 'Contribution',
-      dataIndex: 'contribution',
-      align: 'right',
-      render: (value: string) => <Money value={value} />,
-    },
-    {
-      title: 'Outstanding',
-      dataIndex: 'outstandingAmount',
-      align: 'right',
-      render: (value: string) => <Money value={value} />,
-    },
-    { title: 'Created', dataIndex: 'createdAt', render: formatDate },
-    { title: 'Issued', dataIndex: 'issuedAt', render: formatDate },
+    textColumn('Product', ['product', 'name'], 200),
+    textColumn('Participant', ['participant', 'fullName'], 200),
+    ...(showAgent ? [textColumn<PolicySummary>('Agent', ['agent', 'fullName'], 180)] : []),
+    ...(showAgency ? [textColumn<PolicySummary>('Agency / bank', ['agency', 'name'], 200)] : []),
+    statusColumn('Status', 'status', 140),
+    statusColumn('Payment', 'paymentStatus', 160),
+    moneyColumn('Contribution', 'contribution'),
+    moneyColumn('Outstanding', 'outstandingAmount'),
+    dateColumn('Created', 'createdAt'),
+    dateColumn('Issued', 'issuedAt'),
   ];
 
   return (
-    <Table<PolicySummary>
-      size="middle"
+    <DataTable<PolicySummary>
       rowKey="id"
       loading={loading}
       dataSource={policies}
       columns={columns}
       pagination={pagination}
-      scroll={{ x: 'max-content' }}
+      onRowClick={(policy) => navigate(links.policy(policy.id))}
       locale={{ emptyText: 'No quotations or policies match the filters' }}
     />
   );

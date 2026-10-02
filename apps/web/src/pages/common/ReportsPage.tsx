@@ -120,12 +120,7 @@ export default function ReportsPage() {
     <>
       <PageHeader
         title="Reports"
-        subtitle={
-          audience === 'BACKOFFICE'
-            ? 'Production, finance, servicing and control reports'
-            : 'Reports for your agency, team and business'
-        }
-        breadcrumb={[{ title: 'Dashboard', to: basePathFor(audience) }, { title: 'Reports' }]}
+        breadcrumb={[{ title: 'Home', to: basePathFor(audience) }, { title: 'Reports' }]}
       />
       <QueryState query={catalogue}>
         {(reports) =>

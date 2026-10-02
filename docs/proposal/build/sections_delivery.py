@@ -104,7 +104,8 @@ HYPERCARE = [
     "Four weeks immediately after go-live (weeks 25–28) with the core delivery team on standby.",
     "Daily health checks of application, jobs, EOD and integrations; daily stand-up with IIFT during the first two weeks.",
     "Priority fixing of go-live defects; daily defect and usage report.",
-    "Onsite presence during go-live week (one of the four planned visits).",
+    "Onsite presence for go-live and the first month of support: a Senior Developer for the month and the Project "
+    "Manager in go-live week; the rest of the team supports remotely.",
     "Formal handover to the maintenance team and hypercare exit criteria: no open P1/P2 issues, EOD stable for ten "
     "consecutive business days, all interfaces reconciled.",
 ]
@@ -193,17 +194,19 @@ def methodology(w: ProposalWriter, figs: dict):
 def timeline(w: ProposalWriter, figs: dict, phases, milestones):
     w.h1("Delivery & Implementation Timeline")
     w.para("Production go-live is in week 24 counted from kick-off, followed by four weeks of hypercare. The "
-           "six-month warranty and Year 1 maintenance both start at go-live; defects found under warranty are "
-           "fixed free of charge.")
+           "six-month warranty and Year 1 of maintenance (the AMC under Option A, the subscription under Option B) "
+           "both start at go-live; defects found under warranty are fixed free of charge.")
     w.figure(figs["gantt"], "Delivery plan (weeks from kick-off)", width_cm=17.0)
     w.h2("Key milestones")
     milestone_rows = []
-    payment_lookup = {code: share for code, _, share in price.PAYMENT_MILESTONES}
+    payment_lookup = {code: share for code, _, share in price.SERVICE_MILESTONES}
     for code, week, label in milestones:
         share = payment_lookup.get(code)
         milestone_rows.append([code, label, f"Week {week}", f"{share:.0%}" if share else "–"])
-    w.table(["Milestone", "Description", "Target", "Payment"], milestone_rows, widths=[2.4, 9.0, 2.8, 2.8],
+    w.table(["Milestone", "Description", "Target", "Services fee"], milestone_rows, widths=[2.4, 9.0, 2.8, 2.8],
             center_cols=(0, 2, 3), caption="Milestones and linked payments")
+    w.para("Under Option A the licence fee is paid separately: 50% at contract signing, 30% on installation in SIT "
+           f"and 20% at go-live. Amounts are in Section {sec('commercials')}.")
     w.h2("Dependencies on the critical path")
     w.bullets([
         "Contract signature and kick-off date (week 1 starts at kick-off).",
@@ -251,7 +254,7 @@ SUPPORT_MODEL = [
     ("Minor enhancements", f"{price.ENHANCEMENT_HOURS_PER_YEAR} hours per year included; further changes via change request "
                            f"at the rate card (MNT-23, 24)."),
     ("Onsite support", "Remote by default; onsite for major incidents, upgrades or critical activities at the rate card "
-                       "(MNT-29)."),
+                       "day rate plus OPE at actuals (MNT-29)."),
 ]
 
 SERVICE_REPORTING = [
@@ -267,7 +270,7 @@ EXIT_PLAN = [
     ["Transition planning", "Exit plan agreed in Year 5 (or within 30 days of a termination notice): scope, timeline, receiving party."],
     ["Knowledge transfer", "Structured sessions on architecture, code, configuration, operations and known issues."],
     ["Documentation", "Final refresh of technical, operations, administrator and user manuals; runbooks."],
-    ["Source code & tooling", "Final source code, pipelines, infrastructure scripts and credentials handed over."],
+    ["Source code & tooling", "Final source code of IIFT-specific components (and of the core platform if Option C or escrow applies), pipelines, infrastructure scripts and credentials handed over."],
     ["Data extraction", "Full export of business data, documents and audit records in open formats (SQL dump, CSV, original files)."],
     ["Parallel support", "Shadow support to the new provider or IIFT team for up to 30 days."],
     ["Confirmation", "Signed transition acceptance; secure deletion of IIFT data held by iorta, with certificate."],
@@ -276,10 +279,12 @@ EXIT_PLAN = [
 
 def maintenance(w: ProposalWriter):
     w.h1("Five-Year Maintenance & Support")
-    w.para(f"Maintenance and support start at go-live and run for five years at "
-           f"{price.bnd(price.maintenance_annual())} a year with no escalation. In the first six months the warranty "
-           "covers defect fixes; the maintenance fee pays for the service desk, SLA, monitoring, patches, upgrades, "
-           f"{price.ENHANCEMENT_HOURS_PER_YEAR} enhancement hours a year and the services below.")
+    w.para(f"Maintenance and support start at go-live and run for five years. Under Option A they are charged as "
+           f"the AMC, {price.bnd(price.amc(1))} in Year 1 (22% of licence and customisation) rising by 5% a year; "
+           "under Option B they are part of the subscription. The service is the same under both options. In the "
+           "first six months the warranty covers defect fixes; the AMC or subscription pays for the service desk, "
+           f"SLA, monitoring, patches, upgrades, {price.ENHANCEMENT_HOURS_PER_YEAR} enhancement hours a year and the "
+           "services below. Under Option B, iorta's managed services also cover the cloud infrastructure.")
     w.h2("Support model")
     w.table(["Element", "Description"], [list(s) for s in SUPPORT_MODEL], widths=[3.8, 13.2], bold_first_col=True)
     w.h2("Service levels")
@@ -359,6 +364,12 @@ def team(w: ProposalWriter):
     w.table(["Role", "0 Mob.", "1 Design", "2 Build", "3 Integr.", "4 SIT", "5–6 UAT & go-live", "7 Hypercare"],
             ALLOCATION, widths=[4.4, 1.5, 1.6, 1.6, 1.7, 1.5, 2.5, 2.2], font_size=8,
             center_cols=(1, 2, 3, 4, 5, 6, 7))
+    w.h2("Onsite and remote delivery")
+    w.para("The team works from Malaysia and India. Onsite presence in Bandar Seri Begawan is planned for the phases "
+           "where it matters most; everything else is remote, with video conferencing and shared tools.")
+    rows = [[t.phase, t.role, t.origin, str(t.nights)] for t in price.ONSITE_PLAN]
+    w.table(["Phase", "Role", "From", "Nights onsite"], rows, widths=[7.0, 5.0, 2.4, 2.6], font_size=8,
+            center_cols=(3,), caption="Planned onsite presence (OPE in the Commercial Proposal)")
     w.h2("Expected IIFT roles")
     w.table(["IIFT role", "Responsibility"], IIFT_ROLES, widths=[4.6, 12.4], bold_first_col=True)
 
@@ -377,10 +388,13 @@ ASSUMPTIONS = [
     "Data migration covers agent, agency, bank, branch, participant and reference data, estimated below 10,000 "
     "records from no more than three source extracts; legacy data cleansing at source is IIFT's responsibility.",
     "Under Option A, hardware, OS licences, network, firewall, load balancer, backup infrastructure and DR site are "
-    f"provided by IIFT/IITH to the sizing in Section {sec('infrastructure')}.",
+    f"provided by IIFT/IITH to the sizing in Section {sec('infrastructure')} and the Bill of Materials.",
+    "Under Option B, IIFT approves the cloud region and makes the AMBD outsourcing and cloud notification before "
+    "production data is loaded.",
     "The user interface and documents are in English; Malay translation of screens can be added as a change request.",
-    "Delivery is predominantly remote with four planned onsite visits (kick-off, design workshop, UAT/training, "
-    "go-live), whose travel and subsistence are included in the price.",
+    "Delivery is remote from Malaysia and India, with onsite presence for requirements gathering, user training and "
+    "UAT support, and go-live with one month of support (and knowledge transfer if Option C is taken). Travel and "
+    f"subsistence for these phases are recharged as OPE at cost (Section {sec('commercials')}).",
     "IIFT business hours are as published in the 'Insurans Islam TAIB Business Hours (Family Takaful)' schedule.",
 ]
 
@@ -394,15 +408,17 @@ DEPENDENCIES = [
 
 EXCLUSIONS = [
     "Hardware, operating system licences, network equipment and data-centre services (Option A).",
-    "Cloud hosting charges (Option B), passed through at cost if chosen.",
-    "Third-party charges: SMS messages, AML data subscription, SSL certificates, e-mail relay services, optional "
-    "commercial PostgreSQL support, optional PKI digital certificates.",
+    "Cloud infrastructure charges (Option B), recharged at cost without mark-up or paid by IIFT directly.",
+    "Third-party charges listed in the Bill of Materials: SMS messages, AML data service, SSL certificates, e-mail "
+    "relay services and optional items such as commercial PostgreSQL support or RHEL subscriptions.",
+    "Out-of-pocket expenses, recharged at cost.",
     "Changes to the Core system, FIN, AML service or other third-party systems.",
     "Native mobile applications (the portal is responsive and works on tablets and mobile browsers).",
     "Payment gateway / online card payments (can be added later as a change request).",
     "Full claims administration and policy administration in the core system beyond claim notification and the "
     "portal/back-office functions described.",
-    "Unplanned onsite visits (charged at the rate card) and work outside IIFT business hours other than P1 incidents.",
+    "Onsite visits outside the planned phases (rate card plus OPE) and work outside IIFT business hours other than "
+    "P1 incidents (rate card).",
 ]
 
 
@@ -432,6 +448,9 @@ RISKS = [
     ["R10", "Regulatory feedback on cloud hosting (Option B)", "Medium", "Low", "Recommend Option A; early AMBD engagement if Option B is chosen"],
     ["R11", "Key personnel unavailability", "Medium", "Low", "Named backups; shared code ownership; documentation as we go"],
     ["R12", "Performance issues with document-heavy transactions", "Low", "Low", "Streaming uploads, object storage, performance tests on production-like data"],
+    ["R13", "Cloud charges above the estimate (Option B)", "Low", "Medium", "Recharged at cost with budget alerts, monthly cost report, quarterly right-sizing; reserved capacity only with IIFT approval"],
+    ["R14", "Exchange-rate movement on USD-billed cloud and third-party services", "Low", "Medium", "B$ fees for iorta services; pass-through items converted at invoice-date rates and reported monthly"],
+    ["R15", "Knowledge transfer (Option C) without enough IIFT/IITH developers", "Medium", "Low", "Skills profile agreed in week 1 of the transition; competency assessment; support choice 2 as a safety net"],
 ]
 
 

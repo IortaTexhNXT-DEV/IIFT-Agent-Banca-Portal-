@@ -23,7 +23,7 @@ OBJECTIVES = [
     ("9", "Improve user experience", "Step-by-step quotation wizards, one design system themed to Insurans Islam TAIB colours, WCAG 2.1 AA target."),
     ("10", "Strengthen security", "Controls aligned with OWASP ASVS Level 2 and an independent VAPT before go-live."),
     ("11", "Ensure scalability", "Sized for 100 concurrent and 500 named users, more than ten times the projected policy volume."),
-    ("12", "Long-term sustainability", "Five years of support at a flat fee, maintained documentation and source code of the deployed solution."),
+    ("12", "Long-term sustainability", "Five years of support with yearly increases capped at 5%, maintained documentation, IIFT-specific source code with every release and an option to take the platform source code."),
 ]
 
 USERS = [["Bank", "Portal", "12"], ["IIFT", "Back-office (Admin)", "5"], ["IIFT", "Portal", "5"],
@@ -489,11 +489,11 @@ def security(w: ProposalWriter):
 # 10. Deployment
 # =============================================================================
 ENVIRONMENTS = [
-    ["DEV", "Development and sprint demos", "iorta", "Synthetic", "iorta team"],
-    ["SIT", "Integration and performance testing", "IIFT (iorta-hosted until the IIFT VM is ready)", "Synthetic and masked samples", "iorta, IIFT IT"],
-    ["UAT", "Acceptance testing and training", "IIFT data centre", "Masked or migrated test data", "IIFT users"],
-    ["PROD", "Live operation", "IIFT/IITH data centre", "Production", "IIFT users; iorta under change control"],
-    ["DR", "Disaster recovery", "IIFT/IITH DR site", "Replicated production", "Activated per DR plan"],
+    ["DEV", "Development and sprint demos", "iorta (both options)", "Synthetic", "iorta team"],
+    ["SIT", "Integration and performance testing", "A: IIFT data centre (iorta-hosted until the IIFT VM is ready). B: cloud", "Synthetic and masked samples", "iorta, IIFT IT"],
+    ["UAT", "Acceptance testing and training", "A: IIFT data centre. B: cloud", "Masked or migrated test data", "IIFT users"],
+    ["PROD", "Live operation", "A: IIFT/IITH data centre. B: cloud, Malaysia region", "Production", "IIFT users; iorta under change control"],
+    ["DR", "Disaster recovery", "A: IIFT/IITH DR site. B: second cloud region", "Replicated production", "Activated per DR plan"],
 ]
 
 PIPELINE = [
@@ -561,18 +561,6 @@ def deployment(w: ProposalWriter):
 # =============================================================================
 # 11. Infrastructure options
 # =============================================================================
-ON_PREM_SIZING = [
-    ["Load balancer / WAF", "Pair or existing F5", "2 vCPU / 4 GB each", "–", "IIFT/IITH"],
-    ["Application server (PROD)", "2", "4 vCPU / 8 GB", "100 GB", "IIFT/IITH"],
-    ["Database server (PROD)", "2 (primary + standby)", "4 vCPU / 16 GB", "200 GB SSD", "IIFT/IITH"],
-    ["Document storage", "NFS share or MinIO", "–", "500 GB", "IIFT/IITH"],
-    ["Backup storage", "Per IIFT backup policy", "–", "About 1 TB", "IIFT/IITH"],
-    ["Monitoring", "1 (or existing tooling)", "2 vCPU / 4 GB", "100 GB", "IIFT/IITH"],
-    ["SIT", "1 (app + DB)", "4 vCPU / 16 GB", "200 GB", "IIFT/IITH"],
-    ["UAT", "1 (app + DB)", "4 vCPU / 16 GB", "200 GB", "IIFT/IITH"],
-    ["DR site", "1 app + 1 DB", "4 vCPU / 8 GB; 4 vCPU / 16 GB", "200 GB + 500 GB", "IIFT/IITH"],
-]
-
 RESPONSIBILITIES = [
     ["Servers, storage, network, firewall, load balancer", "Provide", "Specify, review"],
     ["Linux OS (RHEL 9 or Ubuntu 24.04 LTS) and licences", "Provide, patch", "Specify hardening"],
@@ -584,67 +572,98 @@ RESPONSIBILITIES = [
 ]
 
 CLOUD_SERVICES = [
+    ["Region", "AWS Asia Pacific (Malaysia), ap-southeast-5 (Azure Malaysia West); DR copies in a second region"],
     ["Compute", "ECS Fargate across two availability zones (AKS on Azure), or two EC2 instances"],
     ["Database", "RDS for PostgreSQL 16 Multi-AZ (Azure Database for PostgreSQL, zone-redundant)"],
-    ["Storage", "S3 with SSE-KMS, versioning and lifecycle rules (Azure Blob)"],
+    ["Storage", "S3 and EFS with encryption, versioning and lifecycle rules (Azure Blob and Files)"],
     ["Edge", "Application Load Balancer with AWS WAF (Azure Application Gateway with WAF)"],
-    ["Monitoring", "CloudWatch logs, metrics and alarms (Azure Monitor)"],
+    ["Monitoring", "CloudWatch logs, metrics and alarms; GuardDuty threat detection (Azure Monitor, Defender)"],
     ["Connectivity", "Site-to-site VPN to the IITH data centre for Core, FIN, AD, SMTP and back-office users"],
-    ["DR", "Automated backups with point-in-time recovery and cross-region snapshot copy"],
+    ["DR", "Automated backups with point-in-time recovery; pilot-light DR in a second region"],
 ]
 
-COMPARISON = [
-    ["Data residency", "Data stays in Brunei", "Singapore region; needs IIFT and AMBD acceptance", "Personal data on-premise; portal web tier in DMZ or cloud"],
-    ["Regulatory steps", "Internal approval only", "AMBD outsourcing and cloud notification", "Depends on what sits in the cloud"],
-    ["Group assets", "Uses IITH data-centre services and operating model", "New cloud account and skills", "Partly"],
-    ["Provisioning time", "Depends on IITH VM procurement", "Days", "Mixed"],
-    ["Resilience", "Two nodes, standby database, DR site", "Multi-AZ; cross-region copies", "Per component"],
-    ["Hosting charge from iorta", "B$0", f"About {price.bnd(price.cloud_annual())} a year pass-through plus {price.bnd(price.CLOUD_MANAGED_OPERATIONS_ANNUAL)} managed operations", "Between A and B"],
-    ["Who runs it", "IITH infrastructure team; iorta application support", "iorta managed cloud operations", "Shared"],
-]
+
+def _comparison():
+    low, high = price.bom_onprem_totals()
+    return [
+        ["Commercial option", "Option A: perpetual licence and AMC", "Option B: subscription and managed services",
+         "Option A"],
+        ["Data residency", "Data stays in Brunei", "Malaysia region; DR copies in a second region; needs IIFT "
+                                                   "approval and AMBD notification",
+         "Personal data on-premise; portal web tier in DMZ or cloud"],
+        ["Regulatory steps", "Internal approval only", "AMBD outsourcing and cloud notification by IIFT",
+         "Depends on what sits in the cloud"],
+        ["Infrastructure cost", f"IIFT procures: indicative B$ {low:,}–{high:,} one-time (less where IITH "
+                                "capacity is reused)",
+         f"Set-up {price.bnd(price.CLOUD_SETUP_FEE)} one-off; cloud at cost, no mark-up: about "
+         f"{price.bnd(price.cloud_monthly())} a month", "Mostly as Option A"],
+        ["Operations", "IITH infrastructure team; iorta application support under the AMC",
+         f"iorta managed services, {price.bnd(price.managed_monthly(1))} a month in Year 1", "Shared"],
+        ["Provisioning time", "Depends on IITH VM provisioning", "Days", "Mixed"],
+        ["Resilience", "Two nodes, standby database, DR site", "Multi-AZ; DR in a second region", "Per component"],
+    ]
+
+
+def _sizing_rows():
+    rows, group = [], None
+    for grp, server, qty, _, cpu, ram, disk, software, *_ in price.ON_PREM_BOM:
+        if grp != group:
+            group = grp
+            rows.append(("GROUP", grp))
+        rows.append([server, qty, cpu, ram, disk, software])
+    return rows
 
 
 def infrastructure(w: ProposalWriter, figs: dict):
     w.h1("Infrastructure Options")
-    w.para(f"{PRODUCT} ships as standard containers and runs unchanged on-premise or in the cloud. We present three "
-           "options and recommend Option A. Infrastructure is not part of iorta's fees under Option A; under Option "
-           "B, cloud charges are passed through at cost.")
+    w.para(f"{PRODUCT} ships as standard containers and runs unchanged on-premise or in the cloud. The two "
+           "deployment models match the commercial options: on-premise in the IIFT/IITH data centre under Option A, "
+           "with infrastructure procured by IIFT to iorta's sizing, and an iorta-hosted cloud under Option B, with "
+           "cloud infrastructure at cost and managed services by iorta. A hybrid variant of Option A is also "
+           f"possible. Costs are in Section {sec('commercials')} and the Bill of Materials.")
     w.h2("Option A: on-premise in the IIFT/IITH data centre (recommended)")
     w.para("Two application VMs run behind the load balancer. PostgreSQL runs as a primary with a streaming standby, "
            "and a warm standby at the DR site receives WAL log shipping. The solution uses IITH's network security, "
            "backup and monitoring services where capacity allows. Production needs two 4 vCPU / 8 GB application "
            "servers, two 4 vCPU / 16 GB database servers and 500 GB of document storage.")
     w.figure(figs["on_prem"], "Option A: on-premise deployment", width_cm=16.0)
-    w.table(["Component", "Quantity", "Specification", "Storage", "Provided by"], ON_PREM_SIZING,
-            widths=[4.2, 3.4, 4.0, 2.8, 2.6], font_size=8, caption="Option A sizing per environment")
+    w.table(["Server", "Qty", "vCPU", "RAM", "Storage", "Software"], _sizing_rows(),
+            widths=[3.6, 2.4, 1.2, 1.4, 2.4, 6.0], font_size=8, center_cols=(2, 3),
+            caption="Option A sizing per environment (procured by IIFT; indicative costs in Annex C)")
+    w.para("Operating system: Ubuntu Server 24.04 LTS or Red Hat Enterprise Linux 9, hardened to the IITH baseline. "
+           "DEV stays with iorta, so IIFT provides no development environment.")
     w.table(["Item", "IIFT / IITH", "iorta TechNXT"], RESPONSIBILITIES, widths=[8.0, 4.5, 4.5], font_size=8,
             caption="Option A responsibilities")
-    w.h2("Option B: public cloud")
-    w.para("The solution can run in AWS Asia Pacific (Singapore) or Azure Southeast Asia on managed services. Cloud "
-           "use depends on IIFT's data-residency decision and on AMBD's outsourcing and cloud notification "
-           "requirements; we will prepare the supporting documents.")
+    w.h2("Option B: iorta-hosted cloud")
+    w.para(f"iorta hosts and operates the solution in a cloud account dedicated to IIFT in {price.CLOUD_REGION}. "
+           "Cloud use depends on IIFT's data-residency decision and on AMBD's outsourcing and cloud notification, "
+           "which IIFT makes and iorta supports with the required documents. A Brunei-hosted alternative can be "
+           "priced on request.")
     w.table(["Service", "AWS reference (Azure equivalent)"], CLOUD_SERVICES, widths=[3.0, 14.0], font_size=8,
             bold_first_col=True)
-    w.figure(figs["cloud"], "Option B: cloud deployment (AWS reference)", width_cm=16.0)
-    rows = [[name, purpose, price.bnd(monthly)] for name, purpose, monthly in price.CLOUD_MONTHLY_ITEMS]
+    w.figure(figs["cloud"], "Option B: iorta-hosted cloud deployment (AWS reference)", width_cm=16.0)
+    rows = [[name, sizing, price.bnd(monthly)]
+            for (name, _, monthly), sizing in zip(price.CLOUD_MONTHLY_ITEMS, price.CLOUD_SIZING)]
     rows.append(["Total per month", "", price.bnd(price.cloud_monthly())])
-    rows.append(["Total per year (pass-through, indicative)", "", price.bnd(price.cloud_annual())])
-    w.table(["Service", "Purpose", "B$ / month"], rows, widths=[8.2, 5.8, 3.0], align_right_cols=(2,),
-            total_rows=2, font_size=8, caption="Option B indicative cloud cost")
-    w.para(f"Managed cloud operations by iorta (patching, monitoring, backup checks, cost control) cost "
-           f"{price.bnd(price.CLOUD_MANAGED_OPERATIONS_ANNUAL)} a year. Cloud prices move with usage and exchange "
-           "rates and are confirmed before provisioning.")
-    w.h2("Option C: hybrid")
+    rows.append(["Total per year (at cost, estimate)", "", price.bnd(price.cloud_annual())])
+    w.table(["Service", "Reference sizing", "B$ / month"], rows, widths=[6.4, 8.0, 2.6], align_right_cols=(2,),
+            total_rows=2, font_size=8, caption="Option B cloud infrastructure estimate (recharged at cost)")
+    w.para(f"iorta's managed services (monitoring, patching, backups, DR drills, security monitoring and cost "
+           f"management) cost {price.bnd(price.managed_monthly(1))} a month in Year 1. Cloud charges move with usage "
+           "and exchange rates; they are recharged at the provider's cost without mark-up, or IIFT holds the account "
+           f"and pays the provider directly. The one-off cloud set-up fee is {price.bnd(price.CLOUD_SETUP_FEE)}.")
+    w.h2("Hybrid variant of Option A")
     w.para("The back-office, database and documents stay in the IITH data centre. Only the portal's web tier (static "
            "application and reverse proxy) sits in the DMZ or at a cloud edge and forwards API calls over an "
            "encrypted private link. Personal data never leaves the data centre. This suits IIFT if internet-facing "
-           "capacity in the data centre is limited.")
+           "capacity in the data centre is limited; it is priced as Option A, with any edge hosting at actuals.")
     w.h2("Comparison and recommendation")
-    w.table(["Criterion", "A: On-premise", "B: Cloud", "C: Hybrid"], COMPARISON, widths=[3.4, 4.6, 4.8, 4.2],
-            font_size=8, bold_first_col=True, caption="Infrastructure options compared")
+    w.table(["Criterion", "A: On-premise", "B: iorta-hosted cloud", "Hybrid variant"], _comparison(),
+            widths=[3.2, 4.6, 5.0, 4.2], font_size=8, bold_first_col=True, caption="Deployment models compared")
     w.callout("Recommendation: Option A, on-premise in the IITH/IIFT data centre", [
         "Participant and agent data stays in Brunei and no extra regulatory step is needed.",
         "IITH's existing data-centre services and operating model are reused, as for other group systems, which "
         "keeps cost and support effort down.",
-        "iorta charges nothing for hosting. Option B remains available if IIFT prefers an operating-expense model.",
+        f"Option A has the lowest five-year cost (Section {sec('commercials')}). Option B remains available if IIFT "
+        "prefers an operating-expense model with iorta running the infrastructure.",
     ])

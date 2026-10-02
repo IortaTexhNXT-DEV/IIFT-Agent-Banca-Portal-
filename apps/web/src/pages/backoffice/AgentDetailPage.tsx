@@ -1,5 +1,5 @@
 import { EditOutlined, SwapOutlined } from '@ant-design/icons';
-import { Alert, Button, Card, Descriptions, Flex, Table, Tabs } from 'antd';
+import { Alert, Button, Card, Descriptions, Table, Tabs } from 'antd';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { useApiQuery } from '../../api/hooks';
@@ -99,14 +99,15 @@ export default function AgentDetailPage() {
         return (
           <>
             <PageHeader
-              title={
-                <Flex gap={12} align="center" wrap>
-                  {data.fullName}
-                  <StatusTag status={data.status} />
-                </Flex>
-              }
-              subtitle={`${data.agentCode} · ${AGENT_TYPE_LABELS[data.agentType]} · ${data.agency.name}`}
+              title={data.fullName}
+              tags={<StatusTag status={data.status} />}
+              meta={[
+                { label: 'Code', value: data.agentCode },
+                { label: 'Type', value: AGENT_TYPE_LABELS[data.agentType] },
+                { label: 'Agency / bank', value: data.agency.name },
+              ]}
               breadcrumb={[
+                { title: 'Home', to: '/backoffice' },
                 { title: 'Agents & bankers', to: '/backoffice/agents' },
                 { title: data.agentCode },
               ]}

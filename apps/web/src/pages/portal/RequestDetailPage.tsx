@@ -1,4 +1,4 @@
-import { Button, Card, Flex, Popconfirm } from 'antd';
+import { Button, Card, Popconfirm } from 'antd';
 import { useNavigate, useParams } from 'react-router';
 import { api } from '../../api/client';
 import { useApiMutation, useApiQuery } from '../../api/hooks';
@@ -35,14 +35,11 @@ export default function RequestDetailPage() {
         return (
           <>
             <PageHeader
-              title={
-                <Flex gap={12} align="center" wrap>
-                  {data.requestNo}
-                  <StatusTag status={data.status} />
-                </Flex>
-              }
-              subtitle={humanise(data.type)}
+              title={data.requestNo}
+              tags={<StatusTag status={data.status} />}
+              meta={[{ label: 'Type', value: humanise(data.type) }]}
               breadcrumb={[
+                { title: 'Home', to: '/portal' },
                 { title: 'My requests', to: '/portal/requests' },
                 { title: data.requestNo },
               ]}

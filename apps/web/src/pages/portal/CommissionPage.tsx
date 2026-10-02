@@ -1,4 +1,5 @@
-import { Card, Col, DatePicker, Row, Table } from 'antd';
+import { ClockCircleOutlined, DollarOutlined } from '@ant-design/icons';
+import { Card, DatePicker, Table } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useState } from 'react';
 import { usePagedQuery } from '../../api/hooks';
@@ -8,7 +9,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { FilterBar } from '../../components/FilterBar';
 import { Money } from '../../components/Money';
 import { PageHeader } from '../../components/PageHeader';
-import { StatCard } from '../../components/StatCard';
+import { KpiGrid, KpiTile } from '../../components/KpiTile';
 import { StatusTag } from '../../components/StatusTag';
 import { formatDate, formatMoney } from '../../utils/format';
 import { P } from '../../utils/permissions';
@@ -28,7 +29,6 @@ export default function CommissionPage() {
     <>
       <PageHeader
         title="Commission"
-        subtitle="Commission and referral fees on issued policies"
         breadcrumb={[{ title: 'Home', to: '/portal' }, { title: 'Commission' }]}
       />
       <FilterBar>
@@ -44,18 +44,15 @@ export default function CommissionPage() {
           }}
         />
       </FilterBar>
-      <Row gutter={[16, 16]} className="mb-16">
-        <Col xs={12} xl={6}>
-          <StatCard
-            label="Accrued, not yet paid"
-            value={formatMoney(totals.ACCRUED ?? 0)}
-            tone="warning"
-          />
-        </Col>
-        <Col xs={12} xl={6}>
-          <StatCard label="Paid" value={formatMoney(totals.PAID ?? 0)} />
-        </Col>
-      </Row>
+      <KpiGrid columns={4}>
+        <KpiTile
+          label="Accrued, not yet paid"
+          icon={<ClockCircleOutlined />}
+          value={formatMoney(totals.ACCRUED ?? 0)}
+          tone="warning"
+        />
+        <KpiTile label="Paid" icon={<DollarOutlined />} value={formatMoney(totals.PAID ?? 0)} />
+      </KpiGrid>
       <Card className="content-card" styles={{ body: { padding: 0 } }}>
         <Table<Commission>
           size="middle"

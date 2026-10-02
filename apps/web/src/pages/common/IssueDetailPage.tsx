@@ -1,4 +1,4 @@
-import { Alert, Card, Col, Descriptions, Flex, Row, Typography } from 'antd';
+import { Alert, Card, Col, Descriptions, Row, Typography } from 'antd';
 import { useParams } from 'react-router';
 import { useApiQuery } from '../../api/hooks';
 import type { Issue } from '../../api/types';
@@ -77,15 +77,16 @@ export default function IssueDetailPage() {
       {(data) => (
         <>
           <PageHeader
-            title={
-              <Flex gap={12} align="center" wrap>
-                {data.issueNo}
+            title={data.issueNo}
+            tags={
+              <>
                 <StatusTag status={data.status} />
                 <SlaBreachedTag issue={data} />
-              </Flex>
+              </>
             }
-            subtitle={data.title}
+            meta={[{ label: 'Subject', value: data.title }]}
             breadcrumb={[
+              { title: 'Home', to: base },
               { title: manager ? 'Issues' : 'Support', to: `${base}/issues` },
               { title: data.issueNo },
             ]}

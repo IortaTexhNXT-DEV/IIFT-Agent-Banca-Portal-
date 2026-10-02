@@ -1,6 +1,7 @@
-import { Alert, Descriptions } from 'antd';
+import { Alert } from 'antd';
 import type { ApprovalRequest } from '../../api/types';
 import { formatDateTime, humanise } from '../../utils/format';
+import { FieldGrid } from '../FieldGrid';
 import { Money } from '../Money';
 import { StatusTag } from '../StatusTag';
 
@@ -11,30 +12,27 @@ export function RequestSummary({ request }: { request: ApprovalRequest }) {
       ? `Level ${request.currentLevel} of ${request.totalLevels}`
       : `${request.totalLevels} level${request.totalLevels === 1 ? '' : 's'}`;
   return (
-    <Descriptions
-      size="small"
-      column={{ xs: 1, md: 2, xl: 3 }}
+    <FieldGrid
+      columns={3}
       items={[
-        { key: 'type', label: 'Request type', children: humanise(request.type) },
-        { key: 'status', label: 'Status', children: <StatusTag status={request.status} /> },
-        { key: 'level', label: 'Approval', children: level },
-        { key: 'summary', label: 'Summary', children: request.summary, span: 'filled' },
-        { key: 'maker', label: 'Submitted by', children: request.makerName },
-        { key: 'submitted', label: 'Submitted', children: formatDateTime(request.submittedAt) },
-        { key: 'decided', label: 'Decided', children: formatDateTime(request.decidedAt) },
-        ...(request.amount !== null
-          ? [{ key: 'amount', label: 'Amount', children: <Money value={request.amount} /> }]
-          : []),
-        ...(request.finalRemarks
-          ? [
-              {
-                key: 'remarks',
-                label: 'Decision remarks',
-                children: request.finalRemarks,
-                span: 'filled' as const,
-              },
-            ]
-          : []),
+        { key: 'type', label: 'Request type', value: humanise(request.type) },
+        { key: 'status', label: 'Status', value: <StatusTag status={request.status} /> },
+        { key: 'level', label: 'Approval', value: level },
+        { key: 'maker', label: 'Submitted by', value: request.makerName },
+        { key: 'submitted', label: 'Submitted', value: formatDateTime(request.submittedAt) },
+        { key: 'decided', label: 'Decided', value: formatDateTime(request.decidedAt) },
+        request.amount !== null && {
+          key: 'amount',
+          label: 'Amount',
+          value: <Money value={request.amount} strong />,
+        },
+        { key: 'summary', label: 'Summary', value: request.summary, span: 'full' },
+        request.finalRemarks && {
+          key: 'remarks',
+          label: 'Decision remarks',
+          value: request.finalRemarks,
+          span: 'full',
+        },
       ]}
     />
   );
@@ -54,10 +52,10 @@ export function RejectionAlert({
       className="mb-16"
       type="error"
       showIcon
-      title="This request was rejected"
+      title="Rejected"
       description={
         <>
-          {request.finalRemarks ?? 'No remarks were given.'}
+          {request.finalRemarks ?? 'No remarks given.'}
           {resubmitHint && <div className="muted">{resubmitHint}</div>}
         </>
       }

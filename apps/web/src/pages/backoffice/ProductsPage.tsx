@@ -183,8 +183,7 @@ export default function ProductsPage() {
     <>
       <PageHeader
         title="Products"
-        subtitle="Takaful products offered through the portal and their rating rules"
-        breadcrumb={[{ title: 'Dashboard', to: '/backoffice' }, { title: 'Products' }]}
+        breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Products' }]}
       />
       <Card className="content-card">
         <QueryState query={products}>

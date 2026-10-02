@@ -1,5 +1,5 @@
 import { EditOutlined, UnlockOutlined } from '@ant-design/icons';
-import { Button, Card, Flex, Table } from 'antd';
+import { Button, Card, Table } from 'antd';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { api } from '../../api/client';
@@ -8,7 +8,7 @@ import type { Agency, AgentView } from '../../api/types';
 import { useAuth } from '../../auth/AuthContext';
 import { AgencyFormModal } from '../../components/admin/AgencyFormModal';
 import { AgencySummary, IssuanceBlockAlert } from '../../components/admin/AgencySummary';
-import { AGENT_TYPE_LABELS } from '../../components/admin/agents';
+import { AGENT_TYPE_LABELS, CHANNEL_LABELS } from '../../components/admin/agents';
 import { RemarksModal } from '../../components/admin/RemarksModal';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryState } from '../../components/QueryState';
@@ -82,14 +82,14 @@ export default function AgencyDetailPage() {
       {(data) => (
         <>
           <PageHeader
-            title={
-              <Flex gap={12} align="center" wrap>
-                {data.name}
-                <StatusTag status={data.status} />
-              </Flex>
-            }
-            subtitle={data.code}
+            title={data.name}
+            tags={<StatusTag status={data.status} />}
+            meta={[
+              { label: 'Code', value: data.code },
+              { label: 'Channel', value: CHANNEL_LABELS[data.channel] },
+            ]}
             breadcrumb={[
+              { title: 'Home', to: '/backoffice' },
               { title: 'Agencies & banks', to: '/backoffice/agencies' },
               { title: data.code },
             ]}

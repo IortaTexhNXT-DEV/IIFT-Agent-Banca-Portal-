@@ -1,5 +1,5 @@
 import { PlayCircleOutlined } from '@ant-design/icons';
-import { Button, Col, Flex, Row, Tabs, Typography } from 'antd';
+import { Button, Flex, Tabs, Typography } from 'antd';
 import { useState } from 'react';
 import { api } from '../../api/client';
 import { useApiMutation, useApiQuery } from '../../api/hooks';
@@ -13,7 +13,7 @@ import {
 } from '../../components/admin/IntegrationTables';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryState } from '../../components/QueryState';
-import { StatCard } from '../../components/StatCard';
+import { KpiGrid, KpiTile } from '../../components/KpiTile';
 import { formatNumber } from '../../utils/format';
 
 const SUMMARY_REFRESH_MS = 60_000;
@@ -28,18 +28,17 @@ function healthHint(system: IntegrationSummary): string {
 
 function SystemHealth({ summary }: { summary: IntegrationSummary[] }) {
   return (
-    <Row gutter={[16, 16]} className="mb-16">
+    <KpiGrid columns={3}>
       {summary.map((system) => (
-        <Col key={system.system} xs={24} md={12} xl={8}>
-          <StatCard
-            label={SYSTEM_LABELS[system.system]}
-            value={system.successRate === null ? '–' : `${system.successRate}%`}
-            hint={healthHint(system)}
-            tone={system.deadLetter > 0 ? 'danger' : system.retrying > 0 ? 'warning' : 'default'}
-          />
-        </Col>
+        <KpiTile
+          key={system.system}
+          label={SYSTEM_LABELS[system.system]}
+          value={system.successRate === null ? '–' : `${system.successRate}%`}
+          sub={healthHint(system)}
+          tone={system.deadLetter > 0 ? 'danger' : system.retrying > 0 ? 'warning' : 'default'}
+        />
       ))}
-    </Row>
+    </KpiGrid>
   );
 }
 
@@ -90,8 +89,7 @@ export default function IntegrationPage() {
     <>
       <PageHeader
         title="Integration"
-        subtitle="Success rate and response time over the last 24 hours, and messages waiting for delivery"
-        breadcrumb={[{ title: 'Dashboard', to: '/backoffice' }, { title: 'Integration' }]}
+        breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Integration' }]}
       />
       <QueryState query={summary} rows={2}>
         {(data) => <SystemHealth summary={data} />}

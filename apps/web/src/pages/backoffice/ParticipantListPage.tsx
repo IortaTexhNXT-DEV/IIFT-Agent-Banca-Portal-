@@ -8,7 +8,6 @@ export default function ParticipantListPage() {
     <>
       <PageHeader
         title="Participants"
-        subtitle="All registered participants"
         breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Participants' }]}
       />
       <ParticipantList path="/backoffice/participants" />

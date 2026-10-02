@@ -38,7 +38,7 @@ export default function NotificationsPage() {
     <>
       <PageHeader
         title="Notifications"
-        breadcrumb={[{ title: 'Dashboard', to: basePathFor(audience) }, { title: 'Notifications' }]}
+        breadcrumb={[{ title: 'Home', to: basePathFor(audience) }, { title: 'Notifications' }]}
         extra={
           <Button
             icon={<CheckOutlined />}

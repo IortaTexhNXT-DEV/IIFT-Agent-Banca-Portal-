@@ -1,4 +1,5 @@
-import { Empty, Table } from 'antd';
+import { Table } from 'antd';
+import { EmptyState } from '../EmptyState';
 import type { PolicyDetail, Question } from '../../api/types';
 
 interface Row extends Question {
@@ -15,14 +16,10 @@ export function QuestionnaireAnswers({
   answers: PolicyDetail['questionnaire'];
 }) {
   if (questions.length === 0) {
-    return (
-      <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="This product has no declarations" />
-    );
+    return <EmptyState label="No declarations for this product" inline />;
   }
   if (!answers) {
-    return (
-      <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Declarations not answered yet" />
-    );
+    return <EmptyState label="Not answered yet" inline />;
   }
   const rows: Row[] = questions.map((question) => {
     const answer = answers.find((candidate) => candidate.code === question.code);

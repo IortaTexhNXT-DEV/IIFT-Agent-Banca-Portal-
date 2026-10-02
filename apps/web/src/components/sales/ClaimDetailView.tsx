@@ -1,4 +1,4 @@
-import { Card, Col, Descriptions, Flex, Row } from 'antd';
+import { Card, Col, Descriptions, Row } from 'antd';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import type { Claim, RequiredDocument } from '../../api/types';
@@ -27,13 +27,12 @@ export function ClaimDetailView({ claim, actions, uploadTypes }: Props) {
   return (
     <>
       <PageHeader
-        title={
-          <Flex align="center" gap={8}>
-            {claim.claimNo}
-            <StatusTag status={claim.status} />
-          </Flex>
-        }
-        subtitle={`${claimTypes.label(claim.claimType)} · ${policy.participant.fullName}`}
+        title={claim.claimNo}
+        tags={<StatusTag status={claim.status} />}
+        meta={[
+          { label: 'Type', value: claimTypes.label(claim.claimType) },
+          { label: 'Participant', value: policy.participant.fullName },
+        ]}
         breadcrumb={[
           { title: 'Home', to: home },
           { title: 'Claims', to: `${home}/claims` },

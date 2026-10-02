@@ -1,4 +1,10 @@
-import { Alert, App, Button, Card, Col, Flex, Row, Table, Tabs, Tag, Typography } from 'antd';
+import {
+  ClockCircleOutlined,
+  ExclamationCircleOutlined,
+  SafetyCertificateOutlined,
+  WalletOutlined,
+} from '@ant-design/icons';
+import { Alert, App, Button, Card, Flex, Table, Tabs, Tag, Typography } from 'antd';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useApiQuery } from '../../api/hooks';
@@ -12,7 +18,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { Money } from '../../components/Money';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryState } from '../../components/QueryState';
-import { StatCard } from '../../components/StatCard';
+import { KpiGrid, KpiTile } from '../../components/KpiTile';
 import { StatusTag } from '../../components/StatusTag';
 import { PaymentDrawer } from '../../components/sales/PaymentDrawer';
 import { PaymentList } from '../../components/sales/PaymentList';
@@ -33,38 +39,34 @@ function Summary({ summary }: { summary: OutstandingResponse['summary'] }) {
           description={`${summary.blockReason ?? 'Contribution payments are overdue.'} Submit the overdue payments below; issuance resumes once they are received.`}
         />
       )}
-      <Row gutter={[16, 16]} className="mb-16">
-        <Col xs={12} xl={6}>
-          <StatCard
-            label="Outstanding"
-            value={formatMoney(summary.outstandingAmount)}
-            hint={`${summary.outstandingCount} ${summary.outstandingCount === 1 ? 'policy' : 'policies'} awaiting payment`}
-            tone="warning"
-          />
-        </Col>
-        <Col xs={12} xl={6}>
-          <StatCard
-            label="Overdue"
-            value={summary.overdueCount}
-            hint={`${formatMoney(summary.overdueAmount)} past the due date`}
-            tone={summary.overdueCount > 0 ? 'danger' : 'default'}
-          />
-        </Col>
-        <Col xs={12} xl={6}>
-          <StatCard
-            label="Due within 3 days"
-            value={summary.dueSoonCount}
-            tone={summary.dueSoonCount > 0 ? 'warning' : 'default'}
-          />
-        </Col>
-        <Col xs={12} xl={6}>
-          <StatCard
-            label="Pending verification"
-            value={summary.pendingVerificationCount}
-            hint="Payments submitted, awaiting Finance"
-          />
-        </Col>
-      </Row>
+      <KpiGrid columns={4}>
+        <KpiTile
+          label="Outstanding"
+          icon={<WalletOutlined />}
+          value={formatMoney(summary.outstandingAmount)}
+          sub={`${summary.outstandingCount} ${summary.outstandingCount === 1 ? 'policy' : 'policies'}`}
+          tone="warning"
+        />
+        <KpiTile
+          label="Overdue"
+          icon={<ExclamationCircleOutlined />}
+          value={summary.overdueCount}
+          sub={`${formatMoney(summary.overdueAmount)} past due`}
+          tone={summary.overdueCount > 0 ? 'danger' : 'default'}
+        />
+        <KpiTile
+          label="Due within 3 days"
+          icon={<ClockCircleOutlined />}
+          value={summary.dueSoonCount}
+          tone={summary.dueSoonCount > 0 ? 'warning' : 'default'}
+        />
+        <KpiTile
+          label="Pending verification"
+          icon={<SafetyCertificateOutlined />}
+          value={summary.pendingVerificationCount}
+          sub="Awaiting Finance"
+        />
+      </KpiGrid>
     </>
   );
 }
@@ -186,7 +188,6 @@ export default function BillingPage() {
     <>
       <PageHeader
         title="Billing & payments"
-        subtitle="Contributions awaiting payment and payments submitted to IIFT"
         breadcrumb={[{ title: 'Home', to: '/portal' }, { title: 'Billing & payments' }]}
       />
       <QueryState query={outstanding}>

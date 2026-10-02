@@ -35,8 +35,7 @@ export default function DocumentQueuePage() {
     <>
       <PageHeader
         title="Document checks"
-        subtitle="Verify documents uploaded by agents, bank officers and staff"
-        breadcrumb={[{ title: 'Dashboard', to: '/backoffice' }, { title: 'Document checks' }]}
+        breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Document checks' }]}
       />
       <FilterBar>
         <Select

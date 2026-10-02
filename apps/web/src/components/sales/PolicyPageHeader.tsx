@@ -1,4 +1,3 @@
-import { Flex } from 'antd';
 import type { ReactNode } from 'react';
 import type { PolicyDetail } from '../../api/types';
 import { PageHeader } from '../PageHeader';
@@ -14,8 +13,8 @@ export function PolicyPageHeader({
   policy: PolicyDetail;
   actions?: ReactNode;
 }) {
-  const { backoffice } = useSalesLinks();
-  const breadcrumb = backoffice
+  const links = useSalesLinks();
+  const breadcrumb = links.backoffice
     ? [
         { title: 'Home', to: '/backoffice' },
         { title: 'Policies', to: '/backoffice/policies' },
@@ -28,14 +27,19 @@ export function PolicyPageHeader({
 
   return (
     <PageHeader
-      title={
-        <Flex align="center" gap={8} wrap>
-          {reference}
+      title={reference}
+      tags={
+        <>
           <StatusTag status={policy.status} />
           {policy.status !== 'CANCELLED' && <StatusTag status={policy.paymentStatus} />}
-        </Flex>
+        </>
       }
-      subtitle={`${policy.product.name} · ${policy.participant.fullName}${policy.policyNo ? ` · quotation ${policy.quotationNo}` : ''}`}
+      meta={[
+        { label: 'Product', value: policy.product.name },
+        { label: 'Participant', value: policy.participant.fullName },
+        policy.policyNo && { label: 'Quotation', value: policy.quotationNo },
+        links.backoffice && { label: 'Agency / bank', value: policy.agency.name },
+      ]}
       breadcrumb={[...breadcrumb, { title: reference }]}
       extra={actions}
     />

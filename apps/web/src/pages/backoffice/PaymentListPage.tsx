@@ -8,7 +8,6 @@ export default function PaymentListPage() {
     <>
       <PageHeader
         title="Payments"
-        subtitle="Contribution payments submitted by agencies and banks"
         breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Payments' }]}
       />
       <PaymentList path="/backoffice/billing/payments" showAgency />
