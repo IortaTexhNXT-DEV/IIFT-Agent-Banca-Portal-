@@ -40,10 +40,12 @@ import docx_kit  # noqa: E402
 from docx_kit import (ProposalWriter, add_rich_text, add_field, set_column_widths, shade_cell,  # noqa: E402,F401
                       _paragraph_border, _table_borders, _cell_margins, _row_flags, _no_table_borders)
 from docx.enum.table import WD_TABLE_ALIGNMENT, WD_CELL_VERTICAL_ALIGNMENT  # noqa: E402
-from docx.enum.text import WD_ALIGN_PARAGRAPH  # noqa: E402
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT  # noqa: E402
 from docx.oxml import OxmlElement  # noqa: E402
 from docx.oxml.ns import qn  # noqa: E402
-from docx.shared import Pt, Cm, RGBColor  # noqa: E402
+from docx.shared import Pt, Cm, RGBColor, Twips  # noqa: E402
+
+import pricing_data as price  # noqa: E402  (proposal commercial data, read-only: the pack quotes it, never copies it)
 
 PRODUCT = brand.PRODUCT
 CLIENT = brand.CLIENT
@@ -113,16 +115,41 @@ class TechnicalWriter(ProposalWriter):
             style.paragraph_format.space_after = Pt(3)
 
     # -- running header and footer ---------------------------------------------------------------
-    def header_footer(self, section=None):
+    def header_footer(self, section=None, width_cm=None, first_page_blank=True, **_ignored):
+        """Running header: small iorta logo at the left (when the asset exists), document title at the right.
+
+        Accepts the keyword arguments the proposal kit passes from landscape_section and
+        portrait_section, so later sections get a header whose right tab matches their width."""
         section = section or self.doc.sections[0]
-        section.different_first_page_header_footer = True
+        width_cm = width_cm or self.CONTENT_WIDTH_CM
+        section.different_first_page_header_footer = first_page_blank
+        section.header.is_linked_to_previous = False
+        section.footer.is_linked_to_previous = False
         header = section.header.paragraphs[0]
-        header.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-        add_rich_text(header, self.info.header, size=8, colour=brand.TEXT_MUTED)
-        _paragraph_border(header, "bottom", brand.ORANGE, size=6)
+        for run in list(header.runs):
+            run._r.getparent().remove(run._r)
+        header.paragraph_format.space_after = Pt(0)
+        header_text = self.info.header
+        if brand.IORTA_LOGO.exists():
+            header.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            tabs = header.paragraph_format.tab_stops
+            for inherited in (4680, 9360):      # centre and right tabs of the built-in Header style
+                tabs.add_tab_stop(Twips(inherited), WD_TAB_ALIGNMENT.CLEAR)
+            tabs.add_tab_stop(Cm(width_cm), WD_TAB_ALIGNMENT.RIGHT)
+            header.add_run().add_picture(str(brand.IORTA_LOGO), height=Cm(0.55))
+            header.add_run("\t")
+            header_text = header_text.replace(f"{BIDDER} | ", "", 1)   # the logo already names the bidder
+        else:
+            header.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        add_rich_text(header, header_text, size=8, colour=brand.TEXT_MUTED)
+        if header._p.pPr is None or header._p.pPr.find(qn("w:pBdr")) is None:
+            _paragraph_border(header, "bottom", brand.ORANGE, size=6)
         footer = section.footer.paragraphs[0]
+        for run in list(footer.runs):
+            run._r.getparent().remove(run._r)
         footer.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        _paragraph_border(footer, "top", brand.MAGENTA, size=6)
+        if footer._p.pPr is None or footer._p.pPr.find(qn("w:pBdr")) is None:
+            _paragraph_border(footer, "top", brand.MAGENTA, size=6)
         add_rich_text(footer, f"{CLASSIFICATION} | {self.info.reference} v{self.info.version} | Page ",
                       size=8, colour=brand.TEXT_MUTED)
         add_field(footer, "PAGE", "1", size=8, colour=brand.TEXT_MUTED)
@@ -130,14 +157,10 @@ class TechnicalWriter(ProposalWriter):
         add_field(footer, "NUMPAGES", "1", size=8, colour=brand.TEXT_MUTED)
 
     def landscape_section(self):
-        section = super().landscape_section()
-        section.different_first_page_header_footer = False
-        return section
+        return super().landscape_section()      # the proposal kit calls header_footer(first_page_blank=False)
 
     def portrait_section(self):
-        section = super().portrait_section()
-        section.different_first_page_header_footer = False
-        return section
+        return super().portrait_section()
 
     # -- cover -----------------------------------------------------------------------------------
     def cover(self, band_path):
@@ -223,6 +246,10 @@ class TechnicalWriter(ProposalWriter):
             "COM-01 to COM-10 in this pack are the shared platform requirements of RFP section 4.4.",
             "Items marked **delivered during implementation** are designed here but not yet present in the "
             "working application; everything else describes the application as it runs today.",
+            "Option A, B and C are the commercial options of the proposal: on-premise with a perpetual licence, "
+            "subscription hosted and managed by iorta on cloud, and source code handover. Prices and commercial "
+            "terms are in the proposal and its pricing workbook; this pack quotes a figure only where a technical "
+            "statement depends on it, and reads it from the same source as the proposal.",
             "Text in [square brackets] is to be completed with IIFT during mobilisation.",
         ])
 

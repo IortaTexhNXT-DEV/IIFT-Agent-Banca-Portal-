@@ -2,22 +2,11 @@
 deployment, sizing, non-functional design, technology stack and decisions."""
 
 import source_facts as facts
-from tech_kit import PRODUCT, brand
+from tech_kit import PRODUCT, brand, price  # noqa: F401
 
-try:  # pricing is owned by the proposal; fall back to the submitted figures if it is mid-edit
-    import pricing_data as _pricing
-    CLOUD_ITEMS = list(_pricing.CLOUD_MONTHLY_ITEMS)
-except Exception:  # noqa: BLE001
-    CLOUD_ITEMS = [
-        ("Container compute (2 tasks across 2 availability zones)", "Portal, back-office and API", 180),
-        ("Managed PostgreSQL, Multi-AZ, with storage and automated backups", "Database and PITR", 330),
-        ("Application load balancer and web application firewall", "TLS termination, OWASP rules", 120),
-        ("NAT gateway and data transfer", "Outbound integration and updates", 120),
-        ("Object storage (SSE-KMS) and cross-region snapshot copy", "Documents, backups, DR copies", 60),
-        ("Logging, metrics and alarms", "Monitoring and alerting", 60),
-        ("Secrets and key management", "Credentials and encryption keys", 20),
-        ("Scaled-down UAT environment", "Non-production testing", 60),
-    ]
+# Cloud services, reference sizing and the one-off/monthly figures come from the proposal's
+# pricing data (docs/proposal/build/pricing_data.py), so this document cannot drift from it.
+CLOUD_ITEMS = list(zip(price.CLOUD_MONTHLY_ITEMS, price.CLOUD_SIZING))
 
 OUTBOUND = [
     ["CORE", "AGENT_UPSERT", "POST /agents", "Agent registration, profile update or status change approved"],
@@ -111,15 +100,43 @@ KEYS = [
 ]
 
 ENVIRONMENTS = [
-    ["DEV", "Development, sprint demos", "iorta", "1 VM or laptop compose", "Synthetic, demo seed", "simulated",
-     "Enabled"],
-    ["SIT", "Integration and performance testing", "IIFT (iorta until ready)", "1 VM, compose", "Synthetic and "
-     "masked", "live (test endpoints)", "Enabled"],
-    ["UAT", "Acceptance, training, release rehearsal", "IIFT data centre", "1 VM, compose", "Masked or migrated",
-     "live (test endpoints)", "Disabled"],
-    ["PROD", "Live operation", "IIFT/IITH data centre", "2 app + 2 DB VMs", "Production", "live", "Disabled"],
-    ["DR", "Disaster recovery", "IIFT/IITH DR site", "1 app + 1 DB VM", "Replica of PROD", "live (on invocation)",
-     "Disabled"],
+    ["DEV", "Development, sprint demos", "iorta (both options)", "1 VM or laptop compose", "Synthetic, demo seed",
+     "simulated", "Enabled"],
+    ["SIT", "Integration and performance testing", "A: IIFT data centre (iorta until the VM is ready). B: cloud "
+     "account", "1 VM, compose; B: 1 task", "Synthetic and masked", "live (test endpoints)", "Enabled"],
+    ["UAT", "Acceptance, training, release rehearsal", "A: IIFT data centre. B: cloud account", "1 VM, compose; "
+     "B: 1 task, small database", "Masked or migrated", "live (test endpoints)", "Disabled"],
+    ["PROD", "Live operation", "A: IIFT/IITH data centre. B: cloud, Malaysia region", "2 app + 2 DB VMs; B: 2 tasks "
+     "in 2 zones, Multi-AZ database", "Production", "live", "Disabled"],
+    ["DR", "Disaster recovery", "A: IIFT/IITH DR site. B: second cloud region", "1 app + 1 DB VM; B: pilot light",
+     "Replica of PROD", "live (on invocation)", "Disabled"],
+]
+
+# Who does what under each hosting option. (Area, Option A: IIFT/IITH, Option B: iorta managed services,
+# Option B: cloud provider, Option B: IIFT)
+SHARED_RESPONSIBILITY = [
+    ["Physical facilities, hardware, hypervisor", "IITH", "–", "Provider", "–"],
+    ["Network, firewall, load balancer, WAF rules", "IITH (iorta specifies)", "Configure and operate",
+     "Managed services", "Approve rules"],
+    ["Operating system and container runtime patching", "IITH (OS); iorta (containers)", "Patch in agreed windows",
+     "Serverless container platform", "Approve windows"],
+    ["PostgreSQL install, replication, backups, PITR", "IITH runs backups; iorta configures", "Configure, verify, "
+     "restore tests", "Managed database engine", "Approve restore drills"],
+    ["Application deployment and configuration", "iorta under IIFT change control", "iorta under IIFT change "
+     "control", "–", "Change approval (CAB)"],
+    ["Monitoring and alerting", "IITH (infrastructure); iorta (application)", "24x7 infrastructure and "
+     "application", "Platform metrics and logs", "Receive reports and alerts"],
+    ["Security monitoring and vulnerability scanning", "IITH SIEM; iorta scans images", "WAF, threat detection, "
+     "scans of the estate", "Threat detection service", "Security review; VAPT sponsor"],
+    ["Encryption keys and secrets", "IITH vault", "Key management service in IIFT's account", "Key management "
+     "service", "Key ownership; access reviews"],
+    ["DR site or region and the yearly DR test", "IITH provides; iorta takes part", "Pilot light, replication, "
+     "annual drill", "Second region", "Approve the DR region; take part"],
+    ["Cloud account, budget and cost control", "–", "Budget alerts, monthly cost report, right-sizing",
+     "Billing", "Account holder (optional); approves reserved capacity"],
+    ["Regulatory notification (outsourcing, cloud)", "Not needed", "Supporting documents", "Certifications",
+     "AMBD notification"],
+    ["Data ownership, export and deletion at exit", "IIFT", "Export, deletion certificate", "–", "IIFT"],
 ]
 
 IMAGES = [
@@ -340,49 +357,115 @@ def security(w, figs):
 
 def deployment(w, figs):
     w.h1("Deployment Architecture")
+    w.para(f"{PRODUCT} ships as container images and runs unchanged in the IIFT/IITH data centre or in a cloud "
+           "account. The two deployment models match the commercial options of the proposal: Option A, on-premise "
+           "on infrastructure that IIFT procures to the sizing in chapter 10, under a perpetual licence; and "
+           "Option B, hosted and managed by iorta in a cloud account dedicated to IIFT, under a subscription. A "
+           "hybrid variant of Option A keeps all data on-premise and places only the portal's web tier at the edge. "
+           "Option C of the proposal (source code handover) does not change the deployment; the Production Support "
+           "Handover describes that transition.")
     w.h2("Environments")
     w.table(["Env.", "Purpose", "Hosted by", "Shape", "Data", "Integration", "API docs"], ENVIRONMENTS,
-            widths=[1.2, 3.4, 3.0, 2.6, 2.6, 2.4, 1.8], font_size=8, bold_first_col=True, caption="Environments")
+            widths=[1.2, 3.0, 3.6, 3.2, 2.2, 2.2, 1.6], font_size=7.5, bold_first_col=True, caption="Environments")
     w.para("Every environment runs the same images; only configuration differs. Promotion is DEV to SIT to UAT to "
-           "PROD, and nothing reaches PROD that has not passed UAT.")
+           "PROD, and nothing reaches PROD that has not passed UAT. DEV stays with iorta under both options.")
     w.h2("Option A: on-premise high availability (recommended)")
     w.para("Two application VMs sit behind an external WAF and load balancer pair for internet users and an internal "
            "load balancer for staff and IITH systems. Each application VM runs the web, API and ClamAV containers. "
            "PostgreSQL runs natively on a primary VM with a hot standby fed by streaming replication. Documents are "
            "on an NFS share mounted by both application VMs. Losing one application VM leaves the service running; "
-           "losing the database primary is handled by promoting the standby.")
+           "losing the database primary is handled by promoting the standby. IIFT procures the servers, storage, "
+           "network and DR capacity to the sizing in chapter 10 (the proposal's bill of materials lists the same "
+           "items); IITH operates the infrastructure and iorta installs, configures and supports the application "
+           "and database under the maintenance agreement.")
     w.figure(figs["on_prem"], "Option A: on-premise deployment", width_cm=16.0)
-    w.h2("Option B: cloud")
-    w.para("The same images run on AWS Asia Pacific (Singapore) or Azure Southeast Asia, subject to IIFT's "
-           "data-residency decision and AMBD outsourcing and cloud notification.")
-    w.figure(figs["cloud"], "Option B: AWS reference deployment", width_cm=16.0)
-    w.table(["Component", "AWS (Singapore)", "Azure (Southeast Asia)"], [
-        ["Edge", "Application Load Balancer, AWS WAF, ACM certificate", "Application Gateway with WAF"],
-        ["Containers", "ECS Fargate, 2 tasks in 2 AZs", "Azure Container Apps or AKS, 2 replicas in 2 zones"],
-        ["Database", "RDS for PostgreSQL 16, Multi-AZ", "Azure Database for PostgreSQL flexible server, zone-redundant "
-         "HA"],
-        ["Documents", "Amazon EFS, encrypted, mounted at /data/documents", "Azure Files, encrypted"],
-        ["Backups and exports", "S3 with SSE-KMS, cross-region copy", "Blob Storage, geo-redundant"],
-        ["Secrets", "Secrets Manager and KMS", "Key Vault"],
-        ["Monitoring", "CloudWatch logs, metrics, alarms", "Azure Monitor, Log Analytics"],
-        ["Connectivity", "Site-to-site VPN or Direct Connect to IITH", "VPN Gateway or ExpressRoute"],
-    ], widths=[3.0, 7.0, 7.0], font_size=8, bold_first_col=True, caption="Cloud services")
-    w.h2("Option C: hybrid")
+    w.h3("Hybrid variant of Option A")
     w.para("The back-office, API, database and documents stay in the IITH data centre; only the web tier for "
            "internet users (nginx with the SPA) runs in the DMZ or at a cloud edge and forwards /api calls over a "
-           "private encrypted link. Personal data never leaves the data centre.")
+           "private encrypted link. Personal data never leaves the data centre, so no cloud outsourcing step is "
+           "needed. It is sized and priced as Option A; any edge hosting is at actuals.")
+    w.h2("Option B: iorta-hosted cloud")
+    w.para(f"iorta hosts and operates the solution in a cloud account dedicated to IIFT in {price.CLOUD_REGION}, "
+           f"with production across two availability zones and a pilot-light DR environment in {price.CLOUD_DR_REGION}. "
+           "The account may be held by iorta and recharged at cost, or held by IIFT in its own name with iorta "
+           "operating it through delegated access; the design is the same. The AWS reference design is shown below "
+           "and the Azure equivalent is listed in the table.")
+    w.figure(figs["cloud"], "Option B: cloud reference deployment (AWS Asia Pacific (Malaysia))", width_cm=16.0)
+    w.table(["Component", "AWS Asia Pacific (Malaysia)", "Azure Malaysia West"], [
+        ["Edge", "Application Load Balancer, AWS WAF with managed OWASP rules, ACM certificate",
+         "Application Gateway with WAF"],
+        ["Containers", "ECS Fargate, 2 tasks in 2 availability zones", "Container Apps or AKS, 2 replicas in 2 zones"],
+        ["Database", "RDS for PostgreSQL 16, Multi-AZ, 35-day backups and PITR",
+         "Azure Database for PostgreSQL flexible server, zone-redundant HA"],
+        ["Documents", "Amazon EFS, encrypted, mounted at /data/documents", "Azure Files, encrypted"],
+        ["Backups and exports", "S3 with SSE-KMS, replicated to the DR region", "Blob Storage, geo-redundant"],
+        ["Secrets and keys", "Secrets Manager and KMS (customer-managed keys)", "Key Vault"],
+        ["Monitoring and security", "CloudWatch logs, metrics, alarms; GuardDuty; Security Hub",
+         "Azure Monitor, Log Analytics, Defender for Cloud"],
+        ["Connectivity", "Site-to-site VPN to the IITH data centre (Direct Connect optional)",
+         "VPN Gateway (ExpressRoute optional)"],
+        ["DR", "Cross-region read replica, replicated S3, standby task definitions in the second region",
+         "Geo-replica, geo-redundant storage, standby revision in the second region"],
+    ], widths=[3.0, 7.4, 6.6], font_size=8, bold_first_col=True, caption="Cloud services by provider")
+    w.h3("Landing zone")
+    w.para("The one-off cloud set-up in the proposal builds the landing zone before the environments: a dedicated "
+           "account (or subscription) for IIFT with no other tenant; separate production and non-production "
+           "networks (VPC or VNet) with public subnets for the load balancer only and private subnets for tasks and "
+           "databases; identity with named administrators, multi-factor authentication, least-privilege roles and "
+           "no long-lived access keys; customer-managed encryption keys for database, storage and backups; central "
+           "logging with 90-day retention and an immutable audit trail of console and API activity; the site-to-site "
+           "VPN to the IITH data centre; a private container registry; and the security baseline (CIS benchmark "
+           "checks, threat detection, vulnerability scanning) with alerts to the managed services roster. "
+           "Everything is defined as infrastructure code held in the repository, so the estate can be rebuilt in "
+           "the DR region or handed to IIFT.")
+    w.h3("Environments and DR region")
+    w.para("PROD runs two tasks across two availability zones with a Multi-AZ managed database. UAT is a single task "
+           "with a small single-zone database, stopped outside test periods; SIT is the same shape during the "
+           "project. The DR environment in the second region is a pilot light: a cross-region database replica, "
+           "replicated backups and documents, and standby task definitions scaled from zero. Invocation promotes the "
+           "replica, scales the tasks up and switches DNS; the Production Support Handover gives the procedure and "
+           "the yearly drill. RPO and RTO are the same as for Option A (chapter 10).")
+    w.h3("Cost controls")
+    w.bullets([
+        "Cloud charges are recharged at the provider's cost without mark-up, or paid by IIFT directly when it holds "
+        "the account; the estimate in chapter 10 is for budgeting.",
+        "Budget alerts at 80% and 100% of the monthly estimate go to iorta and the IIFT application owner.",
+        "A monthly cost report by service and environment accompanies the monthly service report.",
+        "A quarterly right-sizing review adjusts task sizes, database class and storage tiers; reserved capacity is "
+        "bought only with IIFT's approval, and the saving passes to IIFT.",
+        "Non-production environments are stopped outside test periods; log retention and backup lifecycle rules "
+        "are enforced by policy.",
+    ])
+    w.h3("Shared responsibility")
+    w.table(["Area", "Option A: IIFT / IITH and iorta", "Option B: iorta managed services", "Option B: cloud "
+             "provider", "Option B: IIFT"], SHARED_RESPONSIBILITY, widths=[3.6, 3.6, 3.6, 3.0, 3.2], font_size=7.5,
+            bold_first_col=True, caption="Shared responsibility by option")
+    w.para("Under Option B the managed services cover 24x7 infrastructure and availability monitoring, patching in "
+           "agreed windows, backups with monthly restore tests and the yearly DR drill, security monitoring of the "
+           "cloud estate, capacity and cost management with a monthly report, and infrastructure incident response "
+           "with the cloud provider. The scope and fee are in the proposal; the operating model is in the Production "
+           "Support Handover.")
+    w.h3("Data residency and regulatory notification")
+    w.para("Under Option B, personal data of agents, participants and staff is stored in Malaysia with copies in the "
+           "DR region, encrypted at rest with keys held in IIFT's account and in transit with TLS; back-office "
+           "traffic and the Core, FIN, AD and SMTP integrations run over the VPN to the IITH data centre. Cloud "
+           "hosting is an outsourcing arrangement for IIFT: IIFT approves the regions and makes the AMBD outsourcing "
+           "and cloud notification before production data is loaded, and iorta provides the supporting material "
+           "(this architecture, the control catalogue in chapter 8, the exit plan and the provider's "
+           "certifications). A Brunei-hosted alternative can be designed on request. Option A needs no such step.")
     w.h2("Disaster recovery")
     w.figure(figs["dr"], "Disaster recovery topology", width_cm=15.5)
-    w.para("The DR site holds an asynchronous PostgreSQL replica, a copy of the document store refreshed every 15 "
-           "minutes, copies of the backups, and a cold application VM with the current images. Invocation promotes "
-           "the replica, mounts the document copy, starts the containers with DR configuration and moves DNS or the "
-           "load-balancer VIP. The Production Support Handover gives the step-by-step procedure and the test "
-           "schedule.")
+    w.para("Under Option A the DR site holds an asynchronous PostgreSQL replica, a copy of the document store "
+           "refreshed every 15 minutes, copies of the backups, and a cold application VM with the current images. "
+           "Invocation promotes the replica, mounts the document copy, starts the containers with DR configuration "
+           "and moves DNS or the load-balancer VIP. Under Option B the same pattern spans two regions with managed "
+           "services. The Production Support Handover gives the step-by-step procedure and the test schedule.")
     w.h2("Container images")
     w.table(["Image", "Source", "Notes"], IMAGES, widths=[4.0, 4.8, 8.2], font_size=8, caption="Images")
     w.para("Docker Compose (deploy/docker-compose.yml) runs the full stack on one host for DEV, SIT and UAT, and the "
            "web, API and ClamAV services on each production application VM, with the database on dedicated VMs. "
-           "Kubernetes or ECS manifests are produced during implementation if IIFT selects a cloud option.")
+           "ECS task definitions (or the Azure equivalent) and the landing-zone infrastructure code are produced "
+           "during implementation if IIFT selects Option B.")
     w.h2("Build and release pipeline")
     w.figure(figs["cicd"], "Build and release pipeline", width_cm=16.0)
     w.table(["Stage", "Activities", "Status"], PIPELINE, widths=[3.2, 9.8, 4.0], font_size=8,
@@ -408,7 +491,10 @@ def sizing(w):
            + ", ".join(f"{y}: {n}" for y, n in per_year.items())
            + f". Every figure is then multiplied by {facts.HEADROOM} for headroom, which also covers the target of "
            "100 concurrent users. At this scale the limiting factor is availability, not capacity.")
-    w.h2("On-premise servers")
+    w.h2("On-premise servers (Option A, procured by IIFT)")
+    w.para("IIFT procures the capacity below, or allocates it on the IITH virtualisation platform, before SIT (the "
+           "SIT VM) and before UAT (the rest). The proposal's bill of materials repeats this table with indicative "
+           "costs and is checked against it when the proposal is built.")
     w.table(["Server", "Qty", "vCPU", "RAM", "Storage", "Software"], [
         ("GROUP", "Production"),
         ["WAF / load balancer", "2 (or existing)", "2", "4 GB", "–", "IITH appliance or HAProxy/nginx pair"],
@@ -428,22 +514,22 @@ def sizing(w):
     w.para("Operating system: Red Hat Enterprise Linux 9 or Ubuntu 24.04 LTS, hardened to the IITH baseline. "
            "Each application VM has spare capacity for a second API container if load grows. ClamAV needs about "
            "1.5 GB of memory for its signature database, which is included.")
-    w.h2("Cloud services")
-    rows = [[name, purpose, f"B$ {amount:,}"] for name, purpose, amount in CLOUD_ITEMS]
-    total = sum(item[2] for item in CLOUD_ITEMS)
-    rows.append(["Total per month", "", f"B$ {total:,}"])
-    rows.append(["Total per year", "", f"B$ {total * 12:,}"])
-    w.table(["Service", "Purpose", "Indicative B$ / month"], rows, widths=[8.6, 5.6, 2.8], font_size=8,
-            align_right_cols=(2,), total_rows=2, caption="Option B indicative cost (pass-through)")
-    w.table(["Component", "Size", "Notes"], [
-        ["ECS Fargate tasks", "2 × (1 vCPU, 2 GB)", "web and api containers per task; scale to 4 tasks if needed"],
-        ["RDS for PostgreSQL", "db.t4g.large (2 vCPU, 8 GB), Multi-AZ", "100 GB gp3, 35-day automated backups and "
-         "PITR"],
-        ["Amazon EFS", "Up to 100 GB in five years", "Encrypted, lifecycle to infrequent access"],
-        ["S3", "About 200 GB", "Backups and exports, SSE-KMS, cross-region copy"],
-        ["ClamAV", "Sidecar per task (1 GB)", "Or a small shared service"],
-        ["UAT", "1 task and a single-AZ db.t4g.medium", "Scaled down, stopped outside test periods"],
-    ], widths=[3.6, 5.6, 7.8], font_size=8, caption="Cloud sizing")
+    w.h2("Cloud services (Option B)")
+    w.para("The reference sizing below is the basis of the cloud infrastructure estimate in the proposal; both are "
+           "read from the same source. Charges are recharged at the provider's cost, or paid by IIFT directly, and "
+           f"move with usage and exchange rates. The estimate is about {price.bnd(price.cloud_monthly())} a month "
+           f"for the production run (UAT and the DR pilot light included), plus scaled-down project environments "
+           f"for {price.CLOUD_IMPLEMENTATION_MONTHS} months before go-live; the one-off set-up and the managed "
+           "services fee are in the proposal.")
+    rows = [[service, sizing, price.bnd(monthly)] for (service, _, monthly), sizing in CLOUD_ITEMS]
+    rows.append(["Total per month", "", price.bnd(price.cloud_monthly())])
+    rows.append(["Total per year", "", price.bnd(price.cloud_annual())])
+    w.table(["Service", "Reference sizing", "Estimate B$ / month"], rows, widths=[6.0, 8.4, 2.6], font_size=8,
+            align_right_cols=(2,), total_rows=2, caption="Option B cloud sizing and estimate (recharged at cost)")
+    w.para("ClamAV runs as a sidecar in each task (1 GB) or as a small shared service. The document share is expected "
+           "to stay under 100 GB in five years and object storage under about 200 GB with backups and exports "
+           "(sections 10.5 and 10.6). RPO and RTO targets are unchanged: the Multi-AZ database fails over "
+           "automatically within the region, and the DR region holds a cross-region replica.")
     w.h2("Database sizing")
     w.para("Rows per issued policy were estimated from how the application writes data: quotations not taken up, "
            "policy history, documents, payments, approvals, notifications, outbox messages, integration log entries "
@@ -553,8 +639,10 @@ def stack(w):
     deps, root = facts.versions()
     w.h1("Technology Stack and Versions")
     w.para("Versions are the minimums declared in the package manifests at the time of writing; the lockfile pins "
-           "exact versions. All components are open source under permissive licences; there are no runtime licence "
-           "fees.")
+           "exact versions. All third-party components are open source and carry no licence fee; the only paid "
+           f"choice is the operating system if IIFT standardises on RHEL. The {PRODUCT} licence itself (perpetual "
+           "under Option A, right to use under the Option B subscription, source code under Option C) is a "
+           "commercial term of the proposal.")
     rows = []
     for layer, items in STACK:
         rows.append(("GROUP", layer))

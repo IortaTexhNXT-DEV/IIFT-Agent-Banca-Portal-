@@ -527,9 +527,9 @@ def on_prem(out):
 
 # --- 9. Cloud --------------------------------------------------------------------------------------------
 def cloud(out):
-    image, draw = new_canvas(W, 1300)
-    zone(draw, (20, 20, W - 20, 1170), "AWS Asia Pacific (Singapore) ap-southeast-1, one VPC", fill=WHITE,
-         outline=ORANGE, title_fill=ORANGE)
+    image, draw = new_canvas(W, 1500)
+    zone(draw, (20, 20, W - 20, 1170), "IIFT-dedicated account: AWS Asia Pacific (Malaysia) ap-southeast-5, one VPC",
+         fill=WHITE, outline=ORANGE, title_fill=ORANGE)
     edge = (60, 80, W - 60, 190)
     card(draw, edge, "Application Load Balancer + AWS WAF (public subnets)", "ACM certificate, OWASP rule set",
          size=FS)
@@ -545,24 +545,33 @@ def cloud(out):
              outline=BLUE, title_fill=BLUE, size=FS)
         arrow(draw, (x0 + 305, 190), (x0 + 305, 280), colour=MAGENTA)
     arrow(draw, (640, 545), (720, 545), colour=BLUE, label="Multi-AZ", size=26)
-    items = [("S3 + KMS", "backups, exports, cross-region copy"), ("Secrets Manager", "keys and credentials"),
-             ("CloudWatch", "logs, metrics, alarms"), ("ECR", "signed images")]
+    items = [("S3 + KMS", "backups, exports, copy to DR region"), ("Secrets Manager", "keys and credentials"),
+             ("CloudWatch + GuardDuty", "logs, alarms, threat detection"), ("ECR", "signed images")]
     for i, (name, body) in enumerate(items):
         x0 = 60 + i * 325
         card(draw, (x0, 870, x0 + 300, 1020), name, body, fill=LIGHT_ORANGE, outline=ORANGE, title_fill=DARK,
              size=FS)
-    card(draw, (60, 1050, W - 60, 1150), "Site-to-site VPN / Direct Connect to the IITH data centre",
+    card(draw, (60, 1050, W - 60, 1150), "Site-to-site VPN to the IITH data centre",
          "Core, FIN, AD, SMTP relay and back-office users", fill=WHITE, outline=MID_GREY, title_fill=DARK, size=FS)
-    draw.text((20, 1200), "Azure equivalent: Application Gateway + WAF, AKS or Container Apps, Azure Database for",
-              font=font(26), fill=MUTED)
-    draw.text((20, 1236), "PostgreSQL flexible server (zone-redundant HA), Azure Files, Blob Storage, Key Vault, "
-                          "Azure Monitor.", font=font(26), fill=MUTED)
+    zone(draw, (20, 1200, W - 20, 1380), "DR region (second region approved by IIFT): pilot light", fill=WHITE,
+         outline=ORANGE, title_fill=ORANGE, dashed=True)
+    dr_items = [("RDS cross-region replica", "promoted on invocation"), ("S3 replica", "backups and documents"),
+                ("Standby images and task definitions", "scaled from zero")]
+    for i, (name, body) in enumerate(dr_items):
+        x0 = 60 + i * 435
+        card(draw, (x0, 1250, x0 + 410, 1360), name, body, fill=WHITE, outline=BLUE, title_fill=BLUE, size=FS,
+             dashed=True)
+    notes = ["Azure Malaysia West equivalent: Application Gateway + WAF, Container Apps or AKS, Azure Database for",
+             "PostgreSQL flexible server (zone-redundant HA), Azure Files, Blob Storage, Key Vault, Azure Monitor and",
+             "Defender; DR in a second region."]
+    for i, line in enumerate(notes):
+        draw.text((20, 1400 + i * 34), line, font=font(26), fill=MUTED)
     return save(image, out, "tech-cloud.png")
 
 
 # --- 10. Disaster recovery ----------------------------------------------------------------------------------
 def dr(out):
-    image, draw = new_canvas(W, 900)
+    image, draw = new_canvas(W, 980)
     for i, title in enumerate(["Primary site (IITH data centre)", "DR site"]):
         x0 = 20 + i * 700
         zone(draw, (x0, 20, x0 + 660, 700), title, fill=LIGHT_GREY if i == 0 else WHITE, dashed=i == 1)
@@ -588,6 +597,10 @@ def dr(out):
          outline=ORANGE, title_fill=DARK, size=F)
     card(draw, (720, 740, W - 20, 880), "Invocation", "promote standby, start app, switch DNS / VIP", fill=WHITE,
          outline=MAGENTA, size=F)
+    draw.text((20, 905), "Option B uses the same pattern across two cloud regions: cross-region database replica,",
+              font=font(26), fill=MUTED)
+    draw.text((20, 939), "replicated storage and pilot-light compute, run by iorta's managed services.",
+              font=font(26), fill=MUTED)
     return save(image, out, "tech-dr.png")
 
 
@@ -666,9 +679,10 @@ def support_model(out):
     arrow(draw, mid(users, "right"), mid(boxes[0], "left"), colour=DARK)
     for a, b in zip(boxes, boxes[1:]):
         arrow(draw, mid(a, "bottom"), mid(b, "top"), colour=DARK, label="escalate", size=26)
-    infra = (20, 330, 360, 530)
-    card(draw, infra, "Infrastructure owner", "IITH IT: servers, network, backup, DR site", fill=LIGHT_GREY,
-         outline=MID_GREY, title_fill=DARK, size=FS, title_size=F)
+    infra = (20, 300, 360, 560)
+    card(draw, infra, "Infrastructure owner", "A: IITH IT (servers, network, backup, DR site). "
+                                             "B: iorta managed services (cloud estate)",
+         fill=LIGHT_GREY, outline=MID_GREY, title_fill=DARK, size=FS, title_size=F)
     arrow(draw, mid(infra, "right"), mid(boxes[1], "left"), colour=MUTED, both=True)
     vendors = (1090, 330, 1380, 530)
     card(draw, vendors, "Third parties", "SMS, AML data, SMTP relay, certificates", fill=LIGHT_GREY,

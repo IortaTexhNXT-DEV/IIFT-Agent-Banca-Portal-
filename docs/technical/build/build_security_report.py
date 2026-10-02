@@ -122,18 +122,22 @@ RESIDUAL = [
     ["Back-office MFA", "Medium", "Passwords alone protect back-office accounts today.", "Add e-mail OTP or TOTP MFA "
      "for back-office users; Active Directory sign-on where available", "Implementation, sprint 1"],
     ["Web application firewall", "Medium", "No WAF in front of the portal in the test environment.", "Place the "
-     "portal behind IITH's WAF or a managed WAF with OWASP rules", "Before SIT"],
-    ["Key management", "Medium", "Encryption keys are supplied as environment variables.", "Hold keys in an HSM, "
-     "cloud KMS or vault; rotate yearly using the key-version prefix", "Before go-live"],
+     "portal behind IITH's WAF (Option A) or the cloud provider's managed WAF with OWASP rules (Option B)",
+     "Before SIT"],
+    ["Key management", "Medium", "Encryption keys are supplied as environment variables.", "Hold keys in the IITH "
+     "vault or HSM (Option A) or the key management service of IIFT's cloud account (Option B); rotate yearly "
+     "using the key-version prefix", "Before go-live"],
     ["Malware scanning", "Low", "The API refuses to start in production without CLAMAV_HOST, so production uploads "
      "are always scanned; development instances may run without a scanner.", "Run ClamAV in SIT and UAT too, keep "
      "signatures current and alert when the scanner is unreachable", "Before SIT"],
     ["Database connections", "Low", "Database traffic is not encrypted inside the compose network.", "Enable TLS "
      "to PostgreSQL and restrict the application role to the privileges it needs", "Before go-live"],
-    ["Backup encryption", "Low", "Backup encryption depends on IITH's backup service.", "Encrypt backups and test "
+    ["Backup encryption", "Low", "Backup encryption depends on the hosting platform's backup service.", "Encrypt "
+     "backups (IITH backup platform, or provider-managed backups with customer keys under Option B) and test "
      "restores quarterly", "Before go-live"],
     ["SIEM integration", "Low", "Logs and audit records are not yet forwarded centrally.", "Forward logs and "
-     "audit events to IITH's SIEM; add alert rules", "Implementation"],
+     "audit events to IITH's SIEM (over the VPN under Option B, with cloud threat detection in addition); add "
+     "alert rules", "Implementation"],
     ["Rate limiting behind proxies", "Low", "Per-client limits depend on the forwarded client address.", "Set "
      "TRUST_PROXY_HOPS to the real proxy chain and tune limits after performance testing", "SIT"],
     ["Independent assurance", "High until done", "No independent test has yet been performed.", "Independent VAPT "
@@ -284,9 +288,10 @@ def scope_section(w, checks):
         ["In scope", "API (NestJS) and its HTTP pipeline, authentication and sessions, authorisation and data "
                      "scoping, uploads and document storage, field encryption, audit trail, web-tier configuration "
                      "(nginx), container images, CI pipeline, dependencies"],
-        ["Out of scope", "IIFT/IITH infrastructure and network, IIFT systems behind the integration adapters, "
-                         "denial-of-service, social engineering, physical security; these belong to the independent "
-                         "VAPT and IITH's own controls"],
+        ["Out of scope", "The hosting infrastructure and network (IIFT/IITH data centre under Option A; the cloud "
+                         "estate operated by iorta's managed services under Option B), IIFT systems behind the "
+                         "integration adapters, denial-of-service, social engineering, physical security; these "
+                         "belong to the independent VAPT and to the infrastructure owner's own controls"],
     ], widths=[4.0, 13.0], font_size=8.5, bold_first_col=True, caption="Scope")
 
 

@@ -49,7 +49,7 @@ PRINCIPLES = [
     ["Secure by default", "Regulated personal and financial data.", "Deny by default; encrypted identifiers; "
      "production start-up refuses insecure settings; generic errors with correlation id."],
     ["Operable", "IIFT and IITH must be able to run it.", "Standard containers, JSON logs, health and metrics "
-     "endpoints, documented runbooks, open-source stack without licence fees."],
+     "endpoints, documented runbooks, open-source stack without third-party licence fees."],
     ["Testable", "Changes must be safe to release.", "Unit and end-to-end tests against a real PostgreSQL database run "
      "in CI on every change."],
 ]
@@ -192,7 +192,8 @@ def purpose(w, status_rows=STATUS_TODAY):
         "e-signature page\nREST API, database, document store, scheduled jobs\nIntegration with Core, FIN, AML "
         "provider, SMTP, SMS and Active Directory\nDeployment, sizing, security, monitoring and DR design",
         "Changes inside IITH core and financial systems\nClaims assessment and payment (core system)\nInfrastructure "
-        "procurement and data-centre operation (IIFT/IITH)\nCommercial terms (see the proposal)"]],
+        "procurement and data-centre operation under Option A (IIFT/IITH)\nCommercial terms, prices and the choice "
+        "between Options A, B and C (see the proposal)"]],
         widths=[8.5, 8.5])
     w.h2("Audience")
     w.para("IIFT and IITH IT architecture, infrastructure, security and operations teams; the IIFT project team; "

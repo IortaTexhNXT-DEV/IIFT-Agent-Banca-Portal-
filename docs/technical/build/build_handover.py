@@ -17,7 +17,7 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import tech_kit  # noqa: E402
-from tech_kit import TechnicalWriter, DocInfo, TECH_DIR, PRODUCT  # noqa: E402
+from tech_kit import TechnicalWriter, DocInfo, TECH_DIR, PRODUCT, price  # noqa: E402
 import tech_diagrams  # noqa: E402
 import source_facts as facts  # noqa: E402
 from sad_part1 import JOBS  # noqa: E402
@@ -25,13 +25,16 @@ from sad_part1 import JOBS  # noqa: E402
 INFO = DocInfo(
     code="PSH",
     title="Production Support Handover",
-    subtitle="Support model, service levels, operating procedures, runbooks, configuration reference and knowledge "
-             "transfer",
+    subtitle="Support model, service levels, operating procedures, runbooks, configuration reference, knowledge "
+             "transfer and the Option C source code transition",
     deliverable="DEL-26 (Technical manual), DEL-27 (Operations manual), MNT-01 to MNT-30",
-    keywords="production support; runbooks; SLA; operations; SalesVerse 2.0; IIFT",
+    keywords="production support; runbooks; SLA; operations; managed services; source code handover; SalesVerse 2.0; "
+             "IIFT",
     purpose="This document hands over the operation of SalesVerse 2.0 to the support organisation. It defines who "
             "does what, the service levels, the processes for incidents, problems, changes and releases, and gives "
-            "the runbooks and reference data that support staff need. It is updated after every release (MNT-27).",
+            "the runbooks and reference data that support staff need. It covers both hosting options of the "
+            "proposal (Option A on-premise, Option B iorta-hosted cloud with managed services) and the transition "
+            "under Option C (source code handover). It is updated after every release (MNT-27).",
     related=["SalesVerse-2.0-Solution-Architecture: design, deployment, sizing and security.",
              "SalesVerse-2.0-Data-Dictionary: database tables and columns.",
              "README.md and apps/api/.env.example in the source repository."],
@@ -46,8 +49,10 @@ TIERS = [
      "IIFT business hours; P1 24 x 7 on call"],
     ["L3", "iorta engineering", "Code defects, root-cause analysis, fixes, performance work, releases and emergency "
      "patches", "Business hours; P1 24 x 7 when escalated"],
-    ["Infra", "IITH IT (infrastructure owner)", "Servers, storage, network, firewalls, load balancers, operating "
-     "systems, backup infrastructure, DR site, certificates, DNS, SMTP relay", "Per IITH service hours"],
+    ["Infra", "Option A: IITH IT (infrastructure owner). Option B: iorta managed services", "Servers or cloud "
+     "estate, storage, network, firewalls, load balancers and WAF, operating systems and container platform, "
+     "backup infrastructure, DR site or region, certificates, DNS; SMTP relay and AD stay with IITH under both "
+     "options", "A: per IITH service hours. B: 24 x 7 monitoring; patching in agreed windows"],
 ]
 
 RACI = [
@@ -141,7 +146,9 @@ KT_SESSIONS = [
 ]
 
 CHECKLIST = [
-    ["Source code repository with full history transferred to IIFT/IITH", "Repository access confirmed", "iorta"],
+    ["Source code of IIFT-specific components (configuration, adapters, reports, templates, migrations, build "
+     "scripts) delivered to the IIFT/IITH repository at go-live; core platform source under Option C or escrow "
+     "deposit confirmed", "Repository access confirmed; deposit receipt", "iorta"],
     ["Production, UAT and SIT environments documented with access granted", "Access matrix", "iorta, IITH"],
     ["Secrets and keys held in the IITH vault; no copies outside", "Vault inventory signed", "IITH, iorta"],
     ["Monitoring dashboards and alert rules live; alert recipients tested", "Test alert received", "iorta"],
@@ -166,24 +173,84 @@ REPORT_SECTIONS = [
     ["7", "Security", "Patches applied, vulnerabilities found and remediation status, access reviews"],
     ["8", "Operations", "EOD runs, reconciliation results, integration dead-letters, backup and restore tests"],
     ["9", "Capacity", "Database and document growth, CPU and memory trends against sizing"],
-    ["10", "Enhancement hours", "Hours used from the annual 60-hour pool, balance"],
-    ["11", "Outstanding items and plan", "Open issues, upcoming changes, next month's plan"],
+    ["10", "Enhancement hours", f"Hours used from the annual {price.ENHANCEMENT_HOURS_PER_YEAR}-hour pool, balance"],
+    ["11", "Cloud cost and managed services (Option B)", "Actual cloud charges by service and environment against "
+     "the estimate, budget alerts raised, patching and restore tests done, right-sizing actions"],
+    ["12", "Outstanding items and plan", "Open issues, upcoming changes, next month's plan"],
 ]
 
 EXIT = [
-    ["Trigger", "Year 5 of maintenance, or within 30 days of a termination notice"],
+    ["Trigger", "Year 5 of the maintenance or subscription term, or within 30 days of a termination notice"],
     ["Exit plan", "Scope, timeline, receiving party and responsibilities agreed with IIFT"],
     ["Knowledge transfer", "Sessions on architecture, code, configuration, operations and known issues to the new "
      "provider or IIFT team (sessions 1 to 8 repeated as needed)"],
     ["Documentation", "Final update of this document, the Solution Architecture, Data Dictionary, administrator and "
      "user manuals"],
-    ["Source code and tooling", "Final source code, pipeline definitions, deployment files and build scripts; "
-     "container images in the IITH registry"],
+    ["Source code and tooling", "Final source code of the IIFT-specific components (and of the core platform where "
+     "Option C or an escrow release applies), pipeline definitions, deployment files, infrastructure code and build "
+     "scripts; container images in the IITH registry"],
     ["Data", "IIFT owns all data. Full export on request: PostgreSQL dump, CSV per table, document files decrypted "
      "into a folder per owner, audit trail"],
+    ["Hosting (Option B)", "Data returned as above; the cloud estate is handed to IIFT (an account in IIFT's name "
+     "stays with IIFT) or deleted after IIFT confirms receipt, with a deletion certificate covering backups"],
     ["Credentials", "All iorta access removed; secrets rotated by IITH after transfer"],
     ["Parallel support", "Shadow support to the new provider for up to 30 days"],
     ["Closure", "Signed transition acceptance; secure deletion of IIFT data held by iorta, with certificate"],
+]
+
+# Option B managed services: who is on duty and what they do. Scope lines come from the proposal.
+MANAGED_ROSTER = [
+    ["Infrastructure monitoring and first response", "24 x 7", "On-call cloud engineer (two-person rota), alerted "
+     "by the monitoring platform; acknowledges within the P1 response time"],
+    ["Patching: operating system images, container base images, database engine minor versions", "Monthly window "
+     "agreed with IIFT; emergency patches as needed", "Cloud engineer; change ticket; UAT first"],
+    ["Backup verification and restore test", "Daily check; monthly restore to a scratch instance", "Cloud engineer; "
+     "record in the monthly report"],
+    ["DR drill", "Yearly, with IIFT users", "Cloud engineer and L2; DR test report"],
+    ["Security monitoring: WAF events, threat detection findings, vulnerability scans", "Continuous; weekly "
+     "review", "Cloud engineer; findings triaged to the remediation timelines of the Security Assessment Report"],
+    ["Capacity and cost: budget alerts, monthly cost report, quarterly right-sizing", "Monthly; quarterly review",
+     "Service manager with the IIFT application owner"],
+    ["Provider liaison: support cases, service events, maintenance notices", "As needed", "Cloud engineer"],
+    ["Access reviews of the cloud account", "Quarterly", "Service manager; IIFT reviews the list"],
+]
+
+MANAGED_SLA_REPORTING = [
+    ["Infrastructure availability", "Uptime of the load balancer, tasks and database per month against the 99.5% "
+     "and 99.9% targets; provider service events listed separately"],
+    ["Alerts and infrastructure incidents", "Count by severity, response and restore times, root causes"],
+    ["Patching", "Patches applied, windows used, anything deferred and why"],
+    ["Backups and DR", "Backup success rate, restore test result, replication lag, DR drill status"],
+    ["Security", "WAF blocks, threat findings and their status, scan results, open vulnerabilities by severity"],
+    ["Capacity and cost", "CPU, memory, storage and connection trends; cloud charges by service against the "
+     "estimate; budget alert history; right-sizing actions and savings"],
+]
+
+# Option C: what the source code package contains, beyond the lists in the proposal.
+REPOSITORY_HANDOVER = [
+    "Create the IIFT/IITH repository group (GitLab or GitHub) and the project for each application; iorta pushes "
+    "the full history, tags and release branches; IIFT verifies the tag of the production release builds.",
+    "Transfer the CI/CD pipeline definitions and the runner or workflow configuration; run the pipeline end to end "
+    "in IIFT's account, including the security scans and the SBOM step.",
+    "Hand over the container registry (images, signatures) or re-build the images from the delivered source and "
+    "compare digests.",
+    "Transfer the infrastructure code (Compose files, production overrides, landing-zone definitions under "
+    "Option B) and the deployment documentation.",
+    "Move secrets ownership: IIFT rotates every credential iorta held (R4) once the handover certificate is "
+    "signed; iorta's access to repositories, pipelines and environments is removed on the same day.",
+    "Record the delivered commit, build fingerprint and document versions in the handover certificate.",
+]
+
+POST_HANDOVER_MODELS = [
+    ["1. Full AMC continues", "All AMC services: helpdesk, SLA, patches, upgrades, enhancement hours; iorta "
+     "remains L2 and L3", "IIFT runs L1 and may develop its own changes in a fork; iorta merges them on request",
+     "AMC unchanged (proposal)"],
+    ["2. Platform updates and L3", f"{PRODUCT} core releases and security patches; L3 advice and defect fixes in "
+     "the core under the SLA; access to the core repository and release notes", "IIFT handles L1 and L2, its own "
+     "changes, deployments and infrastructure (or keeps the Option B managed services)",
+     f"{price.POST_HANDOVER_SUPPORT_RATE:.0%} of the AMC base a year (proposal), in place of the AMC"],
+    ["3. Rate card only", "Work ordered when needed at the rate card; no retainer and no SLA", "IIFT runs the whole "
+     "service", "Rate card (proposal)"],
 ]
 
 
@@ -211,19 +278,29 @@ def build(path: Path):
 
         # 1 -------------------------------------------------------------------------------
         w.h1("Introduction")
-        w.para(f"{PRODUCT} goes live after UAT sign-off and is followed by four weeks of hypercare, during which the "
+        hc, wk = price.HYPERCARE_WEEKS, price.GO_LIVE_WEEK
+        w.para(f"{PRODUCT} goes live after UAT sign-off and is followed by {hc} weeks of hypercare, during which the "
                "project team supports production directly. At hypercare exit the service moves to the support model "
-               "in this document for the five-year maintenance period. The six-month warranty from go-live runs in "
-               "parallel and covers defect correction at no cost.")
+               f"in this document for the {price.CONTRACT_YEARS}-year term: under Option A the annual maintenance "
+               "(AMC) with IITH operating the infrastructure, under Option B the subscription with iorta's managed "
+               f"services operating the cloud estate. The {price.WARRANTY_MONTHS}-month warranty from go-live runs "
+               "in parallel and covers defect correction at no cost. Under Option C the source code handover and "
+               "transition in chapter 16 can start once hypercare has ended.")
         w.table(["Phase", "Period", "Support arrangement"], [
-            ["Hypercare", "Weeks 25 to 28 (4 weeks after go-live)", "Project team on site or on call; daily stand-up "
-             "with IIFT; priority fixes"],
-            ["Warranty", "6 months from go-live", "Defects fixed free of charge under this support model"],
-            ["Maintenance", "Years 1 to 5 from go-live", "This support model, SLA and monthly reporting"],
-        ], widths=[3.0, 5.4, 8.6], font_size=8.5, caption="Support phases")
-        w.para("Readers: IIFT helpdesk and IT, IITH infrastructure, iorta support and engineering. Commands assume a "
-               "Linux shell on the application or database VM, with the repository's deploy directory as working "
-               "directory for Docker Compose commands.")
+            ["Hypercare", f"Weeks {wk + 1} to {wk + hc} ({hc} weeks after go-live)", "Project team: senior developer "
+             "on site in Bandar Seri Begawan, the rest on call; daily stand-up with IIFT; priority fixes"],
+            ["Warranty", f"{price.WARRANTY_MONTHS} months from go-live", "Defects fixed free of charge under this "
+             "support model"],
+            ["Maintenance or subscription", f"Years 1 to {price.CONTRACT_YEARS} from go-live", "This support model, "
+             "SLA and monthly reporting; Option B adds the managed services operating model in chapter 12"],
+            ["Option C transition", f"From week {price.KT_START_WEEK} at the earliest, "
+             f"{price.KNOWLEDGE_TRANSFER_WEEKS} weeks", "Chapter 16: knowledge transfer, repository handover, "
+             "handover certificate, then the post-handover support model IIFT chooses"],
+        ], widths=[3.4, 5.0, 8.6], font_size=8.5, caption="Support phases")
+        w.para("Readers: IIFT helpdesk and IT, IITH infrastructure, iorta support, managed services and engineering. "
+               "Commands assume a Linux shell on the application or database VM, with the repository's deploy "
+               "directory as working directory for Docker Compose commands; chapter 12 gives the Option B "
+               "equivalents.")
 
         # 2 -------------------------------------------------------------------------------
         w.h1("Support Model")
@@ -240,8 +317,8 @@ def build(path: Path):
             "audit trail with it.",
         ])
         w.h2("Responsibilities")
-        w.table(["Activity", "IIFT helpdesk / IT", "iorta L2", "iorta L3", "IITH infra"], RACI,
-                widths=[6.4, 2.8, 2.6, 2.4, 2.8], font_size=8, center_cols=(1, 2, 3, 4),
+        w.table(["Activity", "IIFT helpdesk / IT", "iorta L2", "iorta L3", "Infra (A: IITH; B: iorta managed "
+                 "services)"], RACI, widths=[6.4, 2.8, 2.6, 2.4, 2.8], font_size=8, center_cols=(1, 2, 3, 4),
                 caption="RACI (R responsible, A accountable, C consulted, I informed)")
 
         # 3 -------------------------------------------------------------------------------
@@ -321,8 +398,9 @@ def build(path: Path):
             ["Emergency", "Fix for a P1/P2, urgent security patch", "IIFT application owner (retrospective CAB "
              "review)", "As needed"],
         ], widths=[2.4, 6.4, 5.4, 2.8], font_size=8, bold_first_col=True, caption="Change types")
-        w.para("Minor enhancements are delivered from the 60-hour annual pool; larger changes follow the change "
-               "request process with impact assessment, quotation at the rate card and approval (MNT-23, MNT-24). "
+        w.para(f"Minor enhancements are delivered from the {price.ENHANCEMENT_HOURS_PER_YEAR}-hour annual pool "
+               "included in the AMC or subscription; larger changes follow the change request process with impact "
+               "assessment, quotation at the rate card in the proposal and approval (MNT-23, MNT-24). "
                "Data corrections in production are changes: they are scripted, reviewed, run in a transaction, and "
                "recorded in the audit trail or the change ticket.")
 
@@ -386,7 +464,10 @@ def build(path: Path):
         w.h1("Operational Runbooks")
         w.para("Each runbook lists who may run it, the steps and how to verify the result. Run every runbook once in "
                "UAT during knowledge transfer. Production commands are run on the VMs through the bastion, under a "
-               "change ticket unless stated otherwise.")
+               "change ticket unless stated otherwise. The runbooks are written for the Option A deployment on VMs; "
+               "under Option B the application steps are the same and the infrastructure steps (start and stop, "
+               "image roll-out, restore, failover) are performed by iorta's managed services on the container "
+               "service and the managed database, as set out in chapter 12.")
         runbook(w, 1, "Start and stop the service",
                 "Planned stop for maintenance, or restart after an infrastructure event. On production run the steps "
                 "on one application VM at a time so the service stays available.",
@@ -637,6 +718,9 @@ def build(path: Path):
         ], widths=[3.2, 3.6, 6.6, 3.6], font_size=8.5, caption="Backup and DR tests")
 
         # 12 ------------------------------------------------------------------------------
+        managed_services(w)
+
+        # 13 ------------------------------------------------------------------------------
         w.landscape_section()
         w.h1("Configuration Reference", new_page=False)
         w.para("Every environment variable read by the API (apps/api/src/config/app-config.ts), as of this release. "
@@ -670,12 +754,16 @@ def build(path: Path):
         w.table(["#", "Session", "Audience", "Duration", "Materials"], KT_SESSIONS, widths=[0.8, 6.2, 3.8, 1.6, 4.6],
                 font_size=8, center_cols=(0,), caption="Knowledge transfer sessions")
         w.para("Completion criteria: each session delivered and attended; IIFT/IITH staff have run runbooks R1, R2, R5, "
-               "R6, R7 and R8 in UAT unaided; questions log closed.")
+               "R6, R7 and R8 in UAT unaided; questions log closed. These sessions are part of every option; the "
+               "deeper developer transfer that comes with the source code under Option C is in chapter 16.")
 
         # 15 ------------------------------------------------------------------------------
-        onboarding(w)
+        option_c_transition(w)
 
         # 16 ------------------------------------------------------------------------------
+        onboarding(w)
+
+        # 17 ------------------------------------------------------------------------------
         w.h1("Handover Checklist")
         w.table(["Item", "Evidence", "Owner", "Done"], [row + ["☐"] for row in CHECKLIST],
                 widths=[8.2, 4.2, 3.0, 1.6], font_size=8.5, center_cols=(3,), caption="Handover checklist")
@@ -701,16 +789,146 @@ def build(path: Path):
             ["Dead-letter messages (open at month end)", "0", "[n]", "[n]"],
             ["Backups successful / restore test done", "All / quarterly", "[n of n / date]", "[–]"],
             ["Database size / document store size", "Within sizing", "[GB / GB]", "[GB / GB]"],
-            ["Enhancement hours used (year to date)", "60 per year", "[h]", "[h]"],
+            ["Enhancement hours used (year to date)", f"{price.ENHANCEMENT_HOURS_PER_YEAR} per year", "[h]", "[h]"],
+            ["Cloud charges against estimate (Option B)", "Within estimate", "[B$ / B$]", "[B$ / B$]"],
         ], widths=[7.0, 3.4, 3.2, 3.4], font_size=8.5, caption="KPI table")
 
-        # 18 ------------------------------------------------------------------------------
+        # 19 ------------------------------------------------------------------------------
         w.h1("Exit and Transition Plan", new_page=False)
-        w.para("Exit assistance is included in Year 5 and on termination (COM-19, MNT-30). IIFT owns its data, the "
-               "configuration and the custom code delivered under the contract.")
+        w.para(f"Exit assistance is included in Year {price.CONTRACT_YEARS} of the AMC or subscription and on "
+               "termination (COM-19, MNT-30). IIFT owns its data, the configuration and the IIFT-specific code "
+               "delivered under the contract; the core platform source is IIFT's to keep where Option C or an escrow "
+               "release applies.")
         w.table(["Element", "Commitment"], EXIT, widths=[3.6, 13.4], font_size=8.5, bold_first_col=True,
                 caption="Exit and transition")
         w.save(path)
+
+
+def managed_services(w):
+    """Chapter 12: how iorta operates the cloud estate under Option B."""
+    w.h1("Managed Services Operating Model (Option B)")
+    w.para("Under Option B iorta hosts the solution in a cloud account dedicated to IIFT "
+           f"({price.CLOUD_REGION}, DR in a second region) and operates the infrastructure as a managed service "
+           "alongside the application support in chapters 2 to 10. The application processes, SLA, escalation and "
+           "runbooks are unchanged; this chapter adds the infrastructure layer that IITH provides under Option A. "
+           "The scope of the managed services and the fee are in the proposal; the Solution Architecture describes "
+           "the landing zone, environments and shared responsibility.")
+    w.h2("Scope")
+    w.bullets(list(price.MANAGED_SERVICES_INCLUSIONS))
+    w.h2("Roster and on-call")
+    w.table(["Activity", "When", "Who and how"], MANAGED_ROSTER, widths=[6.4, 4.2, 6.4], font_size=8,
+            caption="Managed services roster")
+    w.para("The on-call cloud engineer and the L2 application engineer are different people on the same rota "
+           "schedule, so a P1 bridge call always has both. The escalation matrix in chapter 8 applies; the "
+           "cloud provider's enterprise support case is opened by the cloud engineer for platform faults and its "
+           "reference is recorded on the ticket.")
+    w.h2("Runbook equivalents")
+    w.table(["Runbook", "Option A (VMs)", "Option B (managed services)"], [
+        ["R1 start and stop", "docker compose on each VM", "Scale the service to zero and back; the database is "
+         "stopped only for maintenance through the provider console"],
+        ["R2 deploy a release", "Pull images, migrate job, up -d per VM", "Push images to the registry; run the "
+         "migrate task; update the task definition; rolling deployment with health checks"],
+        ["R3 roll back", "Previous RELEASE tag per VM", "Previous task definition revision; same expand-and-contract "
+         "rule"],
+        ["R4 rotate secrets", "Vault and restart", "Secrets store versions; new task revision picks them up"],
+        ["R5 restore", "pgBackRest point-in-time restore", "Point-in-time restore to a new database instance; switch "
+         "the connection secret; documents from the file-system backup"],
+        ["Local failover", "Promote the standby (section 11.3)", "Automatic Multi-AZ failover, typically within a "
+         "minute; readiness turns green on reconnect"],
+        ["DR invocation", "Section 11.4", "Promote the cross-region replica, scale the standby tasks, switch DNS; "
+         "the same declaration, communication and fail-back steps"],
+    ], widths=[3.2, 5.4, 8.4], font_size=8, bold_first_col=True, caption="Runbooks under Option B")
+    w.h2("Cost report")
+    w.para("Cloud charges are recharged at the provider's cost, or paid by IIFT directly when it holds the account. "
+           "The monthly cost report (section 11 of the monthly service report) shows charges by service and by "
+           "environment against the estimate in the proposal, the budget alerts raised at 80% and 100% of the "
+           "monthly estimate, the exchange rate applied, and the right-sizing actions taken or proposed. The "
+           "quarterly service review decides on reserved capacity and on changes to the reference sizing; "
+           "non-production environments are stopped outside test periods by schedule.")
+    w.h2("SLA reporting")
+    w.table(["Measure", "Reported"], MANAGED_SLA_REPORTING, widths=[4.2, 12.8], font_size=8.5, bold_first_col=True,
+            caption="Managed services section of the monthly report")
+    w.para("Availability is measured at the load balancer and excludes approved maintenance windows. Provider "
+           "service events are reported with the provider's incident reference; the application SLA clock pauses "
+           "for them as it does for IITH infrastructure under Option A, and iorta pursues service credits with the "
+           "provider on IIFT's behalf.")
+
+
+def option_c_transition(w):
+    """Chapter 16: source code handover and transition when IIFT exercises Option C."""
+    w.h1("Option C: Source Code Handover and Transition")
+    w.para(f"Under every option iorta delivers, at go-live and with every release, the source code of the "
+           "IIFT-specific components: configuration, integration adapters, reports, document templates, migration "
+           f"scripts and build scripts. Option C adds the source code of the {PRODUCT} core platform with a "
+           f"structured {price.KNOWLEDGE_TRANSFER_WEEKS}-week knowledge transfer, so that IIFT, IITH or a provider "
+           "IIFT appoints can maintain and extend the solution. It starts after go-live and hypercare exit (week "
+           f"{price.KT_START_WEEK} at the earliest) or later in the contract. Licence rights, price and payment "
+           "milestones are in the proposal; this chapter is the technical transition plan. The escrow alternative "
+           "in the proposal deposits the same package with an agent instead and does not include the knowledge "
+           "transfer.")
+    w.h2("Source code package")
+    w.bullets(list(price.SOURCE_CODE_DELIVERABLES))
+    w.para("The package is the repository at a tagged commit that builds the production release, verified by IIFT "
+           "before the first Option C payment: IIFT clones the repository, runs the pipeline and compares the "
+           "image digests with those running in production. The developer onboarding guide in chapter 17, the "
+           "Solution Architecture, the Data Dictionary and this document are the documentation set; the SBOM lists "
+           "every third-party component with its licence.")
+    w.h2("Knowledge transfer plan")
+    w.para("The plan assumes up to six IIFT/IITH or nominated contractor staff with Node.js, TypeScript, React and "
+           "PostgreSQL experience, released for the full period. The Solution Architect and a Senior Developer are "
+           "on site for the code walkthrough weeks; the rest is delivered remotely with recorded sessions.")
+    w.table(["Week", "Activity", "Outcome and acceptance evidence"],
+            [[str(week), activity, outcome] for week, activity, outcome in price.KT_PLAN],
+            widths=[1.4, 10.0, 5.6], font_size=8.5, center_cols=(0,), caption="Knowledge transfer plan")
+    w.table(["Week", "Detail"], [
+        ["1", "Transition plan signed: participants, roles, environment and repository access, backlog of tickets "
+              "to be used in the shadow weeks, success criteria"],
+        ["2", "Walkthroughs of the Solution Architecture, Data Dictionary, security controls, integration design and "
+              "the deployment; IIFT team builds and runs the stack locally (chapter 17)"],
+        ["3 and 4", "Module-by-module code walkthroughs with the checklist per module: structure, rules, tests, "
+                    "known limitations; participants complete a small change with a test in each area"],
+        ["5", "IIFT team cuts a release from its own repository through the pipeline, applies a migration, deploys "
+              "to SIT and rolls back; iorta observes only"],
+        ["6", "Shadow support: IIFT developers sit in on live L2 and L3 tickets and releases; ticket log kept"],
+        ["7", "Reverse shadow: IIFT developers resolve tickets and prepare a release; iorta reviews code and "
+              "approves; code review records kept"],
+        ["8", "Competency assessment per participant, documentation handover, open questions closed, handover "
+              "certificate signed"],
+    ], widths=[1.8, 15.2], font_size=8, center_cols=(0,), caption="Week by week")
+    w.h2("Repository and pipeline handover")
+    w.steps(REPOSITORY_HANDOVER)
+    w.h2("Acceptance: handover certificate")
+    w.para("The handover certificate is signed by the IIFT application owner and iorta's project director when all "
+           "of the following are met. Payment milestone C3 in the proposal follows the certificate.")
+    w.table(["Criterion", "Evidence"], [
+        ["Repository, pipeline and infrastructure code transferred and verified", "Build fingerprint matches "
+         "production; pipeline run in IIFT's account"],
+        ["IIFT team has built and deployed a release to SIT without iorta's help", "Week 5 release record"],
+        ["Tickets resolved by IIFT developers in the reverse-shadow week with iorta review", "Ticket log and code "
+         "reviews"],
+        ["Documentation set delivered at the handover version", "Document register"],
+        ["Competency assessment completed for each participant", "Assessment record"],
+        ["Credentials rotated and iorta access removed (or retained only as agreed under the chosen support model)",
+         "Access review"],
+    ], widths=[10.0, 7.0], font_size=8.5, caption="Handover certificate criteria")
+    w.table(["Role", "Name", "Signature / date"], [["IIFT application owner", "[Name]", ""],
+                                                   ["IIFT/IITH development lead", "[Name]", ""],
+                                                   ["iorta TechNXT project director", "[Name]", ""]],
+            widths=[6.0, 6.0, 5.0], caption="Handover certificate")
+    w.h2("Support after handover")
+    w.para("IIFT chooses one of the models below from the month after the certificate; the prices are in the "
+           "proposal. Under Option B the managed services for the cloud estate can continue under any of them.")
+    w.table(["Model", "iorta provides", "IIFT provides", "Basis"], POST_HANDOVER_MODELS,
+            widths=[2.8, 5.6, 5.2, 3.4], font_size=8, bold_first_col=True, caption="Post-handover support models")
+    w.bullets([
+        "Changes IIFT makes to the core after handover are IIFT's; iorta's platform releases under model 2 are "
+        "delivered as upstream releases that IIFT merges, with iorta's L3 help for conflicts in the core.",
+        "Under models 2 and 3 the SLA in chapter 3 applies only to the services iorta still provides; IIFT's own "
+        "support organisation takes over the incident, problem and change processes in chapters 4 to 7, which "
+        "remain valid as written.",
+        "Security patches for third-party components become IIFT's responsibility under model 3; the CI pipeline's "
+        "audit, CodeQL, secret and image scans keep running in IIFT's account.",
+    ])
 
 
 def onboarding(w):
