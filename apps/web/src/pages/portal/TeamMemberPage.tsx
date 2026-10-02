@@ -53,6 +53,7 @@ export default function TeamMemberPage() {
                   children: (
                     <AgentDocuments
                       agentId={data.id}
+                      idType={data.idType}
                       channel={data.agency.channel}
                       canUpload={can(P.portalAgentRegister) && data.status !== 'TERMINATED'}
                       checkRequired={data.status === 'PENDING'}

@@ -1,6 +1,6 @@
 import { Card, Input, Select, Table } from 'antd';
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { useApiQuery, usePagedQuery } from '../../api/hooks';
 import type { AgencyOption } from '../../api/sales-types';
 import type { Money as MoneyValue, Payment, PaymentStatus } from '../../api/types';
@@ -17,6 +17,14 @@ type Filters = {
   agencyId?: string;
 };
 
+/** Initial filters from the URL, e.g. the dashboard links to ?status=PENDING_VERIFICATION. */
+export function paymentFiltersFromUrl(params: URLSearchParams): Filters {
+  const status = PAYMENT_STATUS_OPTIONS.find(
+    (option) => option.value === params.get('status'),
+  )?.value;
+  return { status };
+}
+
 interface Props {
   path: '/portal/billing/payments' | '/backoffice/billing/payments';
   /** Back-office: filter and show the agency or bank that paid. */
@@ -26,7 +34,8 @@ interface Props {
 /** AP-37..41: submitted payments with their verification status. */
 export function PaymentList({ path, showAgency = false }: Props) {
   const links = useSalesLinks();
-  const [filters, setFilters] = useState<Filters>({});
+  const [params] = useSearchParams();
+  const [filters, setFilters] = useState<Filters>(() => paymentFiltersFromUrl(params));
   const payments = usePagedQuery<Payment>(path, filters);
   const agencies = useApiQuery<AgencyOption[]>(showAgency ? '/backoffice/agencies/options' : null);
   const set = (patch: Partial<Filters>) => {

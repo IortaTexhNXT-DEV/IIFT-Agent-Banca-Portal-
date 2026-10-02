@@ -35,6 +35,8 @@ export interface MenuEntry {
   icon: ReactNode;
   /** Visible when the user holds any of these permissions (none = always). */
   anyOf?: string[];
+  /** Highlighted only on this exact path, not on the pages below it (module dashboards). */
+  exact?: boolean;
 }
 
 export interface MenuGroup {
@@ -50,6 +52,7 @@ export const PORTAL_MENU: MenuGroup[] = [
         label: 'Dashboard',
         icon: <DashboardOutlined />,
         anyOf: [P.portalDashboard],
+        exact: true,
       },
       {
         path: '/portal/quotations/new',
@@ -134,6 +137,7 @@ export const BACKOFFICE_MENU: MenuGroup[] = [
         label: 'Dashboard',
         icon: <DashboardOutlined />,
         anyOf: [P.boDashboard],
+        exact: true,
       },
       {
         path: '/backoffice/approvals',
@@ -277,3 +281,18 @@ export const BACKOFFICE_MENU: MenuGroup[] = [
     ],
   },
 ];
+
+/**
+ * Menu key to highlight for a path: the longest entry path that equals the path or is a
+ * parent of it. Exact entries match only their own path, and pages outside the menu
+ * highlight nothing.
+ */
+export function selectedMenuKeys(menu: MenuGroup[], pathname: string): string[] {
+  const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+  const match = menu
+    .flatMap((group) => group.entries)
+    .filter((entry) => path === entry.path || (!entry.exact && path.startsWith(`${entry.path}/`)))
+    .map((entry) => entry.path)
+    .sort((a, b) => b.length - a.length)[0];
+  return match ? [match] : [];
+}

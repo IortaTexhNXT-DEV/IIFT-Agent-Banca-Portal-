@@ -1029,12 +1029,43 @@ async function seedBusiness(staff: Record<string, SessionUser>): Promise<void> {
     }),
   );
 
+  // Operations has already checked the paperwork of older business; the last week stays in
+  // the document queue.
+  const settled = await prisma.policy.findMany({
+    where: { issuedAt: { lt: addDays(businessToday(), -7) } },
+    select: { id: true, allocations: { select: { paymentId: true } } },
+  });
+  const activeAgents = await prisma.agent.findMany({
+    where: { status: 'ACTIVE' },
+    select: { id: true },
+  });
+  const checkedOwners = [
+    ...settled.map((policy) => policy.id),
+    ...settled.flatMap((policy) => policy.allocations.map((a) => a.paymentId)),
+    ...activeAgents.map((agent) => agent.id),
+  ];
+  const toVerify = await prisma.document.findMany({
+    where: { status: 'UPLOADED', systemGenerated: false, ownerId: { in: checkedOwners } },
+    select: { id: true },
+  });
+  for (const document of toVerify) {
+    await as(opsChecker, () => documents.review(opsChecker, document.id, 'VERIFIED'));
+  }
+
   // Payment block evaluation, deliveries and end-of-day.
   await app.get(GracePeriodService).evaluateAll();
   await app.get(OutboxDispatcher).dispatchDue();
   await app.get(NotificationDispatcher).dispatchPending();
   await as(finance, () => app.get(EodService).run(addDays(businessToday(), -1), finance.fullName));
   await as(finance, () => app.get(EodService).run(businessToday(), finance.fullName));
+  // Users have read their older notifications; the five most recent stay unread.
+  await prisma.$executeRaw`
+    UPDATE notification SET read_at = now()
+    WHERE read_at IS NULL AND user_id IS NOT NULL AND id NOT IN (
+      SELECT id FROM (
+        SELECT id, row_number() OVER (PARTITION BY user_id ORDER BY created_at DESC) AS position
+        FROM notification WHERE user_id IS NOT NULL
+      ) ranked WHERE position <= 5)`;
   log(`Business data ready (unpaid within grace: ${npUnpaid})`);
 }
 

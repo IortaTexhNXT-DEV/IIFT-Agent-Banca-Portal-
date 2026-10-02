@@ -121,18 +121,25 @@ a {
   position: sticky;
   top: 67px;
   height: calc(100vh - 67px);
-  overflow-y: auto;
+}
+
+/* Menu scrolls on its own; the collapse button stays in a footer below it. */
+.app-sider .ant-layout-sider-children {
+  display: flex;
+  flex-direction: column;
 }
 
 .app-menu {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   border-inline-end: none !important;
-  padding: 8px 6px 48px;
+  padding: 8px 6px;
 }
 
-.app-sider__toggle {
-  position: absolute;
-  bottom: 8px;
-  left: 12px;
+.app-sider__footer {
+  border-top: 1px solid var(--border);
+  padding: 8px 12px;
 }
 
 .app-content {

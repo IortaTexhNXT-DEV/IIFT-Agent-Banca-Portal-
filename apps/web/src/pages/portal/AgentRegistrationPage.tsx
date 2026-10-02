@@ -190,6 +190,7 @@ function RegistrationSubmitted({
       <Card className="content-card">
         <AgentDocuments
           agentId={agent.id}
+          idType={agent.idType}
           channel={agent.agency.channel}
           canUpload
           checkRequired

@@ -12,7 +12,7 @@ import { useMemo, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 import { useApiQuery } from '../api/hooks';
 import { useAuth } from '../auth/AuthContext';
-import type { MenuGroup } from './menus';
+import { type MenuGroup, selectedMenuKeys } from './menus';
 
 interface Props {
   basePath: '/portal' | '/backoffice';
@@ -55,14 +55,10 @@ export function AppShell({ basePath, moduleName, menu, profilePath }: Props) {
     [menu, can],
   );
 
-  // Highlight the deepest menu entry that prefixes the current path.
-  const selected = useMemo(() => {
-    const paths = menu.flatMap((group) => group.entries.map((entry) => entry.path));
-    const match = paths
-      .filter((path) => location.pathname === path || location.pathname.startsWith(`${path}/`))
-      .sort((a, b) => b.length - a.length)[0];
-    return match ? [match] : [];
-  }, [menu, location.pathname]);
+  const selected = useMemo(
+    () => selectedMenuKeys(menu, location.pathname),
+    [menu, location.pathname],
+  );
 
   const userMenu: MenuProps['items'] = [
     ...(profilePath
@@ -144,13 +140,14 @@ export function AppShell({ basePath, moduleName, menu, profilePath }: Props) {
             onClick={({ key }) => navigate(key)}
             className="app-menu"
           />
-          <Button
-            type="text"
-            className="app-sider__toggle"
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            onClick={() => setCollapsed(!collapsed)}
-            aria-label="Toggle navigation"
-          />
+          <div className="app-sider__footer">
+            <Button
+              type="text"
+              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+              onClick={() => setCollapsed(!collapsed)}
+              aria-label="Toggle navigation"
+            />
+          </div>
         </Layout.Sider>
         <Layout.Content className="app-content">
           <Outlet />

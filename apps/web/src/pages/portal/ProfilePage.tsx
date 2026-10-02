@@ -173,6 +173,7 @@ export default function ProfilePage() {
             <Card className="content-card">
               <AgentDocuments
                 agentId={data.id}
+                idType={data.idType}
                 channel={data.agency.channel}
                 canUpload={can(P.portalProfileUpdate)}
                 title="My documents"

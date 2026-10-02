@@ -181,6 +181,7 @@ export default function AgentDetailPage() {
                     children: (
                       <AgentDocuments
                         agentId={data.id}
+                        idType={data.idType}
                         channel={data.agency.channel}
                         canUpload={manage && !closed}
                         canReview={can(P.boDocumentsVerify)}

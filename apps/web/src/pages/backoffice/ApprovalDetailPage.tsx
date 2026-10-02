@@ -82,6 +82,7 @@ function AgentEvidence({ agentId }: { agentId: string }) {
           )}
           <AgentDocuments
             agentId={data.id}
+            idType={data.idType}
             channel={data.agency.channel}
             canReview={can(P.boDocumentsVerify)}
             checkRequired={data.status === 'PENDING'}

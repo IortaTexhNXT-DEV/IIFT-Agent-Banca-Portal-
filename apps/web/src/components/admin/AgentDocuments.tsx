@@ -28,7 +28,6 @@ import { DocumentReviewActions } from './DocumentReviewActions';
 import { useCodes } from './useCodes';
 
 /** Document types collected for agents and bank officers; an IC copy is needed for approval. */
-const REQUIRED_TYPE = 'IC_COPY';
 const AGENT_DOCUMENT_TYPES = ['IC_COPY', 'PASSPORT_COPY', 'AGENT_LICENCE', 'PHOTO', 'OTHER'];
 const BANCA_DOCUMENT_TYPES = ['IC_COPY', 'PASSPORT_COPY', 'BANK_AUTHORISATION', 'PHOTO', 'OTHER'];
 const EXPIRY_WARNING_DAYS = 30;
@@ -39,7 +38,9 @@ interface Props {
   channel: Channel;
   canUpload?: boolean;
   canReview?: boolean;
-  /** Warn while the mandatory IC copy is missing (pending registrations). */
+  /** Passport holders must provide a passport copy, everyone else an IC copy. */
+  idType?: string;
+  /** Warn while the mandatory identity document is missing (pending registrations). */
   checkRequired?: boolean;
   /** Section heading; omit when the surrounding tab or card already names the list. */
   title?: string;
@@ -71,9 +72,11 @@ export function AgentDocuments({
   channel,
   canUpload = false,
   canReview = false,
+  idType,
   checkRequired = false,
   title,
 }: Props) {
+  const requiredType = idType === 'PASSPORT' ? 'PASSPORT_COPY' : 'IC_COPY';
   const [uploading, setUploading] = useState(false);
   const documents = useApiQuery<DocumentView[]>('/common/documents', {
     ownerType: 'AGENT',
@@ -84,7 +87,7 @@ export function AgentDocuments({
   const missingRequired =
     checkRequired &&
     !documents.isLoading &&
-    !items.some((doc) => doc.docType === REQUIRED_TYPE && doc.status !== 'REJECTED');
+    !items.some((doc) => doc.docType === requiredType && doc.status !== 'REJECTED');
 
   return (
     <>
@@ -107,7 +110,7 @@ export function AgentDocuments({
           className="mb-16"
           type="warning"
           showIcon
-          title={`${types.labelOf(REQUIRED_TYPE)} is required before IIFT can approve the registration`}
+          title={`${types.labelOf(requiredType)} is required before IIFT can approve the registration`}
         />
       )}
       <ErrorAlert error={documents.error} className="mb-16" />
@@ -162,7 +165,7 @@ export function AgentDocuments({
           options={(channel === 'BANCA' ? BANCA_DOCUMENT_TYPES : AGENT_DOCUMENT_TYPES).map(
             (type) => ({
               value: type,
-              label: `${types.labelOf(type)}${type === REQUIRED_TYPE ? ' (required)' : ''}`,
+              label: `${types.labelOf(type)}${type === requiredType ? ' (required)' : ''}`,
             }),
           )}
           onClose={() => setUploading(false)}
