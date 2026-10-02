@@ -77,18 +77,19 @@ SECURITY_CONTROLS = [
      "blind index; encrypted volumes and backups (infrastructure).", "COM-01, COM-10, NFR-08"],
     ["Uploads", "Content type from magic bytes (PDF, PNG, JPEG only); MAX_UPLOAD_MB (10 MB) limit; file name "
      "sanitised and extension forced to match content; SHA-256 recorded; ClamAV INSTREAM scan, and the upload fails "
-     "if the scanner cannot be reached.", "AP-46, COM-06"],
+     "if the scanner cannot be reached. CLAMAV_HOST is mandatory in production.", "AP-46, COM-06"],
     ["Rate limiting", "nginx 20 requests/second per IP (burst 40) on /api; API 300 requests/minute per IP; sign-in "
      "and password change 10/minute.", "NFR-14"],
-    ["Headers", "helmet on API responses; nginx adds HSTS, CSP (self only, frame-ancestors none), X-Frame-Options "
-     "DENY, nosniff, Referrer-Policy and Permissions-Policy; server tokens and x-powered-by removed.", "NFR-14"],
+    ["Headers", "helmet on API responses, with X-Frame-Options DENY and a CSP of default-src 'none' and "
+     "frame-ancestors 'none'; nginx adds HSTS, CSP (self only, frame-ancestors none), X-Frame-Options DENY, nosniff, "
+     "Referrer-Policy and Permissions-Policy; server tokens and x-powered-by removed.", "NFR-14"],
     ["Errors", "Generic message plus correlation id to the client; full details only in server logs.", "NFR-15"],
     ["Logging", "JSON logs; cookie, authorization, CSRF and set-cookie headers redacted; audit values redacted.",
      "NFR-11, NFR-28"],
     ["System APIs", "API key compared by SHA-256 in constant time; only the hash is configured; IP allow-list at "
      "nginx or the firewall; every call logged.", "INT-10"],
-    ["Production guard", "The API refuses to start in production with a non-secure cookie, API docs enabled, or live "
-     "integration without Core, FIN, SMTP and inbound key settings.", "NFR-14"],
+    ["Production guard", "The API refuses to start in production with a non-secure cookie, API docs enabled, no "
+     "CLAMAV_HOST, or live integration without Core, FIN, SMTP and inbound key settings.", "NFR-14"],
     ["Multi-factor authentication", "E-mail one-time code or authenticator app for back-office users; optional for "
      "portal users. Delivered during implementation.", "NFR-09"],
 ]
@@ -135,14 +136,14 @@ IMAGES = [
 ]
 
 PIPELINE = [
-    ["Verify", "npm ci; prisma generate; prettier check; oxlint; tsc type check; unit tests; end-to-end API tests "
-     "against a PostgreSQL 16 service; production build; npm audit (moderate and above)", "Running (.github/workflows/"
-     "ci.yml)"],
+    ["Verify", "npm ci; prisma generate; prettier check; oxlint; tsc type check; API and web unit tests; end-to-end "
+     "API tests against a PostgreSQL 16 service; production build; npm audit (moderate and above); CycloneDX SBOM of "
+     "production dependencies kept as a build artifact", "Running (.github/workflows/ci.yml)"],
     ["Images", "Build API and web images; Trivy scan fails on unfixed CRITICAL or HIGH findings", "Running"],
-    ["Static analysis and secrets", "SAST rules and secret scanning on every pull request", "Delivered during "
-     "implementation"],
-    ["Package", "Tag images with the release version, sign them, attach SBOM and release notes, push to the IITH "
-     "registry", "Delivered during implementation"],
+    ["Static analysis and secrets", "CodeQL (JavaScript and TypeScript, security-extended queries) and a gitleaks "
+     "secret scan of the full git history on every push and pull request", "Running"],
+    ["Package", "Tag images with the release version, sign them, attach the SBOM and release notes, push to the "
+     "IITH registry", "Delivered during implementation"],
     ["Deploy SIT and UAT", "Run the migrate job, roll out containers, smoke tests", "Delivered during implementation"],
     ["Deploy PROD", "After IIFT change approval, in the agreed window, same images as UAT", "Delivered during "
      "implementation"],
@@ -235,10 +236,12 @@ STACK = [
                    ("@tanstack/react-query", "@tanstack/react-query", "Server state"),
                    ("react-router", "react-router", "Routing"), ("recharts", "recharts", "Charts"),
                    ("vite", "vite", "Build tool")]),
-    ("Quality", [("vitest", "vitest", "Unit and API tests"), ("supertest", "supertest", "HTTP tests"),
+    ("Quality", [("vitest", "vitest", "Unit, component and API tests"), ("supertest", "supertest", "HTTP tests"),
+                 ("@testing-library/react", "@testing-library/react", "Web component tests"),
                  ("oxlint", "oxlint", "Linting"), ("prettier", "prettier", "Formatting")]),
     ("Delivery", [("Docker images", "node:22-bookworm-slim, nginx-unprivileged 1.29", "Containers"),
-                  ("GitHub Actions / GitLab CI", "ci.yml", "Pipeline"), ("Trivy", "0.28 action", "Image scan")]),
+                  ("GitHub Actions / GitLab CI", "ci.yml", "Pipeline"), ("CodeQL", "v3 action", "Static analysis"),
+                  ("gitleaks", "8.21.2", "Secret scan"), ("Trivy", "0.28 action", "Image scan")]),
 ]
 
 
@@ -255,8 +258,9 @@ def integration(w, figs):
     w.bullets([
         "**Atomic capture.** The outbox row is inserted in the same transaction as the business change, so a message "
         "is never lost and never sent for a change that rolled back.",
-        "**At-least-once delivery with idempotency.** The outbox id is sent as the Idempotency-Key header; the "
-        "receiver must ignore a key it has already processed. This is part of the interface specification.",
+        "**At-least-once delivery with idempotency.** The outbox id is sent as the Idempotency-Key header, unless "
+        "the payload carries its own business key (EOD postings), which is sent instead; the receiver must ignore a "
+        "key it has already processed. This is part of the interface specification.",
         "**Retry with back-off.** Connection errors, timeouts, HTTP 5xx, 408 and 429 are retried after 1, 2, 4, 8 "
         "... minutes, capped at 60 minutes. Other 4xx responses mean the message is wrong and go straight to "
         "dead-letter.",
@@ -289,9 +293,10 @@ def integration(w, figs):
            "reconciles receipts: in live mode against the receipt references FIN reports as posted for that date; in "
            "simulated mode against RECEIPT_POSTED messages delivered from the outbox. The result is MATCHED or "
            "MISMATCH with the unmatched receipt numbers. Finance can re-run EOD for any past date from the "
-           "back-office; the eod_run row for the date is updated, not duplicated. A re-run queues a fresh "
-           "EOD_POSTING carrying the same business date, so the interface specification defines the business date as "
-           "FIN's replacement key for EOD postings.")
+           "back-office; the eod_run row for the date is updated, not duplicated. Each posting carries a revision "
+           "number, the idempotency key EOD-<date>-R<n> and replacesPreviousRevision (true from the second revision). "
+           "The dispatcher sends that key to FIN, so FIN can reject a repeated delivery of the same revision and "
+           "replace the earlier revision for the date; the interface specification sets out this behaviour.")
     w.h2("Simulated and live modes")
     w.para("INTEGRATION_MODE=simulated records every outbound message and marks its reference as simulated without "
            "calling external systems, so the full flow can be built and tested before IITH endpoints exist. In live "
@@ -326,8 +331,9 @@ def security(w, figs):
         "lifecycle against a real database on every CI run.",
         "tools/security/security-checks.mjs runs repeatable OWASP Top 10 checks against a test environment before "
         "each release.",
-        "CI blocks a release on moderate or higher npm audit findings and on unfixed critical or high container "
-        "image findings.",
+        "CI runs CodeQL (security-extended queries) and a gitleaks secret scan of the full history on every push "
+        "and pull request, and blocks a release on moderate or higher npm audit findings and on unfixed critical or "
+        "high container image findings.",
         "An independent VAPT is performed before go-live; no critical or high finding may remain open (NFR-13).",
     ])
 
@@ -510,8 +516,8 @@ def nfr(w):
          "Ant Design accessible components, keyboard navigation, consistent layouts in both applications"],
         ["API standards (NFR-25)", "REST, JSON, OpenAPI 3", "/api/v1 versioning; ISO 8601 dates; documented error "
          "body; OpenAPI description in docs/api"],
-        ["Maintainability (NFR-20, 21)", "Modular, documented, tested", f"{unit_files} unit test files "
-         f"({unit_cases} cases) and {e2e_files} end-to-end suites ({e2e_cases} cases) run in CI; lint, format and "
+        ["Maintainability (NFR-20, 21)", "Modular, documented, tested", f"{unit_files} API and web unit test "
+         f"files ({unit_cases} cases) and {e2e_files} end-to-end suites ({e2e_cases} cases) run in CI; lint, format and "
          "type checks"],
     ], widths=[3.6, 5.2, 8.2], font_size=8, bold_first_col=True, caption="Non-functional targets and design")
     w.h2("Monitoring and health")

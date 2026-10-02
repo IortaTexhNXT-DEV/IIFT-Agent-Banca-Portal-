@@ -42,6 +42,25 @@ SUITE_PURPOSE = {
     "auth.e2e-spec.ts": "Sign-in, cookie flags, lockout, password change, logout and session revocation",
     "operations.e2e-spec.ts": "Onboarding, AML review, issues with SLA and other back-office journeys",
     "policy-lifecycle.e2e-spec.ts": "Quotation to policy with maker-checker payment, agency block, referral approval",
+    "plan-label.spec.ts": "Configured plan names on documents and the e-signature page, with fallback to the code",
+    "workflow-payload.spec.ts": "Encrypted values removed from approval request payloads before they are shown",
+    # Web application (Vitest, Testing Library, jsdom)
+    "client.test.ts": "API client: base path, CSRF header, uploads, error mapping, session-ended handling",
+    "ErrorAlert.test.tsx": "Error messages, validation details and the support reference for server errors",
+    "Money.test.tsx": "Amount display",
+    "RequirePermission.test.tsx": "Pages shown only to users holding the permission",
+    "StatusTag.test.tsx": "Status labels and colours",
+    "menus.test.ts": "Menu highlighting for the current page",
+    "format.test.ts": "Money, number, date and file-size formatting in Brunei dollars and local time",
+    "permissions.test.ts": "Permission codes unique, prefixed by audience, approval permissions grouped",
+    "status.test.ts": "Status colour mapping",
+    "LoginPage.test.tsx": "Sign-in form: validation, forced password change, rejected credentials, ended session",
+    "CellText.test.tsx": "Table cell text",
+    "links.test.ts": "Links to record pages for each audience and from notifications",
+    "values.test.ts": "Display of approval values: hidden encrypted and hashed keys, labels, money and dates",
+    "NomineesEditor.test.ts": "Nominee rows: existing ids kept, blank ID number keeps the stored one, shares",
+    "PaymentList.test.tsx": "Payment list filtered by the status in the URL",
+    "options.test.ts": "Option labels, policy reference and term display",
 }
 
 LICENCE_NOTES = {
@@ -56,8 +75,13 @@ LIMITATIONS = [
     ["Service-level unit coverage", "Unit tests concentrate on rules and calculations; most services are exercised "
      "through the end-to-end suite only.", "Add unit and SIT automation; reach at least 80% line coverage on rating, "
      "billing and workflow modules", "Weeks 6–19"],
-    ["Front-end evidence", "Lint, type-check and build evidence for the web application is captured separately.",
-     "Refresh this report after the front-end build; add Playwright smoke tests to CI", "Weeks 6–16"],
+    ["Front-end tests", "Unit and component tests cover the API client, formatting, permissions, navigation and "
+     "shared components; complete pages are not yet tested in a browser.",
+     "Add Playwright smoke tests of the main portal and back-office journeys to CI", "Weeks 6–16"],
+    ["Front-end bundle size", "The Ant Design vendor chunk is about 1.38 MB raw (438 kB gzip). It is cached "
+     "long-term and pages are already split by route, so it is loaded once per release.",
+     "Watch the size at each release; import components more selectively if first-load time on branch networks "
+     "approaches the NFR-01 target", "Each release"],
     ["Integration adapters", "Core, FIN, AML provider and SMS adapters run in simulated mode until IIFT endpoints "
      "are available.", "Contract tests per interface specification; joint tests with system owners", "Weeks 8–17"],
     ["Performance evidence", "No load test results yet.", "k6 load, stress and soak tests on production-like SIT "
@@ -137,6 +161,13 @@ def ci_steps():
             dockerfile = re.search(r"docker build -f (\S+)", step.get("run", ""))
             if not step.get("name") and dockerfile:
                 label = f"Build image from {dockerfile.group(1)}"
+            uses, options = step.get("uses", ""), step.get("with", {})
+            if not step.get("name") and "codeql-action/init" in uses:
+                label = f"CodeQL set-up: {options.get('languages')}, {options.get('queries')}"
+            elif not step.get("name") and "codeql-action/analyze" in uses:
+                label = "CodeQL analysis (SAST)"
+            elif not step.get("name") and "upload-artifact" in uses:
+                label = f"Keep {options.get('path')} as build artifact"
             if any(skip in label for skip in ("actions/checkout", "actions/setup-node", "npm install -g")):
                 continue
             action = step.get("run") or step.get("uses", "")
@@ -144,6 +175,15 @@ def ci_steps():
             action = action if len(action) < 70 else action[:67] + "…"
             rows.append([job_name, literal(label), literal(action)])
     return rows
+
+
+def largest_web_chunk(build_text):
+    """(file, raw kB, gzip kB) of the largest JavaScript chunk in the Vite build output."""
+    chunks = re.findall(r"assets/(\S+\.js)\s+([\d,.]+) kB\s+│ gzip:\s+([\d,.]+) kB", build_text or "")
+    if not chunks:
+        return None
+    name, raw, gzip = max(chunks, key=lambda c: float(c[1].replace(",", "")))
+    return re.sub(r"-[\w-]{8}\.js$", "", name), raw, gzip
 
 
 def front_end_evidence():
@@ -154,21 +194,38 @@ def front_end_evidence():
     def summarise_text(text):
         if text is None:
             return PENDING
+        exit_code = re.search(r"exit code: (\d+)", text)
+        if exit_code:
+            return "No errors reported" if exit_code.group(1) == "0" else f"Failed (exit code {exit_code.group(1)})"
         return "No errors reported" if "error" not in text.lower() else text.splitlines()[-1][:80]
 
     lint_text = PENDING
     if lint is not None:
         diagnostics = lint.get("diagnostics", lint) if isinstance(lint, dict) else lint
-        errors = sum(1 for item in diagnostics if isinstance(item, dict) and item.get("severity") == "error") \
-            if isinstance(diagnostics, list) else lint.get("errors", 0)
-        lint_text = f"{errors} errors"
+        if isinstance(diagnostics, list):
+            errors = sum(1 for item in diagnostics if isinstance(item, dict) and item.get("severity") == "error")
+            warnings = sum(1 for item in diagnostics if isinstance(item, dict) and item.get("severity") == "warning")
+        else:
+            errors, warnings = lint.get("errors", 0), lint.get("warnings", 0)
+        lint_text = f"{errors} errors, {warnings} warnings"
+        if isinstance(lint, dict) and lint.get("number_of_files"):
+            lint_text += f" ({lint['number_of_files']} files, {lint.get('number_of_rules')} rules)"
+    build_text = summarise_text(build)
+    chunk = largest_web_chunk(build)
+    if chunk and build_text == "No errors reported":
+        build_text += f"; largest chunk {chunk[0]} {chunk[1]} kB ({chunk[2]} kB gzip)"
     return [["Web lint (oxlint)", lint_text], ["Web type check (tsc)", summarise_text(typecheck)],
-            ["Web production build (Vite)", summarise_text(build)]]
+            ["Web production build (Vite)", build_text]]
 
 
 # --- Report sections --------------------------------------------------------------------------
+def coverage_scope(ev):
+    """Number of API source files the coverage figures are measured over."""
+    return len([path for path in ev["e2e_cov"] if path != "total"])
+
+
 def summary_section(w, ev):
-    unit, e2e = ev["unit"], ev["e2e"]
+    unit, e2e, web = ev["unit"], ev["e2e"], ev["web"]
     static = ev["static"]["results"] if ev["static"] else []
     audit_total = ev["audit"]["metadata"]["vulnerabilities"]["total"]
     rows = [[f"{r['check']} ({r['tool']})", f"{r['errors']} errors, {r['warnings']} warnings" +
@@ -177,8 +234,12 @@ def summary_section(w, ev):
     rows += [
         ["API unit tests", f"{unit['numPassedTests']} of {unit['numTotalTests']} passed"],
         ["API end-to-end tests", f"{e2e['numPassedTests']} of {e2e['numTotalTests']} passed"],
-        ["End-to-end line coverage", f"{ev['e2e_cov']['total']['lines']['pct']}%"],
-        ["Unit line coverage", f"{ev['unit_cov']['total']['lines']['pct']}%"],
+        ["Web unit and component tests", f"{web['numPassedTests']} of {web['numTotalTests']} passed"
+         if web else PENDING],
+        ["End-to-end line coverage (API)", f"{ev['e2e_cov']['total']['lines']['pct']}% of {coverage_scope(ev)} "
+                                           "source files"],
+        ["Unit line coverage (API)", f"{ev['unit_cov']['total']['lines']['pct']}% of {coverage_scope(ev)} "
+                                     "source files"],
         ["Dependency vulnerabilities (npm audit)", f"{audit_total} found"],
         ["Runtime packages in licence inventory", f"{ev['licences']['total']}"],
     ]
@@ -189,7 +250,8 @@ def summary_section(w, ev):
            "and the report is rebuilt from the evidence files each time they are refreshed.")
     w.table(["Measure", "Result"], rows, widths=[7.0, 10.0], font_size=8.5, bold_first_col=True,
             caption="Quality results")
-    w.para("Static analysis, both test suites and the dependency audit are clean. End-to-end coverage is "
+    w.para("Static analysis, the three test suites and the dependency audit are clean. Coverage is measured over "
+           f"all {coverage_scope(ev)} API source files, including files that no test loads. End-to-end coverage is "
            f"{ev['e2e_cov']['total']['lines']['pct']}% of lines because those tests drive the real HTTP pipeline "
            "against PostgreSQL. Unit coverage is lower by design at this stage: unit tests target the calculation "
            "and rule code where defects are most costly. Section 5 sets the coverage targets for implementation.")
@@ -267,19 +329,22 @@ def static_section(w, ev):
 
 
 def tests_section(w, ev):
-    unit, e2e = ev["unit"], ev["e2e"]
+    unit, e2e, web = ev["unit"], ev["e2e"], ev["web"]
     w.h1("Automated tests")
     w.para(f"Unit tests run with Vitest and need no database. End-to-end tests start the API with the production "
            "HTTP pipeline (the same middleware, guards, validation and error handling as the server) against a "
-           "PostgreSQL 16 database, and call it over HTTP. Both suites run in CI on every change.")
-    w.table(["Suite", "Tests", "Passed", "Failed", "Run"], [
-        ["API unit tests", str(unit["numTotalTests"]), str(unit["numPassedTests"]), str(unit["numFailedTests"]),
-         format_timestamp(unit["startTime"])],
-        ["API end-to-end tests", str(e2e["numTotalTests"]), str(e2e["numPassedTests"]), str(e2e["numFailedTests"]),
-         format_timestamp(e2e["startTime"])],
-    ], widths=[4.4, 1.8, 1.8, 1.8, 7.2], font_size=8.5, center_cols=(1, 2, 3), caption="Test results")
+           "PostgreSQL 16 database, and call it over HTTP. Web unit and component tests run with Vitest and Testing "
+           "Library in a simulated browser (jsdom) and cover the API client, formatting, permissions, navigation and "
+           "shared components. All three suites run in CI on every change.")
+    suites = [("API unit tests", unit), ("API end-to-end tests", e2e)] + ([("Web unit and component tests", web)]
+                                                                          if web else [])
+    w.table(["Suite", "Files", "Tests", "Passed", "Failed", "Run"], [
+        [name, str(len(result["testResults"])), str(result["numTotalTests"]), str(result["numPassedTests"]),
+         str(result["numFailedTests"]), format_timestamp(result["startTime"])] for name, result in suites
+    ], widths=[4.6, 1.4, 1.5, 1.5, 1.5, 6.5], font_size=8.5, center_cols=(1, 2, 3, 4), caption="Test results")
     w.h2("What the suites cover", numbered=False)
-    w.table(["Test file", "What it asserts", "Tests", "Passed"], suite_rows(unit) + suite_rows(e2e),
+    w.table(["Test file", "What it asserts", "Tests", "Passed"],
+            [row for _, result in suites for row in suite_rows(result)],
             widths=[4.6, 9.4, 1.5, 1.5], font_size=8, center_cols=(2, 3), caption="Test files")
     w.para("Every test title is listed in Annex A.")
 
@@ -287,6 +352,11 @@ def tests_section(w, ev):
 def coverage_section(w, ev):
     w.h1("Coverage")
     unit_total, e2e_total = ev["unit_cov"]["total"], ev["e2e_cov"]["total"]
+    w.para(f"Coverage is measured with the V8 provider over all {coverage_scope(ev)} API source files under "
+           "apps/api/src, excluding the Prisma database client in src/generated, the test files and the start-up "
+           "file main.ts. Files that a suite never loads count as uncovered. Earlier versions of this report measured end-to-end "
+           "coverage over the files the tests loaded, so the figures here are lower but complete. Front-end "
+           "coverage is not yet measured.")
     w.table(["Measure", "Unit tests", "End-to-end tests"], [
         [metric.title(), f"{unit_total[metric]['pct']}%", f"{e2e_total[metric]['pct']}%"]
         for metric in ("lines", "statements", "functions", "branches")
@@ -323,7 +393,8 @@ def dependencies_section(w, ev):
     w.para(f"npm audit reports {vulns['total']} known vulnerabilities across {deps['total']} installed packages "
            f"({deps['prod']} production, {deps['dev']} development, {deps['optional']} optional). CI fails on any "
            "moderate or higher finding, and a container scan (Trivy) fails the image build on any fixable Critical "
-           "or High finding.")
+           "or High finding. Each CI run also produces a CycloneDX software bill of materials of the production "
+           "dependencies (npm sbom), kept as a build artifact.")
     w.table(["Severity", "Critical", "High", "Moderate", "Low", "Info", "Total"],
             [["Findings", *[str(vulns[k]) for k in ("critical", "high", "moderate", "low", "info", "total")]]],
             widths=[3.2, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3], font_size=8.5, center_cols=(1, 2, 3, 4, 5, 6))
@@ -346,11 +417,12 @@ def metrics_section(w, ev):
     m = ev["metrics"]
     w.h1("Code metrics", new_page=False)
     w.table(["Measure", "Value"], [
-        ["API source files", f"{m['api_source']['files']}"],
+        ["API source files (including unit test files)", f"{m['api_source']['files']}"],
         ["API source lines (code / comment / blank)",
          f"{m['api_source']['code']:,} / {m['api_source']['comment']:,} / {m['api_source']['blank']:,}"],
         ["End-to-end test files and lines of code", f"{m['api_e2e_tests']['files']} files, {m['api_e2e_tests']['code']:,} lines"],
-        ["Unit test files", str(m["api_unit_test_files"])],
+        ["API unit test files", str(m["api_unit_test_files"])],
+        ["Web unit and component test files", str(len(ev["web"]["testResults"])) if ev["web"] else PENDING],
         ["Seed and reference data (files / lines of code)",
          f"{m['api_prisma_seed_and_reference']['files']} / {m['api_prisma_seed_and_reference']['code']:,}"],
         ["Functional modules", str(len(m["api_modules"]))],
@@ -370,7 +442,8 @@ def maintainability_section(w):
         "Business behaviour that IIFT will want to change is configuration, not code. Products, plans and rate "
         "tables, questionnaires, workflow definitions and approval thresholds, security and business parameters "
         "(password policy, lockout, session limits, grace period, SLA hours) and master data are maintained in the "
-        "back-office under maker-checker and take effect without a release.",
+        "back-office, audited and take effect without a release. Product and rate changes are checked by a second "
+        "person until a maker-checker approval type for products is added during implementation.",
         "The API, the web tier and the database schema are versioned together. Database changes are applied by "
         "versioned SQL migrations, and the same container images move from SIT to UAT to production.",
     ])
@@ -392,6 +465,7 @@ def build() -> Path:
         "licences": load_json("runtime-dependency-licences.json"),
         "metrics": load_json("code-metrics-api.json"),
         "static": load_json("api-static-analysis.json"),
+        "web": load_json("web-unit-tests.json"),
     }
     w = new_report(f"{brand.PRODUCT} – {TITLE}", "Code standards and quality",
                    f"iorta TechNXT | {brand.PRODUCT} – {TITLE}")
@@ -418,7 +492,8 @@ def build() -> Path:
         maintainability_section(w)
         limitations_section(w)
         w.h1("Annex A – Test titles", numbered=False)
-        w.table(["Test file", "Test", "Result"], test_titles(ev["unit"]) + test_titles(ev["e2e"]),
+        w.table(["Test file", "Test", "Result"], test_titles(ev["unit"]) + test_titles(ev["e2e"])
+                + (test_titles(ev["web"]) if ev["web"] else []),
                 widths=[4.4, 10.8, 1.8], font_size=7.5, padding=15, caption="All automated tests")
         evidence_annex(w, "Annex B – Evidence files")
         return save_and_export(w, OUTPUT)

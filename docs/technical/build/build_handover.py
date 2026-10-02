@@ -489,7 +489,10 @@ def build(path: Path):
                  "still RUNNING.",
                  "The run for the date is updated in place with new totals, report and FIN file; reconciliation runs "
                  "again.",
-                 "Tell Finance that a fresh EOD_POSTING was sent for the date."],
+                 "The new EOD_POSTING carries the next revision number, the idempotency key EOD-<date>-R<n> and "
+                 "replacesPreviousRevision=true when an earlier revision was sent, so FIN replaces the earlier "
+                 "revision for the date and ignores a repeated delivery of the same one.",
+                 "Tell Finance which revision was sent for the date."],
                 verify="Status COMPLETED; totals match the policy and collection reports for the date; reconciliation "
                        "MATCHED or explained.",
                 permission="Finance officer or L2 with bo.eod.run.")
@@ -772,8 +775,9 @@ def onboarding(w):
         "Database changes only by migration (npx prisma migrate dev --name <change>), reviewed in the pull request, "
         "expand-and-contract for anything already in production; update dictionary_text.py so the Data Dictionary "
         "build passes.",
-        "Tests: unit tests next to the code (*.spec.ts); end-to-end tests in apps/api/test for new endpoints and "
-        "permissions.",
+        "Tests: API unit tests next to the code (*.spec.ts); end-to-end tests in apps/api/test for new endpoints and "
+        "permissions; web unit and component tests next to the code (*.test.ts, *.test.tsx) with Vitest and Testing "
+        "Library. npm test --workspaces runs the API and web unit tests.",
         "British English in user-facing text; Shariah-appropriate terms (participant, contribution, takaful).",
     ])
     w.h2("How to")

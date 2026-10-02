@@ -488,9 +488,10 @@ class ProposalWriter:
         paragraph.add_run().add_picture(str(image_path), width=Cm(width_cm))
         self._caption(f"Figure {self._next_figure()}: {caption}")
 
-    def figure_grid(self, items, columns=2, max_width_cm=8.2, max_height_cm=5.6):
+    def figure_grid(self, items, columns=2, max_width_cm=8.2, max_height_cm=5.6, portrait_max_height_cm=10.0):
         """Lay out (image_path, caption, aspect_ratio) items in a borderless grid,
-        each image scaled to fit max_width x max_height and captioned."""
+        each image scaled to fit max_width x max_height and captioned. Portrait
+        images (such as a document page) may be taller so that they stay legible."""
         table = self.doc.add_table(rows=0, cols=columns)
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
         _no_table_borders(table)
@@ -499,7 +500,8 @@ class ProposalWriter:
             row = table.add_row()
             _row_flags(row)
             for cell, (path, caption, aspect) in zip(row.cells, items[start:start + columns]):
-                width = min(max_width_cm, max_height_cm / aspect)
+                height_limit = portrait_max_height_cm if aspect > 1 else max_height_cm
+                width = min(max_width_cm, height_limit / aspect)
                 picture = cell.paragraphs[0]
                 picture.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 picture.paragraph_format.space_after = Pt(0)

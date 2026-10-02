@@ -162,7 +162,9 @@ def functional_solution(w: ProposalWriter, figs: dict):
            "permission needed at each level and amount thresholds that add a level, for example a second approval "
            "from B$300,000 sum covered. On final approval a handler applies the change in the same database "
            "transaction as the audit record and the notification event. The API rejects any attempt by the maker to "
-           f"approve their own request. Journey 9 in Section {sec('journeys')} shows the flow.")
+           f"approve their own request. When Compliance confirms an AML match, the pending requests for that agent or "
+           "participant are rejected automatically with the Compliance remarks and the maker is notified. Journey 9 "
+           f"in Section {sec('journeys')} shows the flow.")
     w.table(["Transaction", "Level 1 checker", "Level 2 checker", "Rule"], WORKFLOWS, widths=[5.6, 3.8, 3.8, 3.8],
             font_size=8, caption="Default workflow definitions, confirmed in design")
     w.h2("Seven-day grace period")
@@ -268,8 +270,10 @@ def product_flows(w: ProposalWriter):
         "The Mortgage Takaful engine (FTP-HP, FTP-NP, PFT) calculates contribution from financing amount, financing "
         "period, profit rate and age next birthday using decreasing-term rate tables. Annual products use plan-based "
         "tables with riders and cover periods.",
-        "Rate tables, loadings, minimum contributions, rounding and authority limits are master data. They are changed "
-        "under maker-checker, versioned with effective dates, and each quotation records the version used. The working "
+        "Rate tables, loadings, minimum contributions, rounding and authority limits are master data, changed in the "
+        "back-office with every change audited. Maker-checker approval and effective-dated versions of rate tables, "
+        "with the version recorded on each quotation, are added during implementation; until then a second person "
+        "checks each rate change against IIFT's signed rate sheet. The working "
         "application holds indicative rates; IIFT's actuarial rates and wakalah fee and tabarru' split are loaded and "
         "verified during design and SIT.",
     ])
@@ -280,7 +284,9 @@ def product_flows(w: ProposalWriter):
                 widths=[1.9, 3.3, 6.4, 5.4], font_size=8, padding=30)
     w.h2("End-of-day processing")
     w.para("EOD runs on a schedule and can be re-run from the back-office. One locked job runs across application "
-           "nodes, and the run is idempotent, so a re-run never duplicates FIN entries.")
+           "nodes. Each posting to FIN carries a revision number and its own idempotency key, and a re-run is marked "
+           "as replacing the previous revision, so FIN can reject duplicates and keep only the latest figures for "
+           "the day.")
     w.table(["#", "Step", "Description"], EOD_STEPS, widths=[0.8, 3.6, 12.6], center_cols=(0,), font_size=8)
 
 
@@ -344,7 +350,7 @@ TECH_STACK = [
     ["Documents and reports", "pdfkit for PDFs, exceljs for Excel; encrypted local volume, MinIO or S3", "No native dependencies"],
     ["Jobs", "NestJS scheduler with PostgreSQL advisory locks", "One runner across replicas for EOD, grace period and outbox"],
     ["Observability", "pino JSON logs with correlation id; health endpoints; Prometheus metrics; Grafana", "Central monitoring and alerting"],
-    ["Testing", "Vitest (unit and API tests against PostgreSQL), Playwright, k6", "Run in the CI pipeline"],
+    ["Testing", "Vitest (unit and API tests against PostgreSQL; web component tests with Testing Library), Playwright, k6", "Run in the CI pipeline"],
     ["Delivery", "Non-root Docker images; docker compose on-premise; Kubernetes or ECS optional; GitHub Actions or GitLab CI", "Same images in every environment"],
 ]
 
@@ -395,8 +401,9 @@ def architecture(w: ProposalWriter, figs: dict):
     w.h2("Technology stack")
     w.table(["Layer", "Technology and version", "Reason"], TECH_STACK, widths=[2.8, 8.0, 6.2], font_size=8,
             bold_first_col=True, caption=f"{PRODUCT} technology stack")
-    w.para("All components are open source under permissive licences. A software bill of materials is delivered "
-           "with the technical manual (COM-17).")
+    w.para("All components are open source under permissive licences. The CI pipeline produces a CycloneDX software "
+           "bill of materials of the production dependencies on every build; it is delivered with the technical "
+           "manual (COM-17).")
     w.h2("Non-functional requirements")
     w.para(f"Security requirements (NFR-08 to NFR-14) are covered in Section {sec('security')}. The remaining "
            "targets are:")
@@ -415,7 +422,7 @@ SECURITY_CONTROLS = [
     ["Encryption in transit", "TLS 1.2 or later with HSTS; TLS also for database, SMTP, LDAPS and APIs", "COM-10, NFR-08"],
     ["Encryption at rest", "IC and passport numbers encrypted per field with AES-256-GCM, keys held outside the database; HMAC-SHA256 blind index for exact search; masked on screen; encrypted document storage and backups", "COM-01, COM-10, NFR-08"],
     ["Input and output", "Whitelist validation of every request body; parameterised queries only; output encoding; CSP and security headers", "NFR-14, NFR-30"],
-    ["File uploads", "Type allow-list with magic-byte check, size limit, SHA-256 checksum, ClamAV scan hook; files served only through authorised API calls", "AP-46, COM-06"],
+    ["File uploads", "Type allow-list with magic-byte check, size limit, SHA-256 checksum, ClamAV malware scan (mandatory in production); files served only through authorised API calls", "AP-46, COM-06"],
     ["Audit", "Append-only table; a database trigger rejects UPDATE and DELETE; the application role can only insert and read; before and after values, user, time, IP, correlation id", "BO-26–28, COM-03, NFR-11"],
     ["Errors and secrets", "Generic error messages with correlation id; secrets in environment or vault, rotated on staff change and yearly", "NFR-15, INT-10"],
     ["System APIs", "mTLS or OAuth2 client credentials for integrations; rate limiting", "INT-09, INT-10"],
@@ -455,8 +462,8 @@ def security(w: ProposalWriter):
     w.h2("Controls")
     w.table(["Control", "Implementation (defaults configurable)", "RFP reference"], SECURITY_CONTROLS,
             widths=[3.0, 10.6, 3.4], font_size=8, bold_first_col=True, caption="Security controls")
-    w.para("The audit trigger, field-level encryption, encrypted document storage and the ClamAV upload hook already "
-           "run in the working application. MFA, Active Directory sign-on and the remaining parameters are set up "
+    w.para("The audit trigger, field-level encryption, encrypted document storage and the ClamAV upload scan already "
+           "run in the working application; the API will not start in production without the scanner configured. MFA, Active Directory sign-on and the remaining parameters are set up "
            "during implementation. Personal data is limited to what products and AML/KYC rules need; a data "
            "inventory with purpose and retention is delivered with the Solution Architecture.")
     w.h2("Secure development lifecycle")
@@ -492,8 +499,8 @@ ENVIRONMENTS = [
 PIPELINE = [
     ["Commit and review", "Branch, pull request, mandatory peer review"],
     ["Build", "Type check, lint, compile front end and API, build container images"],
-    ["Test", "Unit and API tests against PostgreSQL; coverage report"],
-    ["Scan", "Static analysis, dependency, secret and image scans"],
+    ["Test", "Unit and API tests against PostgreSQL; web component tests; coverage report"],
+    ["Scan", "CodeQL static analysis, npm audit, gitleaks secret scan and Trivy image scan"],
     ["Package", "Versioned, signed images with release notes and SBOM"],
     ["Deploy to SIT/UAT", "Automated deployment and migration; Playwright smoke tests"],
     ["Approve", "Test sign-off and IIFT change approval"],

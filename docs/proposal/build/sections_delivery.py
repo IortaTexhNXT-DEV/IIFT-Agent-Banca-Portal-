@@ -58,7 +58,7 @@ RACI = [
 ]
 
 TEST_LEVELS = [
-    ["Unit", "Business rules, rating engines, validators", "iorta developers", "DEV / CI", "Vitest; coverage ≥ 70% on core modules"],
+    ["Unit", "Business rules, rating engines, validators, web components", "iorta developers", "DEV / CI", "Vitest and Testing Library; coverage ≥ 70% on core modules"],
     ["API / integration", "Endpoints, permissions per role, database constraints", "iorta", "CI with PostgreSQL", "Vitest e2e; every endpoint has positive and negative tests"],
     ["SIT", "End-to-end flows across portal, back-office and interfaces", "iorta QA, IITH system owners", "SIT", "No open Critical/High defects; ≥ 95% pass"],
     ["Regression", "Automated suite re-run every sprint and release", "iorta QA", "SIT", "Playwright; 100% of critical paths automated"],

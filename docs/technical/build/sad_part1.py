@@ -17,16 +17,21 @@ STATUS_TODAY = [
     ["Transactional outbox, retry, dead-letter, integration monitor, reconciliation", "Running", "–"],
     ["Core, FIN, AML, SMS, SMTP and LDAP adapters", "Running in simulated mode",
      "Endpoint mapping and payload formats agreed in the interface specification (DEL-09)"],
-    ["Container images, nginx web tier, Docker Compose, CI pipeline", "Running", "CD stages to SIT, UAT and PROD"],
-    ["Health endpoints and Prometheus metrics", "Running", "Dashboards, alert rules and log shipping"],
+    ["Container images, nginx web tier, Docker Compose, CI pipeline with CodeQL, secret scan, dependency and image "
+     "scans and SBOM", "Running", "Image signing, registry push and CD stages to SIT, UAT and PROD"],
+    ["Health endpoints and Prometheus metrics", "Running", "Dashboards, alert rules, log shipping and SIEM "
+     "forwarding"],
     ["Multi-factor authentication for back-office users", "–", "Delivered during implementation"],
     ["PostgreSQL streaming replication, pgBackRest backups, DR site", "–", "Delivered during implementation"],
     ["Data retention and archival job; key rotation tooling", "–", "Delivered during implementation"],
+    ["Maker-checker approval for product and rate changes", "Two-person check (manual)",
+     "Delivered during implementation"],
     ["S3-compatible document storage adapter (only if object storage is chosen)", "–",
      "Delivered during implementation"],
     ["IIFT actuarial rates, wakalah and tabarru' parameters", "Indicative values loaded",
      "IIFT values loaded and verified in design and SIT"],
     ["Legacy data migration", "–", "Delivered during implementation (DEL-19)"],
+    ["Independent VAPT and re-test", "–", "Before go-live (DEL-17)"],
 ]
 
 PRINCIPLES = [
@@ -254,6 +259,9 @@ def functional(w, figs):
            "business while any of its issued policies is unpaid beyond the due date, and lifts the block "
            "automatically once nothing is overdue (AP-42). An administrator can lift a block manually with a reason; "
            "the next daily run re-applies it if contributions are still overdue.")
+    w.para("Renewal is allowed only inside the renewal window, from policy.renewal_notice_days before the end date "
+           "until 30 days after it; outside it the API answers OUTSIDE_RENEWAL_WINDOW. The renewals-due list uses "
+           "the same window, and products can switch renewal off.")
     w.h2("Maker-checker workflows")
     w.para("Eight transaction types run through the workflow engine. Each type has a configurable sequence of levels; "
            "each level names the permission a checker needs and, optionally, an amount threshold from which it "
@@ -265,7 +273,12 @@ def functional(w, figs):
     w.para("Rules enforced by the server: the maker can never approve their own request; the same person cannot "
            "approve two levels of one request; rejection requires remarks; a request can be withdrawn by its maker "
            "until decided; only one pending request per record and type is allowed; and a decision fails with "
-           "STALE_RECORD if another checker decided the same level first.")
+           "STALE_RECORD if another checker decided the same level first. An agent registration can be approved only "
+           "once the identity document is on file: the passport copy for passport holders, otherwise the IC copy.")
+    w.para("When Compliance confirms an AML match, the subject's pending approval requests (for example the agent "
+           "registration) are rejected in the same transaction with the Compliance remarks and the maker is notified. "
+           "The subject's AML status becomes REJECTED, and an agent whose registration is closed this way is "
+           "REJECTED.")
     w.h2("Scheduled processing")
     w.table(["Job", "Schedule (Brunei time)", "Lock", "Purpose", "Source"], JOBS, widths=[2.7, 3.0, 2.7, 4.6, 4.0],
             font_size=7.5, caption="Scheduled jobs")
@@ -413,7 +426,11 @@ def data(w, figs, pm):
            "to be introduced without a big-bang re-encryption. For exact search and duplicate prevention, the "
            "application also stores a blind index: HMAC-SHA256 of the normalised number (separators removed, upper "
            "case) with a separate key. The unique constraint on (id_type, id_number_hash) therefore blocks duplicates "
-           "without decrypting anything. Screens show the number masked to its last four characters.")
+           "without decrypting anything. Screens show the number masked to its last four characters, and the API never "
+           "returns ciphertext: approval request views (inbox, search, detail, the portal's own requests and record "
+           "history) drop payload values whose key ends in Enc, while the stored payload keeps them for the approval "
+           "handler. When nominees are saved again with their existing id and the number left blank, as on a draft "
+           "or an endorsement, the stored encrypted number is kept.")
     w.h2("Reference numbers")
     rows = [[name, dictionary_text.SEQUENCES[name][1], dictionary_text.SEQUENCES[name][2]]
             for name, _ in pm.sequences]

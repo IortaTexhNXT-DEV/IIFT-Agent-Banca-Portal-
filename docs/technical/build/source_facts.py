@@ -63,7 +63,8 @@ ENV_DOCS = {
                                            "the cloud).", "/data/documents"),
     "MAX_UPLOAD_MB": ("Documents", "Largest accepted upload in MB (the HTTP layer also refuses bodies over 25 MB).",
                       "10"),
-    "CLAMAV_HOST": ("Documents", "clamd host for malware scanning of uploads; scanning is skipped when empty.",
+    "CLAMAV_HOST": ("Documents", "clamd host for malware scanning of uploads. When it is empty outside "
+                                  "production, uploads are not scanned.",
                     "clamav"),
     "CLAMAV_PORT": ("Documents", "clamd TCP port.", "3310"),
     "JOBS_ENABLED": ("Jobs", "Runs scheduled jobs in this instance. Locks prevent double runs, so it can stay true on "
@@ -123,6 +124,7 @@ NEED_OVERRIDE = {
     "LDAP_BIND_PASSWORD": "Required when LDAP_URL is set",
     "LDAP_BASE_DN": "Required when LDAP_URL is set",
     "LDAP_USER_FILTER": "Default (sAMAccountName={{username}})",
+    "CLAMAV_HOST": "Required in production",
     "INBOUND_API_KEY_SHA256": "Required in production with live mode",
     "CORE_API_BASE_URL": "Required in production with live mode",
     "FINANCE_API_BASE_URL": "Required in production with live mode",

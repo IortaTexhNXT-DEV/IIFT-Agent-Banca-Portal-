@@ -154,7 +154,8 @@ def commercials(w: ProposalWriter):
     w.table(["Item", "Basis", "Provider / note", "Indicative amount"], [list(t) for t in price.THIRD_PARTY_CHARGES],
             widths=[4.4, 2.6, 4.6, 5.4], font_size=8, caption="Third-party dependencies and charges (COM-17, item 20)")
     w.para(f"Third-party components inside {brand.PRODUCT} are open source (MIT, Apache 2.0, BSD or PostgreSQL "
-           "licence) and carry no fees. A software bill of materials comes with the technical manual.")
+           "licence) and carry no fees. A software bill of materials, produced by the CI pipeline on every build, comes "
+           "with the technical manual.")
 
     w.h2("Rate card")
     w.table(["Item", "Rate", "Notes"], [
@@ -324,7 +325,7 @@ SOFTWARE = [
     ["Database", "PostgreSQL 16+ with streaming replication; pgBackRest or equivalent for backup/PITR", "Open source"],
     ["Object storage (optional)", "MinIO (S3-compatible) or NFS share", "Open source / existing"],
     ["Monitoring", "Prometheus, Grafana, Loki (or existing IITH tooling)", "Open source / existing"],
-    ["Antivirus (optional)", "ClamAV for document uploads", "Open source"],
+    ["Antivirus", "ClamAV for document uploads (required in production)", "Open source"],
 ]
 
 PORTS = [

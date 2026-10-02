@@ -45,8 +45,8 @@ OTHER_EVIDENCE = {
     "A02": "Code review: AES-256-GCM field and document encryption; Argon2id password hashing",
     "A04": "Design review: maker-checker enforced by the API; server-side business rules",
     "A05": "Configuration review: production guards, web-tier headers, non-root containers",
-    "A06": "npm audit (0 findings); container image scan in CI",
-    "A08": "CI pipeline with locked dependencies (npm ci); signed release images planned",
+    "A06": "npm audit (0 findings); container image scan and CycloneDX SBOM in CI",
+    "A08": "CI pipeline with locked dependencies (npm ci), CodeQL and secret scanning; signed release images planned",
     "A09": "Code review: structured logs with correlation id and header redaction; audit table append-only",
     "A10": "Code review: outbound calls go only to endpoints set in configuration; no user-supplied URLs are fetched",
 }
@@ -81,7 +81,7 @@ EXPECTED = {
     "SEC-27": "LOGIN_FAILED events with IP address in the audit trail",
     "SEC-28": "X-Request-Id on every response",
     "SEC-29": "Malformed and unknown tokens reveal nothing",
-    "SEC-30": "Request without a valid key refused (401), or interface disabled (503) when no key is configured",
+    "SEC-30": "401 without a key and with a wrong key; valid key accepted",
 }
 
 CONTROLS = [
@@ -99,19 +99,22 @@ CONTROLS = [
     ["Encryption in transit", "HSTS on API and web tier; TLS terminated at the web tier or load balancer",
      "COM-10, NFR-08"],
     ["Encryption at rest", "IC and passport numbers encrypted with AES-256-GCM (random IV, authentication tag, key "
-     "version prefix) and an HMAC-SHA256 blind index; documents encrypted with AES-256-GCM and stored with mode 0600",
+     "version prefix) and an HMAC-SHA256 blind index; documents encrypted with AES-256-GCM and stored with mode 0600; "
+     "ciphertext is never returned, and approval request views drop encrypted payload values",
      "COM-01, COM-10, NFR-08"],
     ["Input validation", "DTO whitelist with forbidNonWhitelisted; 2 MB JSON limit; parameterised database access",
      "NFR-14, NFR-30"],
     ["File uploads", "Type detected from content (PDF, PNG, JPEG only); extension forced to match; size limit; "
-     "path elements removed; SHA-256 recorded; ClamAV scan when configured", "AP-46, COM-06"],
+     "path elements removed; SHA-256 recorded; ClamAV scan, mandatory in production (the API does not start "
+     "without CLAMAV_HOST)", "AP-46, COM-06"],
     ["Audit trail", "Append-only audit_log: a database trigger rejects UPDATE and DELETE; failed and successful "
      "sign-ins, lockouts and changes recorded with user, time and IP; sensitive fields redacted", "NFR-11, COM-03"],
     ["Error handling", "One global filter returns status, code, message and correlation id; details logged on the "
      "server only", "NFR-15"],
     ["System-to-system APIs", "Inbound API key compared by SHA-256 hash; interface disabled until a key is "
      "configured; web-tier allow-list for IITH addresses", "INT-10"],
-    ["Vulnerability management", "npm audit and container scan in CI; remediation timelines in section 9",
+    ["Vulnerability management", "CodeQL static analysis, gitleaks secret scan over the full history, npm audit and "
+     "container scan in CI; CycloneDX SBOM per build; remediation timelines in section 9",
      "NFR-12, NFR-13"],
 ]
 
@@ -122,8 +125,9 @@ RESIDUAL = [
      "portal behind IITH's WAF or a managed WAF with OWASP rules", "Before SIT"],
     ["Key management", "Medium", "Encryption keys are supplied as environment variables.", "Hold keys in an HSM, "
      "cloud KMS or vault; rotate yearly using the key-version prefix", "Before go-live"],
-    ["Malware scanning", "Medium", "Uploads are scanned only when CLAMAV_HOST is set.", "Deploy ClamAV in every "
-     "environment and make the setting mandatory in production", "Before SIT"],
+    ["Malware scanning", "Low", "The API refuses to start in production without CLAMAV_HOST, so production uploads "
+     "are always scanned; development instances may run without a scanner.", "Run ClamAV in SIT and UAT too, keep "
+     "signatures current and alert when the scanner is unreachable", "Before SIT"],
     ["Database connections", "Low", "Database traffic is not encrypted inside the compose network.", "Enable TLS "
      "to PostgreSQL and restrict the application role to the privileges it needs", "Before go-live"],
     ["Backup encryption", "Low", "Backup encryption depends on IITH's backup service.", "Encrypt backups and test "
@@ -132,8 +136,6 @@ RESIDUAL = [
      "audit events to IITH's SIEM; add alert rules", "Implementation"],
     ["Rate limiting behind proxies", "Low", "Per-client limits depend on the forwarded client address.", "Set "
      "TRUST_PROXY_HOPS to the real proxy chain and tune limits after performance testing", "SIT"],
-    ["Inbound API key path", "Low", "In the test run no key was configured, so the interface refused all calls "
-     "(503).", "Repeat SEC-30 with a configured key and confirm 401 for a wrong key", "SIT"],
     ["Independent assurance", "High until done", "No independent test has yet been performed.", "Independent VAPT "
      "on IIFT's UAT or production-like environment with re-test (DEL-17)", "Weeks 17–19"],
 ]
@@ -212,7 +214,7 @@ def nginx_headers():
 
 def production_guards():
     text = (API / "src" / "config" / "app-config.ts").read_text()
-    return re.findall(r"problems\.push\('([^']+)'\)", text)
+    return re.findall(r"problems\.push\(\s*'([^']+)',?\s*\)", text)
 
 
 def security_settings():
@@ -246,6 +248,15 @@ def ci_security_gates():
             run, uses = step.get("run", ""), step.get("uses", "")
             if "audit" in run:
                 gates.append(["Dependency audit", run])
+            if "gitleaks" in run:
+                gates.append(["Secret scan", "gitleaks over the full git history on every push and pull request"])
+            if "codeql-action/init" in uses:
+                options = step.get("with", {})
+                gates.append(["Static analysis (SAST)", f"CodeQL, {options.get('languages')}, "
+                                                        f"{options.get('queries')} queries"])
+            if "npm sbom" in run:
+                gates.append(["Software bill of materials", "CycloneDX SBOM of production dependencies, kept as a "
+                                                            "build artifact"])
             if "trivy" in uses:
                 severity = step.get("with", {}).get("severity", "")
                 gates.append(["Container image scan", f"Trivy; fails on {severity} (fixable)"])
@@ -343,7 +354,7 @@ def controls_section(w):
     rows = [[area, text.format(**fill), refs] for area, text, refs in CONTROLS]
     w.h1("Security controls implemented")
     w.para("The controls below are in the current build. Default values are read from the platform's settings "
-           "definitions and can be changed by IIFT administrators under maker-checker.")
+           "definitions and can be changed by IIFT administrators in the back-office; every change is audited.")
     w.table(["Control", "Implementation", "RFP reference"], rows, widths=[3.0, 11.0, 3.0], font_size=8,
             bold_first_col=True, caption="Controls mapped to RFP requirements")
 
@@ -357,9 +368,8 @@ def configuration_section(w, checks):
     w.h2("API response headers (observed)", numbered=False)
     w.table(["Header", "Value"], [[k, v if v else "Absent"] for k, v in api_headers.items()],
             widths=[4.4, 12.6], font_size=7.5, padding=20, bold_first_col=True, caption="Headers recorded by SEC-01")
-    w.para("The web tier sends X-Frame-Options DENY and frame-ancestors 'none'; the API's own headers use "
-           "SAMEORIGIN. Browsers receive the web-tier values for the application. We will align the API value to "
-           "DENY during implementation.")
+    w.para("The API and the web tier send the same framing policy: X-Frame-Options DENY and frame-ancestors "
+           "'none'. API responses also carry default-src 'none', as they are data, not pages.")
     w.h2("Cookies, secrets and production guards", numbered=False)
     guards = production_guards()
     w.para("The session cookie is HttpOnly and SameSite=Strict in every environment, and Secure whenever "

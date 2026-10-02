@@ -21,9 +21,9 @@ python3 docs/technical/build/build_quality_report.py
 python3 docs/technical/build/build_security_report.py
 ```
 
-PDF export needs LibreOffice Writer with `python3-uno`. Front-end evidence (`evidence/web-lint.json`,
-`evidence/web-typecheck.txt`, `evidence/web-build.txt`) is optional; until it exists the quality report shows
-"To be refreshed after front-end build".
+PDF export needs LibreOffice Writer with `python3-uno`. Front-end evidence (`evidence/web-unit-tests.json`,
+`evidence/web-lint.json`, `evidence/web-typecheck.txt`, `evidence/web-build.txt`) is optional; until it exists the
+quality report shows "To be refreshed after front-end build".
 
 The security report is iorta TechNXT's internal pre-implementation assessment. It does not replace the independent
 penetration test scheduled before go-live (DEL-17).
