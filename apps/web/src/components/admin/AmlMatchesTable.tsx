@@ -1,6 +1,7 @@
-import { Table } from 'antd';
 import type { AmlScreening } from '../../api/types';
 import { humanise } from '../../utils/format';
+import { DataTable, textColumn } from '../DataTable';
+import { EmptyState } from '../EmptyState';
 
 type Match = AmlScreening['matches'][number];
 
@@ -12,23 +13,20 @@ export function renderScreeningMatches(screening: AmlScreening) {
 /** BO-14: watch-list hits behind a screening result, with the match score and reason. */
 export function AmlMatchesTable({ matches }: { matches: Match[] }) {
   return (
-    <Table<Match>
+    <DataTable<Match>
       size="small"
       pagination={false}
       rowKey={(match) => `${match.listName}-${match.reference ?? match.name}`}
       dataSource={matches}
-      locale={{ emptyText: 'No watch-list matches' }}
+      scroll={{}}
+      className="aml-matches"
+      locale={{ emptyText: <EmptyState label="No watch-list matches" inline /> }}
       columns={[
-        { title: 'List', dataIndex: 'listName', width: 180 },
-        { title: 'Matched name', dataIndex: 'name' },
-        {
-          title: 'Reference',
-          dataIndex: 'reference',
-          width: 140,
-          render: (value: string | null | undefined) => value ?? '–',
-        },
-        { title: 'Score', dataIndex: 'score', width: 90, align: 'right' },
-        { title: 'Reason', dataIndex: 'reason', width: 140, render: humanise },
+        textColumn('List', 'listName', 160),
+        textColumn('Matched name', 'name'),
+        textColumn('Reference', 'reference', 140),
+        { title: 'Score', dataIndex: 'score', width: 80, align: 'right', className: 'money' },
+        { title: 'Reason', dataIndex: 'reason', width: 150, render: humanise },
       ]}
     />
   );

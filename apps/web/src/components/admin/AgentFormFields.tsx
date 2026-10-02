@@ -1,6 +1,7 @@
-import { Col, DatePicker, Form, Input, Row, Select } from 'antd';
+import { DatePicker, Form, Input, Select } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import type { RegisterAgentInput } from '../../api/admin-types';
+import { FormSection } from '../FormSection';
 import { ID_TYPE_OPTIONS } from './agents';
 
 /** Validation patterns mirrored from the API DTOs. */
@@ -25,11 +26,14 @@ export const mobileRule = {
   message: '7 to 15 digits, optionally starting with +',
 };
 
-/** Identity, contact and licensing fields collected for every agent or bank officer (AP-07/48). */
+/**
+ * Identity, contact and licensing fields collected for every agent or bank officer
+ * (AP-07/48), grouped in form sections on a two-column grid.
+ */
 export function AgentFormFields() {
   return (
-    <Row gutter={16}>
-      <Col xs={24} md={12}>
+    <>
+      <FormSection title="Identity">
         <Form.Item
           name="fullName"
           label="Full name (as per ID)"
@@ -40,29 +44,6 @@ export function AgentFormFields() {
         >
           <Input autoComplete="off" />
         </Form.Item>
-      </Col>
-      <Col xs={24} md={6}>
-        <Form.Item
-          name="idType"
-          label="ID type"
-          rules={[{ required: true, message: 'Choose the ID type' }]}
-        >
-          <Select options={[...ID_TYPE_OPTIONS]} />
-        </Form.Item>
-      </Col>
-      <Col xs={24} md={6}>
-        <Form.Item
-          name="idNumber"
-          label="IC / passport number"
-          rules={[
-            { required: true, message: 'Enter the ID number' },
-            { pattern: ID_NUMBER_PATTERN, message: '5 to 30 letters, digits, spaces, - or /' },
-          ]}
-        >
-          <Input autoComplete="off" />
-        </Form.Item>
-      </Col>
-      <Col xs={24} md={6}>
         <Form.Item
           name="dateOfBirth"
           label="Date of birth"
@@ -75,8 +56,25 @@ export function AgentFormFields() {
             defaultPickerValue={dayjs().subtract(30, 'year')}
           />
         </Form.Item>
-      </Col>
-      <Col xs={24} md={9}>
+        <Form.Item
+          name="idType"
+          label="ID type"
+          rules={[{ required: true, message: 'Choose the ID type' }]}
+        >
+          <Select options={[...ID_TYPE_OPTIONS]} />
+        </Form.Item>
+        <Form.Item
+          name="idNumber"
+          label="IC / passport number"
+          rules={[
+            { required: true, message: 'Enter the ID number' },
+            { pattern: ID_NUMBER_PATTERN, message: '5 to 30 letters, digits, spaces, - or /' },
+          ]}
+        >
+          <Input autoComplete="off" />
+        </Form.Item>
+      </FormSection>
+      <FormSection title="Contact">
         <Form.Item
           name="email"
           label="Email"
@@ -87,37 +85,29 @@ export function AgentFormFields() {
         >
           <Input type="email" autoComplete="off" />
         </Form.Item>
-      </Col>
-      <Col xs={24} md={9}>
         <Form.Item
           name="mobile"
           label="Mobile"
           rules={[{ required: true, message: 'Enter the mobile number' }, mobileRule]}
         >
-          <Input inputMode="tel" placeholder="e.g. 6738123456" />
+          <Input inputMode="tel" placeholder="6738123456" />
         </Form.Item>
-      </Col>
-      <Col xs={24} md={12}>
-        <Form.Item name="address" label="Address" rules={[{ max: 300 }]}>
+        <Form.Item name="address" label="Address" rules={[{ max: 300 }]} className="field--full">
           <Input />
         </Form.Item>
-      </Col>
-      <Col xs={24} md={12}>
         <Form.Item name="branchName" label="Branch" rules={[{ max: 100 }]}>
           <Input />
         </Form.Item>
-      </Col>
-      <Col xs={24} md={12}>
+      </FormSection>
+      <FormSection title="Licence">
         <Form.Item name="licenceNo" label="Licence / registration no." rules={[{ max: 50 }]}>
           <Input />
         </Form.Item>
-      </Col>
-      <Col xs={24} md={12}>
         <Form.Item name="licenceExpiry" label="Licence expiry">
           <DatePicker format="DD MMM YYYY" style={{ width: '100%' }} />
         </Form.Item>
-      </Col>
-    </Row>
+      </FormSection>
+    </>
   );
 }
 

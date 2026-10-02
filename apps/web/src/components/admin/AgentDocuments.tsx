@@ -7,22 +7,23 @@ import {
   Form,
   Modal,
   Select,
-  Table,
   Tag,
   Tooltip,
   Typography,
   Upload,
 } from 'antd';
 import type { UploadFile } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useState } from 'react';
 import { api } from '../../api/client';
 import { useApiMutation, useApiQuery } from '../../api/hooks';
 import type { Channel, DocumentView } from '../../api/types';
-import { fileSize, formatDate, formatDateTime } from '../../utils/format';
+import { formatDate } from '../../utils/format';
+import { DataTable, dateColumn, textColumn } from '../DataTable';
+import { EmptyState } from '../EmptyState';
 import { ErrorAlert } from '../ErrorAlert';
 import { StatusTag } from '../StatusTag';
-import { CellText } from './CellText';
 import { DocumentDownloadButton } from './DocumentDownloadButton';
 import { DocumentReviewActions } from './DocumentReviewActions';
 import { useCodes } from './useCodes';
@@ -46,7 +47,8 @@ interface Props {
   title?: string;
 }
 
-function ExpiryCell({ document }: { document: DocumentView }) {
+/** Validity date with an "Expired" or "Expires soon" marker. */
+export function ExpiryCell({ document }: { document: DocumentView }) {
   if (!document.expiryDate) return <span className="muted">–</span>;
   const soon =
     !document.expired && dayjs(document.expiryDate).diff(dayjs(), 'day') <= EXPIRY_WARNING_DAYS;
@@ -55,11 +57,23 @@ function ExpiryCell({ document }: { document: DocumentView }) {
       {formatDate(document.expiryDate)}
       {document.expired && <StatusTag status="EXPIRED" />}
       {soon && (
-        <Tag color="orange" variant="filled">
+        <Tag color="orange" variant="filled" className="status-tag">
           Expires soon
         </Tag>
       )}
     </Flex>
+  );
+}
+
+/** Status chip; rejection or verification remarks are shown in the tooltip. */
+export function DocumentStatusCell({ document }: { document: DocumentView }) {
+  const tag = <StatusTag status={document.status} />;
+  return document.remarks ? (
+    <Tooltip title={document.remarks}>
+      <span>{tag}</span>
+    </Tooltip>
+  ) : (
+    tag
   );
 }
 
@@ -89,6 +103,35 @@ export function AgentDocuments({
     !documents.isLoading &&
     !items.some((doc) => doc.docType === requiredType && doc.status !== 'REJECTED');
 
+  const columns: ColumnsType<DocumentView> = [
+    { title: 'Type', dataIndex: 'docType', width: 130, render: types.labelOf },
+    textColumn('File', 'fileName'),
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      width: 100,
+      render: (_: unknown, doc) => <DocumentStatusCell document={doc} />,
+    },
+    {
+      title: 'Valid until',
+      dataIndex: 'expiryDate',
+      width: 160,
+      render: (_: unknown, doc) => <ExpiryCell document={doc} />,
+    },
+    dateColumn('Added', 'createdAt', 110),
+    {
+      key: 'actions',
+      width: canReview ? 140 : 56,
+      align: 'right',
+      render: (_: unknown, doc) => (
+        <Flex gap={4} align="center" justify="flex-end" className="table-actions">
+          {canReview && <DocumentReviewActions document={doc} />}
+          <DocumentDownloadButton documentId={doc.id} fileName={doc.fileName} />
+        </Flex>
+      ),
+    },
+  ];
+
   return (
     <>
       {(title || canUpload) && (
@@ -110,54 +153,19 @@ export function AgentDocuments({
           className="mb-16"
           type="warning"
           showIcon
-          title={`${types.labelOf(requiredType)} is required before IIFT can approve the registration`}
+          title={`${types.labelOf(requiredType)} required before approval`}
         />
       )}
       <ErrorAlert error={documents.error} className="mb-16" />
-      <Table<DocumentView>
+      <DataTable<DocumentView>
         size="small"
         rowKey="id"
         loading={documents.isLoading}
         dataSource={items}
         pagination={false}
-        scroll={{ x: 'max-content' }}
-        locale={{ emptyText: 'No documents yet' }}
-        columns={[
-          { title: 'Type', dataIndex: 'docType', render: types.labelOf },
-          {
-            title: 'File',
-            dataIndex: 'fileName',
-            render: (name: string) => <CellText text={name} width={280} />,
-          },
-          { title: 'Size', dataIndex: 'sizeBytes', width: 80, render: fileSize },
-          {
-            title: 'Status',
-            dataIndex: 'status',
-            width: 120,
-            render: (_: unknown, doc) => (
-              <Tooltip title={doc.remarks}>
-                <span>
-                  <StatusTag status={doc.status} />
-                </span>
-              </Tooltip>
-            ),
-          },
-          {
-            title: 'Expiry',
-            dataIndex: 'expiryDate',
-            render: (_: unknown, doc) => <ExpiryCell document={doc} />,
-          },
-          { title: 'Added', dataIndex: 'createdAt', width: 170, render: formatDateTime },
-          {
-            key: 'actions',
-            render: (_: unknown, doc) => (
-              <Flex gap={4} align="center" className="table-actions">
-                <DocumentDownloadButton documentId={doc.id} fileName={doc.fileName} />
-                {canReview && <DocumentReviewActions document={doc} />}
-              </Flex>
-            ),
-          },
-        ]}
+        scroll={{}}
+        columns={columns}
+        locale={{ emptyText: <EmptyState label="No documents" /> }}
       />
       {uploading && (
         <UploadDialog
@@ -235,7 +243,7 @@ function UploadDialog({
         <Form.Item
           name="expiryDate"
           label="Valid until"
-          extra="For licences, passports and other documents with an expiry date"
+          tooltip="For licences, passports and other documents with an expiry date"
         >
           <DatePicker
             format="DD MMM YYYY"
@@ -243,7 +251,7 @@ function UploadDialog({
             style={{ width: '100%' }}
           />
         </Form.Item>
-        <Form.Item label="File" extra="PDF, PNG or JPEG, up to 10 MB" required>
+        <Form.Item label="File" tooltip="PDF, PNG or JPEG, up to 10 MB" required>
           <Upload.Dragger
             accept={ACCEPT}
             maxCount={1}

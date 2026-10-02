@@ -1,10 +1,11 @@
-import { Col, DatePicker, Form, type FormInstance, Row, Select } from 'antd';
+import { DatePicker, Form, type FormInstance, Select } from 'antd';
 import type { Dayjs } from 'dayjs';
 import { useApiQuery } from '../../api/hooks';
 import type { AgentView, Page, Product, ReportDefinition } from '../../api/types';
 import { useAuth } from '../../auth/AuthContext';
 import { humanise } from '../../utils/format';
 import { P } from '../../utils/permissions';
+import { FormSection } from '../FormSection';
 import { AgencySelect } from './AgencySelect';
 import { enumOptions } from './useCodes';
 
@@ -74,61 +75,49 @@ export function ReportFilters({
 
   return (
     <Form form={form} layout="vertical" requiredMark={false}>
-      <Row gutter={16}>
+      <FormSection title="Filters" columns={3}>
         {has('dateRange') && (
-          <Col xs={24} md={12} xl={8}>
-            <Form.Item name="period" label={report.dateLabel ?? 'Period'}>
-              <DatePicker.RangePicker
-                format="DD MMM YYYY"
-                allowEmpty={[true, true]}
-                style={{ width: '100%' }}
-              />
-            </Form.Item>
-          </Col>
+          <Form.Item name="period" label={report.dateLabel ?? 'Period'}>
+            <DatePicker.RangePicker
+              format="DD MMM YYYY"
+              allowEmpty={[true, true]}
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
         )}
         {has('product') && (
-          <Col xs={24} md={12} xl={8}>
-            <Form.Item name="productId" label="Product">
-              <Select
-                allowClear
-                placeholder="All products"
-                loading={products.isLoading}
-                options={(products.data ?? []).map((product) => ({
-                  value: product.id,
-                  label: product.name,
-                }))}
-              />
-            </Form.Item>
-          </Col>
+          <Form.Item name="productId" label="Product">
+            <Select
+              allowClear
+              placeholder="All products"
+              loading={products.isLoading}
+              options={(products.data ?? []).map((product) => ({
+                value: product.id,
+                label: product.name,
+              }))}
+            />
+          </Form.Item>
         )}
         {backoffice && has('agency') && (
-          <Col xs={24} md={12} xl={8}>
-            <Form.Item name="agencyId" label="Agency / bank">
-              <AgencySelect
-                allowClear
-                placeholder="All agencies and banks"
-                onChange={() => form.setFieldValue('agentId', undefined)}
-              />
-            </Form.Item>
-          </Col>
+          <Form.Item name="agencyId" label="Agency / bank">
+            <AgencySelect
+              allowClear
+              placeholder="All agencies and banks"
+              onChange={() => form.setFieldValue('agentId', undefined)}
+            />
+          </Form.Item>
         )}
-        {has('agent') && (
-          <Col xs={24} md={12} xl={8}>
-            <AgentFilter agencyId={agencyId} />
-          </Col>
-        )}
+        {has('agent') && <AgentFilter agencyId={agencyId} />}
         {has('status') && report.statusOptions && (
-          <Col xs={24} md={12} xl={8}>
-            <Form.Item name="status" label="Status">
-              <Select
-                allowClear
-                placeholder="All statuses"
-                options={enumOptions(report.statusOptions, humanise)}
-              />
-            </Form.Item>
-          </Col>
+          <Form.Item name="status" label="Status">
+            <Select
+              allowClear
+              placeholder="All statuses"
+              options={enumOptions(report.statusOptions, humanise)}
+            />
+          </Form.Item>
         )}
-      </Row>
+      </FormSection>
     </Form>
   );
 }

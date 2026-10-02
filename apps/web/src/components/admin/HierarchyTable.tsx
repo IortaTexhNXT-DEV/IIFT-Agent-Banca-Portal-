@@ -1,7 +1,7 @@
-import { Table } from 'antd';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import type { HierarchyNode } from '../../api/types';
-import { StatusTag } from '../StatusTag';
+import { DataTable, statusColumn, textColumn } from '../DataTable';
+import { EmptyState } from '../EmptyState';
 import { AGENT_TYPE_LABELS } from './agents';
 
 type Row = Omit<HierarchyNode, 'children'> & { children?: Row[] };
@@ -22,41 +22,33 @@ export function HierarchyTable({
   nodes: HierarchyNode[];
   memberPath: (id: string) => string;
 }) {
+  const navigate = useNavigate();
   return (
-    <Table<Row>
+    <DataTable<Row>
       size="small"
       rowKey="id"
       pagination={false}
       dataSource={toRows(nodes)}
       expandable={{ defaultExpandAllRows: true }}
-      scroll={{ x: 'max-content' }}
-      locale={{ emptyText: 'No agents in your hierarchy' }}
+      scroll={{}}
+      onRowClick={(row) => navigate(memberPath(row.id))}
+      locale={{ emptyText: <EmptyState label="No agents in the hierarchy" /> }}
       columns={[
         {
           title: 'Agent code',
           dataIndex: 'agentCode',
-          width: 200,
+          width: 170,
           render: (code: string, row) => <Link to={memberPath(row.id)}>{code}</Link>,
         },
-        { title: 'Name', dataIndex: 'fullName' },
+        textColumn('Name', 'fullName'),
         {
           title: 'Type',
           dataIndex: 'agentType',
-          width: 140,
+          width: 120,
           render: (type: Row['agentType']) => AGENT_TYPE_LABELS[type],
         },
-        {
-          title: 'Status',
-          dataIndex: 'status',
-          width: 120,
-          render: (status: string) => <StatusTag status={status} />,
-        },
-        {
-          title: 'Branch',
-          dataIndex: 'branchName',
-          width: 180,
-          render: (branch: string | null) => branch ?? '–',
-        },
+        statusColumn('Status', 'status', 110),
+        textColumn('Branch', 'branchName', 160),
       ]}
     />
   );

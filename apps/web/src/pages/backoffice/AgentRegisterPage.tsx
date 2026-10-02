@@ -1,4 +1,4 @@
-import { Button, Card, Col, Flex, Form, Row, Select } from 'antd';
+import { Button, Card, Form, Select } from 'antd';
 import { useNavigate } from 'react-router';
 import { api } from '../../api/client';
 import { useApiMutation } from '../../api/hooks';
@@ -17,7 +17,9 @@ import {
 } from '../../components/admin/agents';
 import { MoneyInput } from '../../components/admin/MoneyInput';
 import { ParentAgentSelect } from '../../components/admin/ParentAgentSelect';
+import { ActionBar } from '../../components/ActionBar';
 import { ErrorAlert } from '../../components/ErrorAlert';
+import { FormSection } from '../../components/FormSection';
 import { PageHeader } from '../../components/PageHeader';
 import { RequirePermission } from '../../components/RequirePermission';
 import { P } from '../../utils/permissions';
@@ -42,7 +44,7 @@ export default function AgentRegisterPage() {
   const register = useApiMutation(
     (input: RegisterAgentInput) => api.post<AgentView>('/backoffice/agents', input),
     {
-      success: 'Registration submitted for approval. Upload the IC copy to complete it.',
+      success: 'Registration submitted for approval',
       invalidate: ['/backoffice'],
       onSuccess: (agent) => navigate(`/backoffice/agents/${agent.id}`),
     },
@@ -62,6 +64,7 @@ export default function AgentRegisterPage() {
       <PageHeader
         title="Register agent or bank officer"
         breadcrumb={[
+          { title: 'Home', to: '/backoffice' },
           { title: 'Agents & bankers', to: '/backoffice/agents' },
           { title: 'Register' },
         ]}
@@ -75,79 +78,70 @@ export default function AgentRegisterPage() {
           initialValues={{ idType: 'NRIC' }}
           onFinish={submit}
         >
-          <Row gutter={16}>
-            <Col xs={24} md={12}>
-              <Form.Item
-                name="agencyId"
-                label="Agency / bank"
-                rules={[{ required: true, message: 'Choose the agency or bank' }]}
-              >
-                <AgencySelect
-                  onChange={(id) => {
-                    const types =
-                      AGENT_TYPES_BY_CHANNEL[
-                        agencies.data?.find((agency) => agency.id === id)?.channel ?? 'AGENCY'
-                      ];
-                    form.setFieldsValue({
-                      agentType: types.length === 1 ? types[0] : undefined,
-                      parentAgentId: undefined,
-                    });
-                  }}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={6}>
-              <Form.Item
-                name="agentType"
-                label="Type"
-                rules={[{ required: true, message: 'Choose the type' }]}
-              >
-                <Select
-                  disabled={!channel}
-                  options={(channel ? AGENT_TYPES_BY_CHANNEL[channel] : []).map((type) => ({
-                    value: type,
-                    label: AGENT_TYPE_LABELS[type],
-                  }))}
-                  onChange={() => form.setFieldValue('parentAgentId', undefined)}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={6}>
-              <Form.Item
-                name="authorityLimit"
-                label="Authority limit"
-                extra="Leave empty for no limit"
-              >
-                <MoneyInput />
-              </Form.Item>
-            </Col>
+          <FormSection title="Agency & hierarchy">
+            <Form.Item
+              name="agencyId"
+              label="Agency / bank"
+              rules={[{ required: true, message: 'Choose the agency or bank' }]}
+            >
+              <AgencySelect
+                placeholder="Choose"
+                onChange={(id) => {
+                  const types =
+                    AGENT_TYPES_BY_CHANNEL[
+                      agencies.data?.find((agency) => agency.id === id)?.channel ?? 'AGENCY'
+                    ];
+                  form.setFieldsValue({
+                    agentType: types.length === 1 ? types[0] : undefined,
+                    parentAgentId: undefined,
+                  });
+                }}
+              />
+            </Form.Item>
+            <Form.Item
+              name="agentType"
+              label="Type"
+              rules={[{ required: true, message: 'Choose the type' }]}
+            >
+              <Select
+                placeholder={channel ? 'Choose' : 'Choose the agency first'}
+                disabled={!channel}
+                options={(channel ? AGENT_TYPES_BY_CHANNEL[channel] : []).map((type) => ({
+                  value: type,
+                  label: AGENT_TYPE_LABELS[type],
+                }))}
+                onChange={() => form.setFieldValue('parentAgentId', undefined)}
+              />
+            </Form.Item>
             {parentType && (
-              <Col xs={24} md={12}>
-                <Form.Item
-                  name="parentAgentId"
-                  label="Reports to"
-                  extra={agentType === 'BANKER' ? 'Senior bank officer, if any' : undefined}
-                  rules={[
-                    { required: agentType === 'SUB_AGENT', message: 'Choose the main agent' },
-                  ]}
-                >
-                  <ParentAgentSelect
-                    allowClear
-                    agencyId={agencyId}
-                    agentType={agentType}
-                    placeholder={`Active ${AGENT_TYPE_LABELS[parentType].toLowerCase()} of this ${channel === 'BANCA' ? 'bank' : 'agency'}`}
-                  />
-                </Form.Item>
-              </Col>
+              <Form.Item
+                name="parentAgentId"
+                label="Reports to"
+                tooltip={
+                  agentType === 'BANKER'
+                    ? 'Senior bank officer, if any'
+                    : `Active ${AGENT_TYPE_LABELS[parentType].toLowerCase()} of the agency`
+                }
+                rules={[{ required: agentType === 'SUB_AGENT', message: 'Choose the main agent' }]}
+              >
+                <ParentAgentSelect
+                  allowClear
+                  agencyId={agencyId}
+                  agentType={agentType}
+                  placeholder={agentType === 'BANKER' ? 'None' : 'Choose'}
+                />
+              </Form.Item>
             )}
-          </Row>
+            <Form.Item name="authorityLimit" label="Authority limit" tooltip="Empty for no limit">
+              <MoneyInput />
+            </Form.Item>
+          </FormSection>
           <AgentFormFields />
-          <Flex justify="flex-end" gap={8}>
-            <Button onClick={() => navigate('/backoffice/agents')}>Cancel</Button>
+          <ActionBar start={<Button onClick={() => navigate('/backoffice/agents')}>Cancel</Button>}>
             <Button type="primary" htmlType="submit" loading={register.isPending}>
               Submit for approval
             </Button>
-          </Flex>
+          </ActionBar>
         </Form>
       </Card>
     </RequirePermission>

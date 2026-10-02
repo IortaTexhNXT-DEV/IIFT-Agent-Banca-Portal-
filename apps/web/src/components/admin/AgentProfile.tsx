@@ -1,21 +1,44 @@
-import { Descriptions, type DescriptionsProps, Flex } from 'antd';
+import { type DescriptionsProps, Flex } from 'antd';
 import dayjs from 'dayjs';
 import type { ReactNode } from 'react';
 import type { AgentView } from '../../api/types';
 import { formatDate, formatDateTime } from '../../utils/format';
+import { FieldGrid, type FieldItem } from '../FieldGrid';
 import { Money } from '../Money';
 import { StatusTag } from '../StatusTag';
 import { AGENT_TYPE_LABELS, idTypeLabel } from './agents';
+
+export type AgentProfileField =
+  | 'code'
+  | 'type'
+  | 'status'
+  | 'agency'
+  | 'parent'
+  | 'branch'
+  | 'id'
+  | 'dob'
+  | 'email'
+  | 'mobile'
+  | 'address'
+  | 'licence'
+  | 'licenceExpiry'
+  | 'aml'
+  | 'limit'
+  | 'registered'
+  | 'activated';
 
 interface Props {
   agent: AgentView;
   /** Link to the reporting-line agent, when the viewer can open it. */
   parentLink?: (parent: NonNullable<AgentView['parent']>) => ReactNode;
-  /** Extra rows appended after the standard profile fields. */
+  /** Extra fields appended after the standard profile fields. */
   extra?: DescriptionsProps['items'];
+  /** Standard fields to leave out, e.g. when a side card already shows them. */
+  omit?: AgentProfileField[];
+  columns?: 2 | 3 | 4;
 }
 
-function LicenceExpiry({ value }: { value: string | null }) {
+export function LicenceExpiry({ value }: { value: string | null }) {
   if (!value) return <>–</>;
   const expired = dayjs(value).isBefore(dayjs(), 'day');
   return (
@@ -27,14 +50,14 @@ function LicenceExpiry({ value }: { value: string | null }) {
 }
 
 /** AP-05/10, BO-05: registered profile, contact, agency and licensing details of an agent. */
-export function AgentProfile({ agent, parentLink, extra = [] }: Props) {
-  const items: DescriptionsProps['items'] = [
-    { key: 'code', label: 'Agent code', children: agent.agentCode },
-    { key: 'type', label: 'Type', children: AGENT_TYPE_LABELS[agent.agentType] },
+export function AgentProfile({ agent, parentLink, extra = [], omit = [], columns = 3 }: Props) {
+  const fields: (FieldItem & { key: AgentProfileField })[] = [
+    { key: 'code', label: 'Agent code', value: agent.agentCode },
+    { key: 'type', label: 'Type', value: AGENT_TYPE_LABELS[agent.agentType] },
     {
       key: 'status',
       label: 'Status',
-      children: (
+      value: (
         <Flex gap={8} align="center" wrap>
           <StatusTag status={agent.status} />
           {agent.statusReason && <span className="muted">{agent.statusReason}</span>}
@@ -44,36 +67,43 @@ export function AgentProfile({ agent, parentLink, extra = [] }: Props) {
     {
       key: 'agency',
       label: agent.agency.channel === 'BANCA' ? 'Bank' : 'Agency',
-      children: `${agent.agency.name} (${agent.agency.code})`,
+      value: `${agent.agency.name} (${agent.agency.code})`,
     },
     {
       key: 'parent',
       label: 'Reports to',
-      children: agent.parent
+      value: agent.parent
         ? (parentLink?.(agent.parent) ?? `${agent.parent.fullName} (${agent.parent.agentCode})`)
-        : '–',
+        : null,
     },
-    { key: 'branch', label: 'Branch', children: agent.branchName ?? '–' },
-    { key: 'id', label: idTypeLabel(agent.idType), children: agent.idNumberMasked },
-    { key: 'dob', label: 'Date of birth', children: formatDate(agent.dateOfBirth) },
-    { key: 'email', label: 'Email', children: agent.email },
-    { key: 'mobile', label: 'Mobile', children: agent.mobile },
-    { key: 'address', label: 'Address', children: agent.address ?? '–' },
-    { key: 'licence', label: 'Licence no.', children: agent.licenceNo ?? '–' },
+    { key: 'branch', label: 'Branch', value: agent.branchName },
+    { key: 'id', label: idTypeLabel(agent.idType), value: agent.idNumberMasked },
+    { key: 'dob', label: 'Date of birth', value: formatDate(agent.dateOfBirth) },
+    { key: 'email', label: 'Email', value: agent.email },
+    { key: 'mobile', label: 'Mobile', value: agent.mobile },
+    { key: 'address', label: 'Address', value: agent.address, span: 2 },
+    { key: 'licence', label: 'Licence no.', value: agent.licenceNo },
     {
       key: 'licenceExpiry',
       label: 'Licence expiry',
-      children: <LicenceExpiry value={agent.licenceExpiry} />,
+      value: <LicenceExpiry value={agent.licenceExpiry} />,
     },
-    { key: 'aml', label: 'AML status', children: <StatusTag status={agent.amlStatus} /> },
+    { key: 'aml', label: 'AML status', value: <StatusTag status={agent.amlStatus} /> },
     {
       key: 'limit',
       label: 'Authority limit',
-      children: agent.authorityLimit === null ? 'No limit' : <Money value={agent.authorityLimit} />,
+      value: agent.authorityLimit === null ? 'No limit' : <Money value={agent.authorityLimit} />,
     },
-    { key: 'registered', label: 'Registered', children: formatDateTime(agent.createdAt) },
-    { key: 'activated', label: 'Activated', children: formatDateTime(agent.activatedAt) },
-    ...extra,
+    { key: 'registered', label: 'Registered', value: formatDateTime(agent.createdAt) },
+    { key: 'activated', label: 'Activated', value: formatDateTime(agent.activatedAt) },
   ];
-  return <Descriptions size="small" column={{ xs: 1, md: 2, xl: 3 }} items={items} />;
+  const items: FieldItem[] = [
+    ...fields.filter((field) => !omit.includes(field.key)),
+    ...extra.map((item, index) => ({
+      key: String(item.key ?? `extra-${index}`),
+      label: item.label,
+      value: item.children,
+    })),
+  ];
+  return <FieldGrid columns={columns} items={items} />;
 }

@@ -44,7 +44,7 @@ export function RemarksModal({
       onOk={() => form.submit()}
       destroyOnHidden
     >
-      {description && <div className="mb-16">{description}</div>}
+      {description && <div className="mb-16 muted">{description}</div>}
       <ErrorAlert error={error} className="mb-16" />
       <Form
         form={form}

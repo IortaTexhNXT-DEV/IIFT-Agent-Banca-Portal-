@@ -1,7 +1,7 @@
-import { Table } from 'antd';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import type { AgentDetail } from '../../api/types';
-import { StatusTag } from '../StatusTag';
+import { DataTable, statusColumn, textColumn } from '../DataTable';
+import { EmptyState } from '../EmptyState';
 import { AGENT_TYPE_LABELS } from './agents';
 
 type SubAgent = AgentDetail['subAgents'][number];
@@ -14,30 +14,31 @@ export function SubAgentTable({
   agents: SubAgent[];
   memberPath: (id: string) => string;
 }) {
+  const navigate = useNavigate();
   return (
-    <Table<SubAgent>
+    <DataTable<SubAgent>
       size="small"
       rowKey="id"
       pagination={false}
       dataSource={agents}
-      locale={{ emptyText: 'No agents report to this agent' }}
+      scroll={{}}
+      onRowClick={(agent) => navigate(memberPath(agent.id))}
+      locale={{ emptyText: <EmptyState label="No reporting agents" /> }}
       columns={[
         {
           title: 'Agent code',
           dataIndex: 'agentCode',
+          width: 130,
           render: (code: string, agent) => <Link to={memberPath(agent.id)}>{code}</Link>,
         },
-        { title: 'Name', dataIndex: 'fullName' },
+        textColumn('Name', 'fullName'),
         {
           title: 'Type',
           dataIndex: 'agentType',
+          width: 120,
           render: (type: SubAgent['agentType']) => AGENT_TYPE_LABELS[type],
         },
-        {
-          title: 'Status',
-          dataIndex: 'status',
-          render: (status: string) => <StatusTag status={status} />,
-        },
+        statusColumn('Status', 'status', 110),
       ]}
     />
   );

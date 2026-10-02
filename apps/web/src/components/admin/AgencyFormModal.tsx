@@ -1,10 +1,11 @@
-import { Col, Form, Input, Modal, Row, Select } from 'antd';
+import { Form, Input, Modal, Select } from 'antd';
 import { api } from '../../api/client';
 import { useApiMutation } from '../../api/hooks';
 import type { AgencyInput } from '../../api/admin-types';
 import type { Agency } from '../../api/types';
 import { humanise } from '../../utils/format';
 import { ErrorAlert } from '../ErrorAlert';
+import { FormSection } from '../FormSection';
 import { mobileRule, optional } from './AgentFormFields';
 import { CHANNEL_LABELS } from './agents';
 import { enumOptions } from './useCodes';
@@ -52,7 +53,7 @@ export function AgencyFormModal({ agency, onClose, onSaved }: Props) {
   return (
     <Modal
       open
-      title={editing ? `Edit ${agency?.name}` : 'Add agency or bank'}
+      title={editing ? `Edit ${agency?.code}` : 'Add agency or bank'}
       okText={editing ? 'Save' : 'Create'}
       okButtonProps={{ loading: save.isPending }}
       onCancel={onClose}
@@ -79,82 +80,66 @@ export function AgencyFormModal({ agency, onClose, onSaved }: Props) {
             : { channel: 'AGENCY' }
         }
       >
-        <Row gutter={16}>
+        <FormSection title="Organisation">
           {!editing && (
-            <>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  name="code"
-                  label="Code"
-                  extra="Capital letters, digits and hyphens, e.g. AGY-KB"
-                  rules={[
-                    { required: true, message: 'Enter a code' },
-                    {
-                      pattern: CODE_PATTERN,
-                      message: '2 to 20 capital letters, digits or hyphens',
-                    },
-                  ]}
-                  normalize={(value: string) => value.toUpperCase()}
-                >
-                  <Input />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item name="channel" label="Channel" rules={[{ required: true }]}>
-                  <Select
-                    options={Object.entries(CHANNEL_LABELS).map(([value, label]) => ({
-                      value,
-                      label,
-                    }))}
-                  />
-                </Form.Item>
-              </Col>
-            </>
-          )}
-          <Col xs={24} md={editing ? 16 : 24}>
             <Form.Item
-              name="name"
-              label="Name"
+              name="code"
+              label="Code"
+              tooltip="Capital letters, digits and hyphens, e.g. AGY-KB"
               rules={[
-                { required: true, whitespace: true, message: 'Enter the name' },
-                { min: 2, max: 150 },
+                { required: true, message: 'Enter a code' },
+                { pattern: CODE_PATTERN, message: '2 to 20 capital letters, digits or hyphens' },
               ]}
+              normalize={(value: string) => value.toUpperCase()}
             >
               <Input />
             </Form.Item>
-          </Col>
-          {editing && (
-            <Col xs={24} md={8}>
-              <Form.Item name="status" label="Status" rules={[{ required: true }]}>
-                <Select options={enumOptions(AGENCY_STATUSES, humanise)} />
-              </Form.Item>
-            </Col>
           )}
-          <Col xs={24} md={12}>
-            <Form.Item name="registrationNo" label="Registration no." rules={[{ max: 50 }]}>
-              <Input />
+          {!editing && (
+            <Form.Item name="channel" label="Channel" rules={[{ required: true }]}>
+              <Select
+                options={Object.entries(CHANNEL_LABELS).map(([value, label]) => ({
+                  value,
+                  label,
+                }))}
+              />
             </Form.Item>
-          </Col>
-          <Col xs={24} md={12}>
-            <Form.Item name="phone" label="Phone" rules={[mobileRule]}>
-              <Input inputMode="tel" />
+          )}
+          <Form.Item
+            name="name"
+            label="Name"
+            className={editing ? undefined : 'field--full'}
+            rules={[
+              { required: true, whitespace: true, message: 'Enter the name' },
+              { min: 2, max: 150 },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+          {editing && (
+            <Form.Item name="status" label="Status" rules={[{ required: true }]}>
+              <Select options={enumOptions(AGENCY_STATUSES, humanise)} />
             </Form.Item>
-          </Col>
-          <Col xs={24} md={12}>
-            <Form.Item
-              name="email"
-              label="Email"
-              rules={[{ type: 'email', message: 'Enter a valid email address' }]}
-            >
-              <Input type="email" />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={12}>
-            <Form.Item name="address" label="Address" rules={[{ max: 300 }]}>
-              <Input />
-            </Form.Item>
-          </Col>
-        </Row>
+          )}
+          <Form.Item name="registrationNo" label="Registration no." rules={[{ max: 50 }]}>
+            <Input />
+          </Form.Item>
+        </FormSection>
+        <FormSection title="Contact">
+          <Form.Item
+            name="email"
+            label="Email"
+            rules={[{ type: 'email', message: 'Enter a valid email address' }]}
+          >
+            <Input type="email" />
+          </Form.Item>
+          <Form.Item name="phone" label="Phone" rules={[mobileRule]}>
+            <Input inputMode="tel" />
+          </Form.Item>
+          <Form.Item name="address" label="Address" rules={[{ max: 300 }]} className="field--full">
+            <Input />
+          </Form.Item>
+        </FormSection>
       </Form>
     </Modal>
   );

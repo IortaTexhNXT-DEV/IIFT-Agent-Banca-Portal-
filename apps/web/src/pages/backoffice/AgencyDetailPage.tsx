@@ -1,7 +1,8 @@
 import { EditOutlined, UnlockOutlined } from '@ant-design/icons';
-import { Button, Card, Table } from 'antd';
+import { Button, Card, Col, Row } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import { useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 import { api } from '../../api/client';
 import { useApiMutation, useApiQuery, usePagedQuery } from '../../api/hooks';
 import type { Agency, AgentView } from '../../api/types';
@@ -10,55 +11,48 @@ import { AgencyFormModal } from '../../components/admin/AgencyFormModal';
 import { AgencySummary, IssuanceBlockAlert } from '../../components/admin/AgencySummary';
 import { AGENT_TYPE_LABELS, CHANNEL_LABELS } from '../../components/admin/agents';
 import { RemarksModal } from '../../components/admin/RemarksModal';
+import { DataTable, dateColumn, statusColumn, textColumn } from '../../components/DataTable';
+import { EmptyState } from '../../components/EmptyState';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryState } from '../../components/QueryState';
 import { StatusTag } from '../../components/StatusTag';
-import { formatDate } from '../../utils/format';
+import { TableCard } from '../../components/TableCard';
 import { P } from '../../utils/permissions';
 
-function AgencyAgents({ agencyId }: { agencyId: string }) {
+function AgencyAgents({ agencyId, banca }: { agencyId: string; banca: boolean }) {
+  const navigate = useNavigate();
   const agents = usePagedQuery<AgentView>('/backoffice/agents', { agencyId });
+  const columns: ColumnsType<AgentView> = [
+    {
+      title: 'Agent code',
+      dataIndex: 'agentCode',
+      width: 120,
+      render: (code: string, agent) => <Link to={`/backoffice/agents/${agent.id}`}>{code}</Link>,
+    },
+    textColumn('Name', 'fullName'),
+    {
+      title: 'Type',
+      dataIndex: 'agentType',
+      width: 120,
+      render: (type: AgentView['agentType']) => AGENT_TYPE_LABELS[type],
+    },
+    textColumn('Reports to', ['parent', 'fullName'], 170),
+    statusColumn('Status', 'status', 120),
+    statusColumn('AML', 'amlStatus', 110),
+    dateColumn('Licence expiry', 'licenceExpiry', 130),
+  ];
   return (
-    <Table<AgentView>
-      size="small"
-      rowKey="id"
-      loading={agents.isFetching}
-      dataSource={agents.items}
-      pagination={agents.pagination}
-      scroll={{ x: 'max-content' }}
-      locale={{ emptyText: 'No agents registered' }}
-      columns={[
-        {
-          title: 'Agent code',
-          dataIndex: 'agentCode',
-          render: (code: string, agent) => (
-            <Link to={`/backoffice/agents/${agent.id}`}>{code}</Link>
-          ),
-        },
-        { title: 'Name', dataIndex: 'fullName' },
-        {
-          title: 'Type',
-          dataIndex: 'agentType',
-          render: (type: AgentView['agentType']) => AGENT_TYPE_LABELS[type],
-        },
-        {
-          title: 'Reports to',
-          key: 'parent',
-          render: (_: unknown, agent) => agent.parent?.fullName ?? '–',
-        },
-        {
-          title: 'Status',
-          dataIndex: 'status',
-          render: (status: string) => <StatusTag status={status} />,
-        },
-        {
-          title: 'AML',
-          dataIndex: 'amlStatus',
-          render: (status: string) => <StatusTag status={status} />,
-        },
-        { title: 'Licence expiry', dataIndex: 'licenceExpiry', render: formatDate },
-      ]}
-    />
+    <TableCard title={banca ? 'Bank officers' : 'Agents'}>
+      <DataTable<AgentView>
+        rowKey="id"
+        loading={agents.isFetching}
+        dataSource={agents.items}
+        pagination={agents.pagination}
+        columns={columns}
+        onRowClick={(agent) => navigate(`/backoffice/agents/${agent.id}`)}
+        locale={{ emptyText: <EmptyState label="No agents registered" /> }}
+      />
+    </TableCard>
   );
 }
 
@@ -79,61 +73,76 @@ export default function AgencyDetailPage() {
 
   return (
     <QueryState query={agency}>
-      {(data) => (
-        <>
-          <PageHeader
-            title={data.name}
-            tags={<StatusTag status={data.status} />}
-            meta={[
-              { label: 'Code', value: data.code },
-              { label: 'Channel', value: CHANNEL_LABELS[data.channel] },
-            ]}
-            breadcrumb={[
-              { title: 'Home', to: '/backoffice' },
-              { title: 'Agencies & banks', to: '/backoffice/agencies' },
-              { title: data.code },
-            ]}
-            extra={
-              can(P.boAgenciesManage) && (
-                <>
-                  {data.issuanceBlocked && (
-                    <Button icon={<UnlockOutlined />} onClick={() => setDialog('lift')}>
-                      Lift block
+      {(data) => {
+        const banca = data.channel === 'BANCA';
+        return (
+          <>
+            <PageHeader
+              title={data.name}
+              tags={<StatusTag status={data.status} />}
+              meta={[
+                { label: 'Code', value: data.code },
+                { label: 'Channel', value: CHANNEL_LABELS[data.channel] },
+                data.registrationNo && { label: 'Registration no.', value: data.registrationNo },
+              ]}
+              breadcrumb={[
+                { title: 'Home', to: '/backoffice' },
+                { title: 'Agencies & banks', to: '/backoffice/agencies' },
+                { title: data.code },
+              ]}
+              extra={
+                can(P.boAgenciesManage) && (
+                  <>
+                    {data.issuanceBlocked && (
+                      <Button icon={<UnlockOutlined />} onClick={() => setDialog('lift')}>
+                        Lift block
+                      </Button>
+                    )}
+                    <Button
+                      type="primary"
+                      icon={<EditOutlined />}
+                      onClick={() => setDialog('edit')}
+                    >
+                      Edit
                     </Button>
-                  )}
-                  <Button type="primary" icon={<EditOutlined />} onClick={() => setDialog('edit')}>
-                    Edit
-                  </Button>
-                </>
-              )
-            }
-          />
-          <IssuanceBlockAlert agency={data} />
-          <Card title="Details" className="content-card">
-            <AgencySummary agency={data} />
-          </Card>
-          <Card title="Agents and bank officers" className="content-card">
-            <AgencyAgents agencyId={data.id} />
-          </Card>
-          {dialog === 'edit' && (
-            <AgencyFormModal agency={data} onClose={() => setDialog(undefined)} />
-          )}
-          {dialog === 'lift' && (
-            <RemarksModal
-              title={`Lift issuance block – ${data.code}`}
-              okText="Lift block"
-              label="Reason"
-              required
-              maxLength={300}
-              description="Use this when contributions were settled outside the portal. The daily check blocks the agency again if contributions are still overdue."
-              pending={liftBlock.isPending}
-              error={liftBlock.error}
-              onSubmit={(reason) => liftBlock.mutate(reason)}
-              onClose={() => setDialog(undefined)}
+                  </>
+                )
+              }
             />
-          )}
-        </>
-      )}
+            <IssuanceBlockAlert agency={data} />
+            <Row gutter={16}>
+              <Col xs={24} xl={16}>
+                <Card title="Details" className="content-card">
+                  <AgencySummary agency={data} fields="details" />
+                </Card>
+              </Col>
+              <Col xs={24} xl={8}>
+                <Card title="Agents & contributions" className="content-card">
+                  <AgencySummary agency={data} fields="activity" columns={2} />
+                </Card>
+              </Col>
+            </Row>
+            <AgencyAgents agencyId={data.id} banca={banca} />
+            {dialog === 'edit' && (
+              <AgencyFormModal agency={data} onClose={() => setDialog(undefined)} />
+            )}
+            {dialog === 'lift' && (
+              <RemarksModal
+                title={`Lift issuance block – ${data.code}`}
+                okText="Lift block"
+                label="Reason"
+                required
+                maxLength={300}
+                description="For contributions settled outside the portal; the daily check blocks the agency again while contributions stay overdue."
+                pending={liftBlock.isPending}
+                error={liftBlock.error}
+                onSubmit={(reason) => liftBlock.mutate(reason)}
+                onClose={() => setDialog(undefined)}
+              />
+            )}
+          </>
+        );
+      }}
     </QueryState>
   );
 }

@@ -1,16 +1,19 @@
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, Card, Input, Select, Table } from 'antd';
+import { Button, Input, Select } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { usePagedQuery } from '../../api/hooks';
 import type { Agency, Channel } from '../../api/types';
 import { useAuth } from '../../auth/AuthContext';
 import { AgencyFormModal } from '../../components/admin/AgencyFormModal';
+import { IssuanceTag } from '../../components/admin/AgencySummary';
 import { CHANNEL_LABELS } from '../../components/admin/agents';
 import { enumOptions } from '../../components/admin/useCodes';
-import { FilterBar } from '../../components/FilterBar';
+import { DataTable, statusColumn, textColumn } from '../../components/DataTable';
+import { EmptyState } from '../../components/EmptyState';
 import { PageHeader } from '../../components/PageHeader';
-import { StatusTag } from '../../components/StatusTag';
+import { TableCard } from '../../components/TableCard';
 import { formatNumber, humanise } from '../../utils/format';
 import { P } from '../../utils/permissions';
 
@@ -38,6 +41,41 @@ export default function AgencyListPage() {
     agencies.resetPage();
   };
 
+  const columns: ColumnsType<Agency> = [
+    {
+      title: 'Code',
+      dataIndex: 'code',
+      width: 120,
+      fixed: 'left',
+      render: (code: string, agency) => (
+        <Link to={`/backoffice/agencies/${agency.id}`}>{code}</Link>
+      ),
+    },
+    textColumn('Name', 'name'),
+    {
+      title: 'Channel',
+      dataIndex: 'channel',
+      width: 130,
+      render: (channel: Channel) => CHANNEL_LABELS[channel],
+    },
+    statusColumn('Status', 'status', 110),
+    {
+      title: 'Active agents',
+      dataIndex: 'activeAgents',
+      width: 110,
+      align: 'right',
+      render: formatNumber,
+    },
+    {
+      title: 'New business',
+      dataIndex: 'issuanceBlocked',
+      width: 120,
+      render: (blocked: boolean) => <IssuanceTag blocked={blocked} />,
+    },
+    textColumn('Email', 'email', 200),
+    textColumn('Phone', 'phone', 120),
+  ];
+
   return (
     <>
       <PageHeader
@@ -51,80 +89,45 @@ export default function AgencyListPage() {
           )
         }
       />
-      <FilterBar>
-        <Input.Search
-          allowClear
-          placeholder="Code or name"
-          aria-label="Search agencies"
-          style={{ width: 240 }}
-          onSearch={(value) => update({ search: value.trim() || undefined })}
-        />
-        <Select
-          allowClear
-          placeholder="Channel"
-          aria-label="Channel"
-          style={{ width: 170 }}
-          options={CHANNEL_OPTIONS}
-          onChange={(channel?: Channel) => update({ channel })}
-        />
-        <Select
-          allowClear
-          placeholder="Status"
-          aria-label="Status"
-          style={{ width: 150 }}
-          options={enumOptions(STATUSES, humanise)}
-          onChange={(status?: Agency['status']) => update({ status })}
-        />
-      </FilterBar>
-      <Card className="content-card">
-        <Table<Agency>
-          size="middle"
+      <TableCard
+        toolbar={
+          <>
+            <Input.Search
+              allowClear
+              placeholder="Code or name"
+              aria-label="Search agencies"
+              className="filter-search"
+              onSearch={(value) => update({ search: value.trim() || undefined })}
+            />
+            <Select
+              allowClear
+              placeholder="Channel"
+              aria-label="Channel"
+              className="filter-select"
+              options={CHANNEL_OPTIONS}
+              onChange={(channel?: Channel) => update({ channel })}
+            />
+            <Select
+              allowClear
+              placeholder="Status"
+              aria-label="Status"
+              className="filter-select"
+              options={enumOptions(STATUSES, humanise)}
+              onChange={(status?: Agency['status']) => update({ status })}
+            />
+          </>
+        }
+      >
+        <DataTable<Agency>
           rowKey="id"
           loading={agencies.isFetching}
           dataSource={agencies.items}
           pagination={agencies.pagination}
-          scroll={{ x: 'max-content' }}
-          locale={{ emptyText: 'No agencies or banks match the filters' }}
-          columns={[
-            {
-              title: 'Code',
-              dataIndex: 'code',
-              render: (code: string, agency) => (
-                <Link to={`/backoffice/agencies/${agency.id}`}>{code}</Link>
-              ),
-            },
-            { title: 'Name', dataIndex: 'name' },
-            {
-              title: 'Channel',
-              dataIndex: 'channel',
-              render: (channel: Channel) => CHANNEL_LABELS[channel],
-            },
-            {
-              title: 'Status',
-              dataIndex: 'status',
-              render: (status: string) => <StatusTag status={status} />,
-            },
-            {
-              title: 'Active agents',
-              dataIndex: 'activeAgents',
-              align: 'right',
-              render: formatNumber,
-            },
-            {
-              title: 'New business',
-              dataIndex: 'issuanceBlocked',
-              render: (blocked: boolean) =>
-                blocked ? (
-                  <StatusTag status="SUSPENDED" label="Blocked" />
-                ) : (
-                  <StatusTag status="ACTIVE" label="Permitted" />
-                ),
-            },
-            { title: 'Email', dataIndex: 'email', render: (email: string | null) => email ?? '–' },
-            { title: 'Phone', dataIndex: 'phone', render: (phone: string | null) => phone ?? '–' },
-          ]}
+          columns={columns}
+          onRowClick={(agency) => navigate(`/backoffice/agencies/${agency.id}`)}
+          locale={{ emptyText: <EmptyState label="No agencies or banks match the filters" /> }}
         />
-      </Card>
+      </TableCard>
       {creating && (
         <AgencyFormModal
           onClose={() => setCreating(false)}

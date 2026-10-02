@@ -1,39 +1,57 @@
 import { EditOutlined, SwapOutlined } from '@ant-design/icons';
-import { Alert, Button, Card, Descriptions, Table, Tabs } from 'antd';
+import { Alert, Button, Card, Col, Row, Tabs } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import { useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 import { useApiQuery } from '../../api/hooks';
 import type { AgentDetail, AmlScreening } from '../../api/types';
 import { useAuth } from '../../auth/AuthContext';
 import { AgentDocuments } from '../../components/admin/AgentDocuments';
-import { AgentStatusModal, AgentUpdateModal } from '../../components/admin/AgentMaintenance';
+import { AgentStatusForm, AgentUpdateForm } from '../../components/admin/AgentMaintenance';
 import { AgentProfile } from '../../components/admin/AgentProfile';
-import { AGENT_TYPE_LABELS, STATUS_TRANSITIONS } from '../../components/admin/agents';
+import { IssuanceTag } from '../../components/admin/AgencySummary';
+import {
+  AGENT_TYPE_LABELS,
+  CHANNEL_LABELS,
+  STATUS_TRANSITIONS,
+} from '../../components/admin/agents';
 import { renderScreeningMatches } from '../../components/admin/AmlMatchesTable';
 import { SubAgentTable } from '../../components/admin/SubAgentTable';
 import { ApprovalHistory } from '../../components/ApprovalHistory';
+import { DataTable, dateTimeColumn, statusColumn, textColumn } from '../../components/DataTable';
+import { EmptyState } from '../../components/EmptyState';
+import { FieldGrid } from '../../components/FieldGrid';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryState } from '../../components/QueryState';
 import { StatusTag } from '../../components/StatusTag';
 import { formatDateTime } from '../../utils/format';
 import { P } from '../../utils/permissions';
 
+type TabKey = 'documents' | 'hierarchy' | 'aml' | 'approvals' | 'maintenance';
+type Maintenance = 'update' | 'status';
+
 const agentLink = (agent: { id: string; agentCode: string; fullName: string }) => (
   <Link to={`/backoffice/agents/${agent.id}`}>{`${agent.fullName} (${agent.agentCode})`}</Link>
 );
 
+function count(label: string, total: number): string {
+  return total > 0 ? `${label} (${total})` : label;
+}
+
 function Hierarchy({ agent }: { agent: AgentDetail }) {
   return (
     <>
-      <Descriptions
-        size="small"
+      <FieldGrid
+        columns={3}
         className="mb-16"
         items={[
           {
             key: 'parent',
             label: 'Reports to',
-            children: agent.parent ? agentLink(agent.parent) : 'No reporting line',
+            value: agent.parent ? agentLink(agent.parent) : null,
           },
+          { key: 'type', label: 'Type', value: AGENT_TYPE_LABELS[agent.agentType] },
+          { key: 'count', label: 'Reporting agents', value: agent.subAgents.length },
         ]}
       />
       <SubAgentTable
@@ -44,42 +62,136 @@ function Hierarchy({ agent }: { agent: AgentDetail }) {
   );
 }
 
+const SCREENING_COLUMNS: ColumnsType<AmlScreening> = [
+  dateTimeColumn('Screened', 'createdAt', 160),
+  { title: 'Provider', dataIndex: 'provider', width: 140 },
+  { title: 'Highest score', dataIndex: 'score', width: 120, align: 'right', className: 'money' },
+  {
+    title: 'Matches',
+    key: 'matches',
+    width: 90,
+    align: 'right',
+    className: 'money',
+    render: (_: unknown, row) => row.matches.length,
+  },
+  statusColumn('Outcome', 'status', 140),
+  dateTimeColumn('Reviewed', 'reviewedAt', 160),
+  textColumn('Review remarks', 'reviewRemarks'),
+];
+
 function Screenings({ screenings }: { screenings: AmlScreening[] }) {
   return (
-    <Table<AmlScreening>
+    <DataTable<AmlScreening>
       size="small"
       rowKey="id"
       pagination={false}
       dataSource={screenings}
-      locale={{ emptyText: 'Not screened yet' }}
+      scroll={{}}
+      columns={SCREENING_COLUMNS}
+      locale={{ emptyText: <EmptyState label="Not screened yet" /> }}
       expandable={{
         rowExpandable: (row) => row.matches.length > 0,
         expandedRowRender: renderScreeningMatches,
       }}
-      columns={[
-        { title: 'Screened', dataIndex: 'createdAt', render: formatDateTime },
-        { title: 'Provider', dataIndex: 'provider' },
-        { title: 'Highest score', dataIndex: 'score', align: 'right' },
-        {
-          title: 'Matches',
-          key: 'matches',
-          align: 'right',
-          render: (_: unknown, row) => row.matches.length,
-        },
-        {
-          title: 'Outcome',
-          dataIndex: 'status',
-          render: (status: string) => <StatusTag status={status} />,
-        },
-        { title: 'Reviewed', dataIndex: 'reviewedAt', render: formatDateTime },
-        {
-          title: 'Review remarks',
-          dataIndex: 'reviewRemarks',
-          ellipsis: true,
-          render: (remarks: string | null) => remarks ?? '–',
-        },
-      ]}
     />
+  );
+}
+
+/** Status, portal login and agency facts kept beside the profile. */
+function SideCards({ agent }: { agent: AgentDetail }) {
+  const banca = agent.agency.channel === 'BANCA';
+  return (
+    <>
+      <Card title="Status" className="content-card">
+        <FieldGrid
+          columns={2}
+          items={[
+            {
+              key: 'status',
+              label: 'Status',
+              value: <StatusTag status={agent.status} />,
+            },
+            { key: 'aml', label: 'AML status', value: <StatusTag status={agent.amlStatus} /> },
+            agent.statusReason && {
+              key: 'reason',
+              label: 'Status reason',
+              value: agent.statusReason,
+              span: 'full',
+            },
+            {
+              key: 'login',
+              label: 'Portal login',
+              value: agent.user ? agent.user.username : 'Created on approval',
+            },
+            {
+              key: 'loginStatus',
+              label: 'Login status',
+              value: agent.user ? <StatusTag status={agent.user.status} /> : null,
+            },
+            {
+              key: 'lastLogin',
+              label: 'Last sign-in',
+              value: formatDateTime(agent.user?.lastLoginAt),
+            },
+            { key: 'registered', label: 'Registered', value: formatDateTime(agent.createdAt) },
+            { key: 'activated', label: 'Activated', value: formatDateTime(agent.activatedAt) },
+          ]}
+        />
+      </Card>
+      <Card title={banca ? 'Bank' : 'Agency'} className="content-card">
+        <FieldGrid
+          columns={2}
+          items={[
+            {
+              key: 'name',
+              label: 'Name',
+              value: (
+                <Link to={`/backoffice/agencies/${agent.agency.id}`}>{agent.agency.name}</Link>
+              ),
+              span: 'full',
+            },
+            { key: 'code', label: 'Code', value: agent.agency.code },
+            { key: 'channel', label: 'Channel', value: CHANNEL_LABELS[agent.agency.channel] },
+            { key: 'status', label: 'Status', value: <StatusTag status={agent.agency.status} /> },
+            {
+              key: 'issuance',
+              label: 'New business',
+              value: <IssuanceTag blocked={agent.agency.issuanceBlocked} />,
+            },
+          ]}
+        />
+      </Card>
+    </>
+  );
+}
+
+function MaintenanceTab({
+  agent,
+  form,
+  onChange,
+}: {
+  agent: AgentDetail;
+  form: Maintenance;
+  onChange(form: Maintenance): void;
+}) {
+  const canChangeStatus = STATUS_TRANSITIONS[agent.status].length > 0;
+  return (
+    <Card
+      className="content-card"
+      activeTabKey={form}
+      tabProps={{ size: 'middle' }}
+      onTabChange={(key) => onChange(key as Maintenance)}
+      tabList={[
+        { key: 'update', label: 'Profile update' },
+        { key: 'status', label: 'Status change', disabled: !canChangeStatus },
+      ]}
+    >
+      {form === 'update' ? (
+        <AgentUpdateForm key={agent.version} agent={agent} />
+      ) : (
+        <AgentStatusForm key={agent.version} agent={agent} />
+      )}
+    </Card>
   );
 }
 
@@ -87,14 +199,21 @@ function Screenings({ screenings }: { screenings: AmlScreening[] }) {
 export default function AgentDetailPage() {
   const { id = '' } = useParams();
   const { can } = useAuth();
+  const navigate = useNavigate();
   const agent = useApiQuery<AgentDetail>(`/backoffice/agents/${id}`);
-  const [dialog, setDialog] = useState<'update' | 'status'>();
+  const [tab, setTab] = useState<TabKey>('documents');
+  const [maintenance, setMaintenance] = useState<Maintenance>('update');
+  const openMaintenance = (form: Maintenance) => {
+    setMaintenance(form);
+    setTab('maintenance');
+  };
 
   return (
     <QueryState query={agent}>
       {(data) => {
         const manage = can(P.boAgentsManage);
         const closed = data.status === 'TERMINATED' || data.status === 'REJECTED';
+        const maintainable = manage && !closed;
         const pending = data.approvals.filter((approval) => approval.status === 'PENDING');
         return (
           <>
@@ -112,18 +231,17 @@ export default function AgentDetailPage() {
                 { title: data.agentCode },
               ]}
               extra={
-                manage &&
-                !closed && (
+                maintainable && (
                   <>
                     {STATUS_TRANSITIONS[data.status].length > 0 && (
-                      <Button icon={<SwapOutlined />} onClick={() => setDialog('status')}>
+                      <Button icon={<SwapOutlined />} onClick={() => openMaintenance('status')}>
                         Change status
                       </Button>
                     )}
                     <Button
                       type="primary"
                       icon={<EditOutlined />}
-                      onClick={() => setDialog('update')}
+                      onClick={() => openMaintenance('update')}
                     >
                       Request profile update
                     </Button>
@@ -137,83 +255,96 @@ export default function AgentDetailPage() {
                 className="mb-16"
                 type="info"
                 showIcon
-                title={
-                  <>
-                    <Link to={`/backoffice/approvals/${approval.id}`}>{approval.requestNo}</Link> is
-                    awaiting approval: {approval.summary}
-                  </>
+                title={`${approval.requestNo} awaiting approval – ${approval.summary}`}
+                action={
+                  <Button
+                    size="small"
+                    onClick={() => navigate(`/backoffice/approvals/${approval.id}`)}
+                  >
+                    Open request
+                  </Button>
                 }
               />
             ))}
-            <Card title="Profile" className="content-card">
-              <AgentProfile
-                agent={data}
-                parentLink={agentLink}
-                extra={[
-                  {
-                    key: 'login',
-                    label: 'Portal login',
-                    children: data.user
-                      ? `${data.user.username} (${data.user.status.toLowerCase()})`
-                      : 'Created on approval',
-                  },
-                  {
-                    key: 'lastLogin',
-                    label: 'Last sign-in',
-                    children: formatDateTime(data.user?.lastLoginAt),
-                  },
-                  {
-                    key: 'agencyLink',
-                    label: data.agency.channel === 'BANCA' ? 'Bank record' : 'Agency record',
-                    children: (
-                      <Link to={`/backoffice/agencies/${data.agency.id}`}>{data.agency.code}</Link>
-                    ),
-                  },
-                ]}
-              />
-            </Card>
-            <Card className="content-card">
-              <Tabs
-                destroyOnHidden
-                items={[
-                  {
-                    key: 'documents',
-                    label: 'Documents',
-                    children: (
+            <Row gutter={16}>
+              <Col xs={24} xl={16}>
+                <Card title="Profile" className="content-card">
+                  <AgentProfile
+                    agent={data}
+                    parentLink={agentLink}
+                    omit={['code', 'type', 'status', 'aml', 'registered', 'activated']}
+                  />
+                </Card>
+              </Col>
+              <Col xs={24} xl={8}>
+                <SideCards agent={data} />
+              </Col>
+            </Row>
+            <Tabs
+              className="page-tabs"
+              activeKey={tab}
+              onChange={(key) => setTab(key as TabKey)}
+              items={[
+                {
+                  key: 'documents',
+                  label: count('Documents', data.documents.length),
+                  children: (
+                    <Card className="content-card">
                       <AgentDocuments
                         agentId={data.id}
                         idType={data.idType}
                         channel={data.agency.channel}
-                        canUpload={manage && !closed}
+                        canUpload={maintainable}
                         canReview={can(P.boDocumentsVerify)}
                         checkRequired={data.status === 'PENDING'}
                       />
-                    ),
-                  },
-                  {
-                    key: 'hierarchy',
-                    label: `Hierarchy (${data.subAgents.length})`,
-                    children: <Hierarchy agent={data} />,
-                  },
-                  {
-                    key: 'aml',
-                    label: 'AML screening',
-                    children: <Screenings screenings={data.screenings ?? []} />,
-                  },
-                  {
-                    key: 'approvals',
-                    label: 'Approval history',
-                    children: <ApprovalHistory approvals={data.approvals} />,
-                  },
-                ]}
-              />
-            </Card>
-            {dialog === 'update' && (
-              <AgentUpdateModal agent={data} onClose={() => setDialog(undefined)} />
-            )}
-            {dialog === 'status' && (
-              <AgentStatusModal agent={data} onClose={() => setDialog(undefined)} />
-            )}
+                    </Card>
+                  ),
+                },
+                {
+                  key: 'hierarchy',
+                  label: count('Hierarchy', data.subAgents.length),
+                  children: (
+                    <Card className="content-card">
+                      <Hierarchy agent={data} />
+                    </Card>
+                  ),
+                },
+                {
+                  key: 'aml',
+                  label: count('AML screening', data.screenings?.length ?? 0),
+                  children: (
+                    <Card className="content-card">
+                      <Screenings screenings={data.screenings ?? []} />
+                    </Card>
+                  ),
+                },
+                {
+                  key: 'approvals',
+                  label: count('Approval history', data.approvals.length),
+                  children: (
+                    <Card className="content-card">
+                      <ApprovalHistory approvals={data.approvals} />
+                    </Card>
+                  ),
+                },
+                ...(maintainable
+                  ? [
+                      {
+                        key: 'maintenance',
+                        label: 'Maintenance',
+                        children: (
+                          <MaintenanceTab
+                            agent={data}
+                            form={maintenance}
+                            onChange={setMaintenance}
+                          />
+                        ),
+                      },
+                    ]
+                  : []),
+              ]}
+            />
           </>
         );
       }}
