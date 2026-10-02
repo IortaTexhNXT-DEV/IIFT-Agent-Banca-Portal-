@@ -1,30 +1,20 @@
-import { PlusOutlined } from '@ant-design/icons';
-import {
-  App,
-  Button,
-  Card,
-  Col,
-  Drawer,
-  Flex,
-  Form,
-  Input,
-  Popconfirm,
-  Row,
-  Select,
-  Table,
-  Tag,
-} from 'antd';
+import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
+import { App, Button, Drawer, Form, Input, Popconfirm, Select, Tag, Tooltip } from 'antd';
 import { useState } from 'react';
 import { api } from '../../api/client';
 import { useApiMutation, useApiQuery } from '../../api/hooks';
 import type { PermissionDefinition, Role } from '../../api/admin-types';
 import type { Audience } from '../../api/types';
-import { CellText } from '../../components/admin/CellText';
 import { PermissionPicker } from '../../components/admin/PermissionPicker';
+import { ActionBar } from '../../components/ActionBar';
+import { DataTable, textColumn } from '../../components/DataTable';
 import { ErrorAlert } from '../../components/ErrorAlert';
+import { FormSection } from '../../components/FormSection';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryState } from '../../components/QueryState';
+import { TableCard } from '../../components/TableCard';
 import { formatNumber } from '../../utils/format';
+import '../../styles/admin.css';
 
 const ROLES_PATH = '/backoffice/roles';
 const AUDIENCE_LABELS: Record<Audience, string> = {
@@ -77,13 +67,14 @@ function RoleDrawer({
       title={role ? `Edit role – ${role.name}` : 'New role'}
       onClose={onClose}
       destroyOnHidden
-      extra={
-        <Flex gap={8}>
+      extra={role?.isSystem && <Tag variant="filled">System</Tag>}
+      footer={
+        <ActionBar>
           <Button onClick={onClose}>Cancel</Button>
           <Button type="primary" loading={save.isPending} onClick={() => form.submit()}>
             Save
           </Button>
-        </Flex>
+        </ActionBar>
       }
     >
       <ErrorAlert error={save.error} className="mb-16" />
@@ -95,6 +86,8 @@ function RoleDrawer({
         initialValues={
           role
             ? {
+                code: role.code,
+                audience: role.audience,
                 name: role.name,
                 description: role.description ?? '',
                 permissions: role.permissions,
@@ -102,57 +95,49 @@ function RoleDrawer({
             : { audience: 'BACKOFFICE', permissions: [] }
         }
       >
-        <Row gutter={16}>
-          {!role && (
-            <>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  name="code"
-                  label="Code"
-                  normalize={(value: string) => value.toUpperCase()}
-                  rules={[
-                    { required: true, message: 'Enter a code' },
-                    {
-                      pattern: CODE_PATTERN,
-                      message: 'Capital letters, digits and underscores, starting with a letter',
-                    },
-                  ]}
-                >
-                  <Input />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item name="audience" label="Used in" rules={[{ required: true }]}>
-                  <Select
-                    options={Object.entries(AUDIENCE_LABELS).map(([value, label]) => ({
-                      value,
-                      label,
-                    }))}
-                    onChange={() => form.setFieldValue('permissions', [])}
-                  />
-                </Form.Item>
-              </Col>
-            </>
-          )}
-          <Col span={24}>
-            <Form.Item
-              name="name"
-              label="Name"
-              rules={[
-                { required: true, whitespace: true, message: 'Enter the role name' },
-                { min: 2, max: 100 },
-              ]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={24}>
-            <Form.Item name="description" label="Description" rules={[{ max: 500 }]}>
-              <Input.TextArea rows={2} />
-            </Form.Item>
-          </Col>
-        </Row>
-        <Form.Item name="permissions" label="Permissions" rules={[{ type: 'array', max: 100 }]}>
+        <FormSection title="Role" columns={2}>
+          <Form.Item
+            name="code"
+            label="Code"
+            normalize={(value: string) => value.toUpperCase()}
+            rules={[
+              { required: true, message: 'Enter a code' },
+              { pattern: CODE_PATTERN, message: 'Capitals, digits and underscores' },
+            ]}
+          >
+            <Input disabled={Boolean(role)} />
+          </Form.Item>
+          <Form.Item name="audience" label="Used in" rules={[{ required: true }]}>
+            <Select
+              disabled={Boolean(role)}
+              options={Object.entries(AUDIENCE_LABELS).map(([value, label]) => ({
+                value,
+                label,
+              }))}
+              onChange={() => form.setFieldValue('permissions', [])}
+            />
+          </Form.Item>
+          <Form.Item
+            name="name"
+            label="Name"
+            className="field--full"
+            rules={[
+              { required: true, whitespace: true, message: 'Enter the role name' },
+              { min: 2, max: 100 },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="description"
+            label="Description"
+            className="field--full"
+            rules={[{ max: 500 }]}
+          >
+            <Input.TextArea rows={2} />
+          </Form.Item>
+        </FormSection>
+        <Form.Item name="permissions" noStyle rules={[{ type: 'array', max: 100 }]}>
           <PermissionPicker
             permissions={catalogue.filter((permission) => permission.audience === audience)}
           />
@@ -190,58 +175,70 @@ export default function RolesPage() {
           </Button>
         }
       />
-      <Card className="content-card">
-        <QueryState query={roles}>
-          {(items) => (
-            <Table<Role>
-              size="middle"
+      <QueryState query={roles}>
+        {(items) => (
+          <TableCard>
+            <DataTable<Role>
               rowKey="id"
+              scroll={{}}
               pagination={false}
               dataSource={items}
-              scroll={{ x: 'max-content' }}
+              locale={{ emptyText: 'No roles' }}
+              onRowClick={catalogue.data ? (role) => setEditing(role) : undefined}
               columns={[
                 {
                   title: 'Role',
                   dataIndex: 'name',
+                  width: 310,
                   render: (name: string, role) => (
-                    <Flex gap={8} align="center">
+                    <span className="tag-row">
                       {name}
-                      {role.isSystem && <Tag variant="filled">System</Tag>}
-                    </Flex>
+                      {role.isSystem && (
+                        <Tooltip title="Installed with the system; cannot be deleted">
+                          <Tag variant="filled">System</Tag>
+                        </Tooltip>
+                      )}
+                    </span>
                   ),
                 },
-                { title: 'Code', dataIndex: 'code' },
+                { title: 'Code', dataIndex: 'code', width: 230 },
                 {
                   title: 'Used in',
                   dataIndex: 'audience',
+                  width: 160,
                   render: (audience: Audience) => AUDIENCE_LABELS[audience],
                 },
-                {
-                  title: 'Description',
-                  dataIndex: 'description',
-                  render: (description: string | null) => (
-                    <CellText text={description} width={300} />
-                  ),
-                },
+                textColumn('Description', 'description'),
                 {
                   title: 'Permissions',
                   dataIndex: 'permissions',
+                  width: 120,
                   align: 'right',
                   render: (permissions: string[]) => formatNumber(permissions.length),
                 },
-                { title: 'Users', dataIndex: 'userCount', align: 'right', render: formatNumber },
+                {
+                  title: 'Users',
+                  dataIndex: 'userCount',
+                  width: 70,
+                  align: 'right',
+                  render: formatNumber,
+                },
                 {
                   key: 'actions',
+                  width: 80,
+                  align: 'right',
                   render: (_: unknown, role) => (
-                    <Flex gap={4} className="table-actions">
-                      <Button
-                        size="small"
-                        type="link"
-                        disabled={!catalogue.data}
-                        onClick={() => setEditing(role)}
-                      >
-                        Edit
-                      </Button>
+                    <span className="row-actions">
+                      <Tooltip title="Edit">
+                        <Button
+                          type="text"
+                          size="small"
+                          icon={<EditOutlined />}
+                          aria-label={`Edit ${role.name}`}
+                          disabled={!catalogue.data}
+                          onClick={() => setEditing(role)}
+                        />
+                      </Tooltip>
                       {!role.isSystem && role.userCount === 0 && (
                         <Popconfirm
                           title={`Delete the role ${role.name}?`}
@@ -249,19 +246,25 @@ export default function RolesPage() {
                           okButtonProps={{ danger: true }}
                           onConfirm={() => remove.mutate(role)}
                         >
-                          <Button size="small" type="link" danger>
-                            Delete
-                          </Button>
+                          <Tooltip title="Delete">
+                            <Button
+                              type="text"
+                              size="small"
+                              danger
+                              icon={<DeleteOutlined />}
+                              aria-label={`Delete ${role.name}`}
+                            />
+                          </Tooltip>
                         </Popconfirm>
                       )}
-                    </Flex>
+                    </span>
                   ),
                 },
               ]}
             />
-          )}
-        </QueryState>
-      </Card>
+          </TableCard>
+        )}
+      </QueryState>
       {editing && catalogue.data && (
         <RoleDrawer
           role={editing === 'new' ? undefined : editing}

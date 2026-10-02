@@ -1,6 +1,7 @@
 import { PlayCircleOutlined } from '@ant-design/icons';
-import { Button, Flex, Tabs, Typography } from 'antd';
+import { Button, Tabs } from 'antd';
 import { useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { api } from '../../api/client';
 import { useApiMutation, useApiQuery } from '../../api/hooks';
 import type { IntegrationSummary, ReconciliationRun } from '../../api/admin-types';
@@ -11,21 +12,27 @@ import {
   ReconciliationTable,
   SYSTEM_LABELS,
 } from '../../components/admin/IntegrationTables';
+import { KpiGrid, KpiTile, type KpiTone } from '../../components/KpiTile';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryState } from '../../components/QueryState';
-import { KpiGrid, KpiTile } from '../../components/KpiTile';
 import { formatNumber } from '../../utils/format';
 
 const SUMMARY_REFRESH_MS = 60_000;
+const TABS = ['outbox', 'log', 'reconciliation'] as const;
+type Tab = (typeof TABS)[number];
 
-function healthHint(system: IntegrationSummary): string {
-  const calls =
-    system.averageMs === null
-      ? 'No calls'
-      : `${formatNumber(system.successCount + system.failureCount)} calls, avg ${formatNumber(system.averageMs)} ms`;
-  return `${calls} · ${system.pending} pending · ${system.retrying} retrying · ${system.deadLetter} dead`;
+function tone(system: IntegrationSummary): KpiTone {
+  if (system.deadLetter > 0) return 'danger';
+  if (system.retrying > 0) return 'warning';
+  return 'default';
 }
 
+function queueHint(system: IntegrationSummary): string {
+  const calls = formatNumber(system.successCount + system.failureCount);
+  return `${calls} calls · ${formatNumber(system.pending)} pending · ${formatNumber(system.retrying)} retrying · ${formatNumber(system.deadLetter)} dead`;
+}
+
+/** INT-11: success rate and queue state of every connected system. */
 function SystemHealth({ summary }: { summary: IntegrationSummary[] }) {
   return (
     <KpiGrid columns={3}>
@@ -34,8 +41,8 @@ function SystemHealth({ summary }: { summary: IntegrationSummary[] }) {
           key={system.system}
           label={SYSTEM_LABELS[system.system]}
           value={system.successRate === null ? '–' : `${system.successRate}%`}
-          sub={healthHint(system)}
-          tone={system.deadLetter > 0 ? 'danger' : system.retrying > 0 ? 'warning' : 'default'}
+          sub={queueHint(system)}
+          tone={tone(system)}
         />
       ))}
     </KpiGrid>
@@ -55,21 +62,18 @@ function Reconciliation() {
   );
   return (
     <>
-      <Flex justify="flex-end" className="mb-16">
-        <Button type="primary" icon={<PlayCircleOutlined />} onClick={() => setRunning(true)}>
-          Run reconciliation
-        </Button>
-      </Flex>
-      <ReconciliationTable />
+      <ReconciliationTable
+        actions={
+          <Button type="primary" icon={<PlayCircleOutlined />} onClick={() => setRunning(true)}>
+            Run reconciliation
+          </Button>
+        }
+      />
       {running && (
         <BusinessDateModal
           title="Run reconciliation"
           okText="Run"
-          description={
-            <Typography.Text type="secondary">
-              Matches the e-Receipts issued on the date against the postings Finance has confirmed.
-            </Typography.Text>
-          }
+          description="Matches the e-Receipts of the date against confirmed FIN postings"
           pending={reconcile.isPending}
           error={reconcile.error}
           onSubmit={(businessDate) => reconcile.mutate(businessDate)}
@@ -82,6 +86,9 @@ function Reconciliation() {
 
 /** INT-11/13..15: interface health, message queue with retry, call log and reconciliation. */
 export default function IntegrationPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requested = searchParams.get('tab');
+  const tab: Tab = TABS.find((key) => key === requested) ?? 'outbox';
   const summary = useApiQuery<IntegrationSummary[]>('/backoffice/integration/summary', undefined, {
     refetchInterval: SUMMARY_REFRESH_MS,
   });
@@ -95,7 +102,10 @@ export default function IntegrationPage() {
         {(data) => <SystemHealth summary={data} />}
       </QueryState>
       <Tabs
+        className="page-tabs"
+        activeKey={tab}
         destroyOnHidden
+        onChange={(key) => setSearchParams(key === 'outbox' ? {} : { tab: key }, { replace: true })}
         items={[
           { key: 'outbox', label: 'Message queue', children: <OutboxTable /> },
           { key: 'log', label: 'Integration log', children: <IntegrationLogTable /> },

@@ -1,12 +1,15 @@
-import { PlusOutlined } from '@ant-design/icons';
-import { Button, Card, Form, Input, InputNumber, Modal, Select, Switch, Table } from 'antd';
+import { EditOutlined, PlusOutlined, RightOutlined } from '@ant-design/icons';
+import { Button, Card, Col, Form, Input, InputNumber, Modal, Row, Switch, Tooltip } from 'antd';
 import { useState } from 'react';
 import { api } from '../../api/client';
 import { useApiMutation, useApiQuery } from '../../api/hooks';
 import type { CodeItem } from '../../api/types';
 import { humanise } from '../../utils/format';
+import { DataTable, textColumn } from '../DataTable';
 import { ErrorAlert } from '../ErrorAlert';
-import { FilterBar } from '../FilterBar';
+import { FormSection } from '../FormSection';
+import { QueryState } from '../QueryState';
+import { TableCard } from '../TableCard';
 import '../../styles/admin.css';
 
 const PATH = '/backoffice/config/codes';
@@ -54,6 +57,7 @@ function CodeModal({
       onCancel={onClose}
       onOk={() => form.submit()}
       destroyOnHidden
+      width={480}
     >
       <ErrorAlert error={save.error} className="mb-16" />
       <Form
@@ -65,33 +69,60 @@ function CodeModal({
           item ? { code: item.code, label: item.label, sortOrder: item.sortOrder } : undefined
         }
       >
-        <Form.Item
-          name="code"
-          label="Code"
-          extra={
-            item
-              ? 'Codes cannot be changed once in use'
-              : 'Stored on records; letters, digits and underscores'
-          }
-          rules={[
-            { required: true, message: 'Enter a code' },
-            { pattern: CODE_PATTERN, message: 'Up to 50 letters, digits or underscores' },
-          ]}
-        >
-          <Input disabled={Boolean(item)} />
-        </Form.Item>
-        <Form.Item
-          name="label"
-          label="Label"
-          rules={[{ required: true, whitespace: true, message: 'Enter the label' }, { max: 150 }]}
-        >
-          <Input />
-        </Form.Item>
-        <Form.Item name="sortOrder" label="Sort order">
-          <InputNumber min={0} precision={0} />
-        </Form.Item>
+        <FormSection columns={2}>
+          <Form.Item
+            name="code"
+            label="Code"
+            tooltip={item ? 'Codes cannot be changed once in use' : 'Stored on records'}
+            rules={[
+              { required: true, message: 'Enter a code' },
+              { pattern: CODE_PATTERN, message: 'Up to 50 letters, digits or underscores' },
+            ]}
+          >
+            <Input disabled={Boolean(item)} />
+          </Form.Item>
+          <Form.Item name="sortOrder" label="Sort order">
+            <InputNumber min={0} precision={0} className="w-full" />
+          </Form.Item>
+          <Form.Item
+            name="label"
+            label="Label"
+            className="field--full"
+            rules={[{ required: true, whitespace: true, message: 'Enter the label' }, { max: 150 }]}
+          >
+            <Input />
+          </Form.Item>
+        </FormSection>
       </Form>
     </Modal>
+  );
+}
+
+function CategoryList({
+  categories,
+  selected,
+  onSelect,
+}: {
+  categories: string[];
+  selected?: string;
+  onSelect(category: string): void;
+}) {
+  return (
+    <ul className="side-list">
+      {categories.map((category) => (
+        <li key={category}>
+          <button
+            type="button"
+            className={`side-list__item${category === selected ? ' side-list__item--active' : ''}`}
+            aria-current={category === selected ? 'true' : undefined}
+            onClick={() => onSelect(category)}
+          >
+            <span>{humanise(category)}</span>
+            <RightOutlined className="muted" />
+          </button>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -113,64 +144,78 @@ export function MasterDataSettings() {
 
   return (
     <>
-      <FilterBar>
-        <Select
-          aria-label="Category"
-          style={{ width: 260 }}
-          loading={categories.isLoading}
-          value={selected}
-          options={(categories.data ?? []).map((value) => ({ value, label: humanise(value) }))}
-          onChange={setCategory}
-        />
-        <span className="filter-bar__spacer" />
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          disabled={!selected}
-          onClick={() => setEditing('new')}
-        >
-          Add value
-        </Button>
-      </FilterBar>
       <ErrorAlert error={codes.error ?? setActive.error} className="mb-16" />
-      <Card className="content-card">
-        <Table<CodeItem>
-          size="middle"
-          rowKey="id"
-          loading={codes.isLoading}
-          dataSource={codes.data ?? []}
-          pagination={false}
-          locale={{ emptyText: 'No values in this category' }}
-          columns={[
-            { title: 'Code', dataIndex: 'code' },
-            { title: 'Label', dataIndex: 'label' },
-            { title: 'Sort order', dataIndex: 'sortOrder', align: 'right', width: 110 },
-            {
-              title: 'Active',
-              dataIndex: 'active',
-              width: 100,
-              render: (active: boolean, item) => (
-                <Switch
-                  size="small"
-                  checked={active}
-                  aria-label={`${active ? 'Deactivate' : 'Activate'} ${item.label}`}
-                  loading={setActive.isPending && setActive.variables?.id === item.id}
-                  onChange={(checked) => setActive.mutate({ id: item.id, active: checked })}
-                />
-              ),
-            },
-            {
-              key: 'actions',
-              width: 80,
-              render: (_: unknown, item) => (
-                <Button size="small" type="link" onClick={() => setEditing(item)}>
-                  Edit
-                </Button>
-              ),
-            },
-          ]}
-        />
-      </Card>
+      <Row gutter={16}>
+        <Col xs={24} md={8} xl={6}>
+          <Card title="Code lists" className="content-card content-card--flush">
+            <QueryState query={categories} rows={6}>
+              {(items) => (
+                <CategoryList categories={items} selected={selected} onSelect={setCategory} />
+              )}
+            </QueryState>
+          </Card>
+        </Col>
+        <Col xs={24} md={16} xl={18}>
+          <TableCard
+            title={selected ? humanise(selected) : 'Values'}
+            extra={
+              <Button
+                size="small"
+                icon={<PlusOutlined />}
+                disabled={!selected}
+                onClick={() => setEditing('new')}
+              >
+                Add value
+              </Button>
+            }
+          >
+            <DataTable<CodeItem>
+              size="small"
+              rowKey="id"
+              scroll={{}}
+              loading={codes.isLoading}
+              dataSource={codes.data ?? []}
+              pagination={false}
+              locale={{ emptyText: 'No values' }}
+              columns={[
+                { title: 'Code', dataIndex: 'code', width: 200 },
+                textColumn('Label', 'label'),
+                { title: 'Sort order', dataIndex: 'sortOrder', align: 'right', width: 100 },
+                {
+                  title: 'Active',
+                  dataIndex: 'active',
+                  width: 80,
+                  render: (active: boolean, item) => (
+                    <Switch
+                      size="small"
+                      checked={active}
+                      aria-label={`${active ? 'Deactivate' : 'Activate'} ${item.label}`}
+                      loading={setActive.isPending && setActive.variables?.id === item.id}
+                      onChange={(checked) => setActive.mutate({ id: item.id, active: checked })}
+                    />
+                  ),
+                },
+                {
+                  key: 'actions',
+                  width: 56,
+                  align: 'right',
+                  render: (_: unknown, item) => (
+                    <Tooltip title="Edit">
+                      <Button
+                        type="text"
+                        size="small"
+                        icon={<EditOutlined />}
+                        aria-label={`Edit ${item.label}`}
+                        onClick={() => setEditing(item)}
+                      />
+                    </Tooltip>
+                  ),
+                },
+              ]}
+            />
+          </TableCard>
+        </Col>
+      </Row>
       {editing && selected && (
         <CodeModal
           category={selected}

@@ -1,4 +1,4 @@
-import { Flex, Tag, Typography } from 'antd';
+import { Tag } from 'antd';
 import dayjs from 'dayjs';
 import type { Issue, IssuePriority, IssueStatus } from '../../api/types';
 import { formatDateTime } from '../../utils/format';
@@ -23,32 +23,39 @@ export function isIssueOpen(issue: Pick<Issue, 'status'>): boolean {
   return issue.status !== 'RESOLVED' && issue.status !== 'CLOSED';
 }
 
-/** A response or resolution target: the due time, flagged when it has passed unmet. */
+type SlaState = 'met' | 'breached' | 'due';
+
+export function slaState(due: string, metAt: string | null, open: boolean): SlaState {
+  if (metAt) return dayjs(metAt).isAfter(due) ? 'breached' : 'met';
+  return open && dayjs().isAfter(due) ? 'breached' : 'due';
+}
+
+const SLA_TAG: Record<SlaState, { colour: string; label: string } | null> = {
+  met: { colour: 'green', label: 'Met' },
+  breached: { colour: 'red', label: 'Breached' },
+  due: null,
+};
+
+/** A response or resolution target: the due time with a tag once it is met or breached. */
 export function SlaDue({ due, metAt, open }: { due: string; metAt: string | null; open: boolean }) {
-  const missed = metAt ? dayjs(metAt).isAfter(due) : open && dayjs().isAfter(due);
+  const tag = SLA_TAG[slaState(due, metAt, open)];
   return (
-    <Typography.Text type={missed ? 'danger' : undefined}>
+    <span className="tag-row">
       {formatDateTime(due)}
-      {metAt && !missed && <span className="muted"> · met</span>}
-      {missed && ' · missed'}
-    </Typography.Text>
+      {tag && (
+        <Tag color={tag.colour} variant="filled" className="status-tag">
+          {tag.label}
+        </Tag>
+      )}
+    </span>
   );
 }
 
 export function SlaBreachedTag({ issue }: { issue: Pick<Issue, 'slaBreached'> }) {
   if (!issue.slaBreached) return null;
   return (
-    <Tag color="red" variant="filled">
+    <Tag color="red" variant="filled" className="status-tag">
       SLA breached
     </Tag>
-  );
-}
-
-export function IssueTitle({ issue }: { issue: Pick<Issue, 'title' | 'slaBreached'> }) {
-  return (
-    <Flex gap={8} align="center" wrap>
-      {issue.title}
-      <SlaBreachedTag issue={issue} />
-    </Flex>
   );
 }

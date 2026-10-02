@@ -1,25 +1,25 @@
 import { PlusOutlined } from '@ant-design/icons';
-import { Button, Card, Checkbox, Input, Select, Table } from 'antd';
+import { Button, Checkbox, Input, Select } from 'antd';
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { usePagedQuery } from '../../api/hooks';
 import type { Issue, IssuePriority, IssueStatus } from '../../api/types';
 import { useAuth } from '../../auth/AuthContext';
 import {
   ISSUE_PRIORITIES,
   ISSUE_STATUSES,
-  IssueTitle,
   isIssueOpen,
   SlaDue,
 } from '../../components/admin/issues';
 import { basePathFor } from '../../components/admin/links';
 import { ReportIssueModal } from '../../components/admin/ReportIssueModal';
 import { enumOptions, useCodes } from '../../components/admin/useCodes';
-import { FilterBar } from '../../components/FilterBar';
+import { DataTable, dateTimeColumn, statusColumn, textColumn } from '../../components/DataTable';
 import { PageHeader } from '../../components/PageHeader';
-import { StatusTag } from '../../components/StatusTag';
-import { formatDateTime, humanise } from '../../utils/format';
+import { TableCard } from '../../components/TableCard';
+import { humanise } from '../../utils/format';
 import { P } from '../../utils/permissions';
+import '../../styles/admin.css';
 
 interface Filters {
   search?: string;
@@ -32,6 +32,7 @@ interface Filters {
 /** AP-55..57, BO-29..31: issues reported by the user, or every issue for support managers. */
 export default function IssueListPage() {
   const { user, can } = useAuth();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const audience = user?.audience ?? 'PORTAL';
   const base = basePathFor(audience);
@@ -47,102 +48,100 @@ export default function IssueListPage() {
     setFilters((current) => ({ ...current, ...changes }));
     issues.resetPage();
   };
+  const title = manager ? 'Issues' : 'Support';
 
   return (
     <>
       <PageHeader
-        title={manager ? 'Issues' : 'Support'}
-        breadcrumb={[{ title: 'Home', to: base }, { title: manager ? 'Issues' : 'Support' }]}
+        title={title}
+        breadcrumb={[{ title: 'Home', to: base }, { title }]}
         extra={
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setReporting(true)}>
             Report an issue
           </Button>
         }
       />
-      <FilterBar>
-        <Input.Search
-          allowClear
-          placeholder="Issue no. or title"
-          aria-label="Search issues"
-          style={{ width: 240 }}
-          onSearch={(value) => update({ search: value.trim() || undefined })}
-        />
-        <Select
-          allowClear
-          placeholder="Status"
-          aria-label="Status"
-          style={{ width: 150 }}
-          options={enumOptions(ISSUE_STATUSES, humanise)}
-          onChange={(status?: IssueStatus) => update({ status })}
-        />
-        <Select
-          allowClear
-          placeholder="Priority"
-          aria-label="Priority"
-          style={{ width: 140 }}
-          options={enumOptions(ISSUE_PRIORITIES, humanise)}
-          onChange={(priority?: IssuePriority) => update({ priority })}
-        />
-        {manager && (
+      <TableCard
+        toolbar={
           <>
-            <Checkbox
-              checked={filters.assignedToMe ?? false}
-              onChange={(event) => update({ assignedToMe: event.target.checked || undefined })}
-            >
-              Assigned to me
-            </Checkbox>
-            <Checkbox
-              checked={filters.breachedOnly ?? false}
-              onChange={(event) => update({ breachedOnly: event.target.checked || undefined })}
-            >
-              SLA breached
-            </Checkbox>
+            <Input.Search
+              allowClear
+              placeholder="Issue no. or title"
+              aria-label="Search issues"
+              className="filter-search"
+              onSearch={(value) => update({ search: value.trim() || undefined })}
+            />
+            <Select
+              allowClear
+              placeholder="Status"
+              aria-label="Status"
+              className="filter-select"
+              options={enumOptions(ISSUE_STATUSES, humanise)}
+              onChange={(status?: IssueStatus) => update({ status })}
+            />
+            <Select
+              allowClear
+              placeholder="Priority"
+              aria-label="Priority"
+              className="filter-select"
+              options={enumOptions(ISSUE_PRIORITIES, humanise)}
+              onChange={(priority?: IssuePriority) => update({ priority })}
+            />
+            {manager && (
+              <>
+                <Checkbox
+                  checked={filters.assignedToMe ?? false}
+                  onChange={(event) => update({ assignedToMe: event.target.checked || undefined })}
+                >
+                  Assigned to me
+                </Checkbox>
+                <Checkbox
+                  checked={filters.breachedOnly ?? false}
+                  onChange={(event) => update({ breachedOnly: event.target.checked || undefined })}
+                >
+                  SLA breached
+                </Checkbox>
+              </>
+            )}
           </>
-        )}
-      </FilterBar>
-      <Card className="content-card">
-        <Table<Issue>
-          size="middle"
+        }
+      >
+        <DataTable<Issue>
           rowKey="id"
           loading={issues.isFetching}
           dataSource={issues.items}
           pagination={issues.pagination}
-          scroll={{ x: 'max-content' }}
-          locale={{
-            emptyText: manager ? 'No issues match the filters' : 'You have not reported any issues',
-          }}
+          locale={{ emptyText: 'No issues' }}
+          onRowClick={(issue) => navigate(`${base}/issues/${issue.id}`)}
           columns={[
             {
               title: 'Issue no.',
               dataIndex: 'issueNo',
+              width: 130,
               render: (no: string, issue) => <Link to={`${base}/issues/${issue.id}`}>{no}</Link>,
             },
+            textColumn('Title', 'title', 260),
             {
-              title: 'Title',
-              dataIndex: 'title',
-              width: 320,
-              render: (_: unknown, issue) => <IssueTitle issue={issue} />,
+              title: 'Category',
+              dataIndex: 'category',
+              width: 160,
+              ellipsis: true,
+              render: categories.labelOf,
             },
-            { title: 'Category', dataIndex: 'category', render: categories.labelOf },
-            {
-              title: 'Priority',
-              dataIndex: 'priority',
-              render: (priority: string) => <StatusTag status={priority} />,
-            },
-            {
-              title: 'Status',
-              dataIndex: 'status',
-              render: (status: string) => <StatusTag status={status} />,
-            },
-            ...(manager ? [{ title: 'Reported by', dataIndex: 'reportedByName' }] : []),
+            statusColumn('Priority', 'priority', 100),
+            statusColumn('Status', 'status', 120),
+            ...(manager ? [textColumn<Issue>('Reported by', 'reportedByName', 180)] : []),
             {
               title: 'Assigned to',
               dataIndex: 'assignedToName',
-              render: (name: string | null) => name ?? 'Unassigned',
+              width: 160,
+              ellipsis: true,
+              render: (name: string | null) => name ?? <span className="muted">Unassigned</span>,
             },
             {
               title: 'Response due',
               dataIndex: 'responseDueAt',
+              width: 190,
               render: (_: unknown, issue) => (
                 <SlaDue
                   due={issue.responseDueAt}
@@ -154,6 +153,7 @@ export default function IssueListPage() {
             {
               title: 'Resolution due',
               dataIndex: 'resolutionDueAt',
+              width: 190,
               render: (_: unknown, issue) => (
                 <SlaDue
                   due={issue.resolutionDueAt}
@@ -162,10 +162,10 @@ export default function IssueListPage() {
                 />
               ),
             },
-            { title: 'Reported', dataIndex: 'createdAt', render: formatDateTime },
+            dateTimeColumn('Reported', 'createdAt', 150),
           ]}
         />
-      </Card>
+      </TableCard>
       {reporting && <ReportIssueModal onClose={() => setReporting(false)} />}
     </>
   );

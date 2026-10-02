@@ -18,17 +18,19 @@ interface Props {
   name: string;
   label: string;
   shape: Shape;
-  extra?: string;
-  rows?: number;
+  /** Shown as a tooltip on the label, e.g. the expected entry shape. */
+  tooltip?: string;
+  className?: string;
 }
 
-/** Monospace JSON editor field that checks the text parses to an object or array. */
-export function JsonField({ name, label, shape, extra, rows = 12 }: Props) {
+/** Monospace JSON editor field of fixed height that checks the text parses to an object or array. */
+export function JsonField({ name, label, shape, tooltip, className }: Props) {
   return (
     <Form.Item
       name={name}
       label={label}
-      extra={extra}
+      tooltip={tooltip}
+      className={className}
       rules={[
         { required: true, message: `Enter the ${label.toLowerCase()}` },
         {
@@ -37,14 +39,14 @@ export function JsonField({ name, label, shape, extra, rows = 12 }: Props) {
               return matches(JSON.parse(text), shape)
                 ? Promise.resolve()
                 : Promise.reject(new Error(`Must be a JSON ${shape}`));
-            } catch (error) {
-              return Promise.reject(new Error(`Invalid JSON: ${(error as Error).message}`));
+            } catch {
+              return Promise.reject(new Error('Invalid JSON'));
             }
           },
         },
       ]}
     >
-      <Input.TextArea rows={rows} spellCheck={false} className="json-editor" />
+      <Input.TextArea spellCheck={false} className="json-editor" />
     </Form.Item>
   );
 }

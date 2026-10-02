@@ -213,3 +213,278 @@
 .parameter-error {
   margin-top: 8px;
 }
+
+/* operations & administration */
+
+/* Action bars used as drawer footers already sit on the footer border. */
+.ant-drawer-footer .action-bar,
+.ant-modal-footer .action-bar {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.ant-drawer-footer {
+  padding: 12px 24px;
+}
+
+/* Fixed-height JSON panels (queue payloads) and editors (product configuration). */
+.json-block--fixed {
+  height: 220px;
+  max-height: none;
+}
+
+.json-editor textarea,
+textarea.json-editor {
+  height: 360px !important;
+  resize: none;
+}
+
+/* Tag lists inside table cells stay on one line. */
+.tag-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+/* Small file links in table cells (EOD report, FIN file). */
+.file-links {
+  display: inline-flex;
+  gap: 12px;
+  white-space: nowrap;
+}
+
+.file-links .ant-btn {
+  padding-inline: 0;
+  height: 22px;
+}
+
+/* Permission picker: one section per functional area, checkboxes on a grid. */
+.permission-picker .form-grid {
+  row-gap: 6px;
+}
+
+.permission-picker .form-section__title .ant-checkbox-wrapper {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.permission-picker .ant-checkbox-wrapper {
+  align-items: center;
+}
+
+/* Editable step table (workflow editor). */
+.step-table .ant-form-item {
+  margin-bottom: 0;
+}
+
+.step-table .ant-table-tbody > tr > td {
+  vertical-align: top;
+}
+
+.step-table .ant-form-item-explain-error {
+  font-size: 12px;
+}
+
+.step-table__level {
+  display: inline-block;
+  min-width: 24px;
+  line-height: 32px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* Inline parameter editing keeps the row height. */
+.parameter-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+}
+
+.parameter-value .ant-input-number,
+.parameter-value .ant-input {
+  width: 160px;
+}
+
+.parameter-key {
+  display: block;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--subtle);
+}
+
+/* Code lists (master data) in the side column. */
+.side-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0;
+}
+
+.side-list__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 20px;
+  border: 0;
+  background: none;
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.side-list__item:hover {
+  background: var(--fill);
+}
+
+.side-list__item--active {
+  background: var(--brand-magenta-light);
+  color: var(--brand-magenta-dark);
+  font-weight: 600;
+}
+
+/* Issue conversation: compact rows, internal notes marked by a tag and a tinted band. */
+.comment-thread .comment {
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.comment-thread .comment + .comment {
+  margin-top: 8px;
+}
+
+.comment-thread .comment--internal {
+  border-style: solid;
+  background: var(--fill);
+}
+
+.comment-thread .comment__meta {
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.comment-thread .comment__body {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.comment-form .ant-form-item {
+  margin-bottom: 12px;
+}
+
+.issue-description {
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+/* Notification rows: subject plus one line of body text. */
+.notification__subject {
+  display: block;
+  line-height: 20px;
+}
+
+.notification__body {
+  display: block;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notification-row--unread > td {
+  background: var(--fill);
+}
+
+/* Row-level icon actions stay on one line. */
+.row-actions {
+  display: inline-flex;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.temp-password {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 18px;
+  letter-spacing: 1px;
+}
+
+.w-full {
+  width: 100%;
+}
+
+/* distribution & control */
+
+/* Audit: compact before/after diff inside the expanded row. */
+.audit-change {
+  max-width: 1100px;
+}
+
+.audit-change .change-table .ant-table {
+  background: #fff;
+}
+
+.audit-change .audit-meta {
+  margin-top: 12px;
+}
+
+.change-cell__text {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
+td.audit-id {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 12px;
+}
+
+/* Expanded screening matches sit on the inset background without a second border. */
+.ant-table-expanded-row .aml-matches .ant-table {
+  background: transparent;
+}
+
+/* Alerts inside a flush table card line up with the toolbar. */
+.table-inset {
+  padding: 12px 20px 0;
+}
+
+/* Report catalogue: dense menu, report title with a help icon. */
+.report-menu.ant-menu-inline .ant-menu-item {
+  margin-inline: 8px;
+  width: calc(100% - 16px);
+}
+
+.report-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.report-title__info {
+  color: var(--subtle);
+  font-size: 14px;
+}
+
+.notification__subject--unread {
+  font-weight: 600;
+}
+
+.filter-select--narrow {
+  width: 130px;
+}
+
+@media (max-width: 768px) {
+  .filter-select--narrow {
+    width: 100%;
+  }
+}

@@ -2,10 +2,12 @@ import { DatePicker, Form, Modal } from 'antd';
 import dayjs, { type Dayjs } from 'dayjs';
 import type { ReactNode } from 'react';
 import { ErrorAlert } from '../ErrorAlert';
+import '../../styles/admin.css';
 
 interface Props {
   title: string;
   okText: string;
+  /** One line shown under the date, e.g. "Replaces the report and FIN file of the date". */
   description?: ReactNode;
   pending: boolean;
   error: unknown;
@@ -34,8 +36,8 @@ export function BusinessDateModal({
       onCancel={onClose}
       onOk={() => form.submit()}
       destroyOnHidden
+      width={400}
     >
-      {description && <div className="mb-16">{description}</div>}
       <ErrorAlert error={error} className="mb-16" />
       <Form
         form={form}
@@ -47,11 +49,12 @@ export function BusinessDateModal({
         <Form.Item
           name="businessDate"
           label="Business date"
+          extra={description}
           rules={[{ required: true, message: 'Choose the business date' }]}
         >
           <DatePicker
             format="DD MMM YYYY"
-            style={{ width: '100%' }}
+            className="w-full"
             disabledDate={(date) => date.isAfter(dayjs(), 'day')}
           />
         </Form.Item>

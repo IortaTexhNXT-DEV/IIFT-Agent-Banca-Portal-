@@ -8,6 +8,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { humanise } from '../../utils/format';
 import { DocumentPanel } from '../DocumentPanel';
 import { ErrorAlert } from '../ErrorAlert';
+import { FormSection } from '../FormSection';
 import { ISSUE_PRIORITIES, issueUploadTypes } from './issues';
 import { basePathFor } from './links';
 import { enumOptions, useCodes } from './useCodes';
@@ -18,6 +19,9 @@ interface IssueValues {
   priority: IssuePriority;
   description: string;
 }
+
+const PRIORITY_HELP =
+  'Critical: business stopped. High: key function unavailable. Medium: workaround exists. Low: question or minor fault.';
 
 /** AP-55..57: report an issue, then attach screenshots or documents to it. */
 export function ReportIssueModal({ onClose }: { onClose(): void }) {
@@ -57,14 +61,14 @@ export function ReportIssueModal({ onClose }: { onClose(): void }) {
           className="mb-16"
           type="success"
           showIcon
-          title={`Your reference number is ${created.issueNo}. Support will respond within the target time for ${humanise(created.priority).toLowerCase()} priority.`}
+          title={`Reference ${created.issueNo} – ${humanise(created.priority).toLowerCase()} priority response target applies`}
         />
         <DocumentPanel
           ownerType="ISSUE"
           ownerId={created.id}
           canUpload
           uploadTypes={issueUploadTypes(documentTypes.labelOf)}
-          title="Attachments (optional)"
+          title="Attachments"
         />
       </Modal>
     );
@@ -95,42 +99,46 @@ export function ReportIssueModal({ onClose }: { onClose(): void }) {
         requiredMark="optional"
         initialValues={{ priority: 'MEDIUM' }}
       >
-        <Form.Item
-          name="title"
-          label="Title"
-          rules={[
-            { required: true, whitespace: true, message: 'Enter a short title' },
-            { min: 5, max: 200 },
-          ]}
-        >
-          <Input />
-        </Form.Item>
-        <Form.Item
-          name="category"
-          label="Category"
-          rules={[{ required: true, message: 'Choose a category' }]}
-        >
-          <Select options={categories.options} loading={categories.loading} />
-        </Form.Item>
-        <Form.Item
-          name="priority"
-          label="Priority"
-          extra="Critical: business stopped. High: a key function is unavailable. Medium: impaired with a workaround. Low: question or minor fault."
-          rules={[{ required: true }]}
-        >
-          <Select options={enumOptions(ISSUE_PRIORITIES, humanise)} />
-        </Form.Item>
-        <Form.Item
-          name="description"
-          label="Description"
-          extra="What happened, what you expected, and any reference numbers involved"
-          rules={[
-            { required: true, whitespace: true, message: 'Describe the issue' },
-            { min: 10, max: 4000 },
-          ]}
-        >
-          <Input.TextArea rows={5} showCount maxLength={4000} />
-        </Form.Item>
+        <FormSection title="Issue" columns={2}>
+          <Form.Item
+            name="title"
+            label="Title"
+            className="field--full"
+            rules={[
+              { required: true, whitespace: true, message: 'Enter a short title' },
+              { min: 5, max: 200, message: '5 to 200 characters' },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="category"
+            label="Category"
+            rules={[{ required: true, message: 'Choose a category' }]}
+          >
+            <Select options={categories.options} loading={categories.loading} />
+          </Form.Item>
+          <Form.Item
+            name="priority"
+            label="Priority"
+            tooltip={PRIORITY_HELP}
+            rules={[{ required: true }]}
+          >
+            <Select options={enumOptions(ISSUE_PRIORITIES, humanise)} />
+          </Form.Item>
+          <Form.Item
+            name="description"
+            label="Description"
+            className="field--full"
+            tooltip="What happened, what you expected, and any reference numbers"
+            rules={[
+              { required: true, whitespace: true, message: 'Describe the issue' },
+              { min: 10, max: 4000, message: '10 to 4,000 characters' },
+            ]}
+          >
+            <Input.TextArea rows={4} showCount maxLength={4000} />
+          </Form.Item>
+        </FormSection>
       </Form>
     </Modal>
   );

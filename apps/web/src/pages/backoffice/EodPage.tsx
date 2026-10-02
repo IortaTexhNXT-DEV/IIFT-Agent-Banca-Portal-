@@ -1,17 +1,38 @@
-import { DownloadOutlined, PlayCircleOutlined } from '@ant-design/icons';
-import { App, Button, Card, Flex, Table, Tooltip, Typography } from 'antd';
+import {
+  CalendarOutlined,
+  CheckCircleOutlined,
+  DownloadOutlined,
+  FileProtectOutlined,
+  PlayCircleOutlined,
+  WalletOutlined,
+} from '@ant-design/icons';
+import { App, Button, Tooltip } from 'antd';
 import { useState } from 'react';
 import { api, download } from '../../api/client';
 import { useApiMutation, usePagedQuery } from '../../api/hooks';
 import type { EodRun } from '../../api/admin-types';
 import { BusinessDateModal } from '../../components/admin/BusinessDateModal';
-import { CellText } from '../../components/admin/CellText';
-import { Money } from '../../components/Money';
+import {
+  DataTable,
+  dateColumn,
+  dateTimeColumn,
+  moneyColumn,
+  textColumn,
+} from '../../components/DataTable';
+import { KpiGrid, KpiTile, type KpiTone } from '../../components/KpiTile';
 import { PageHeader } from '../../components/PageHeader';
 import { StatusTag } from '../../components/StatusTag';
-import { formatDate, formatDateTime, formatNumber } from '../../utils/format';
+import { TableCard } from '../../components/TableCard';
+import {
+  formatDate,
+  formatDateTime,
+  formatMoney,
+  formatNumber,
+  humanise,
+} from '../../utils/format';
+import '../../styles/admin.css';
 
-function FileButton({ documentId, label }: { documentId: string | null; label: string }) {
+function FileLink({ documentId, label }: { documentId: string | null; label: string }) {
   const { message } = App.useApp();
   if (!documentId) return null;
   return (
@@ -27,6 +48,50 @@ function FileButton({ documentId, label }: { documentId: string | null; label: s
     >
       {label}
     </Button>
+  );
+}
+
+const STATUS_TONE: Record<EodRun['status'], KpiTone> = {
+  COMPLETED: 'default',
+  RUNNING: 'accent',
+  FAILED: 'danger',
+};
+
+/** Latest business date at a glance. */
+function LatestRun({ run }: { run: EodRun | undefined }) {
+  return (
+    <KpiGrid columns={5}>
+      <KpiTile
+        label="Business date"
+        icon={<CalendarOutlined />}
+        value={run ? formatDate(run.businessDate) : '–'}
+        sub={run ? `Run by ${run.triggeredBy}` : 'Not run yet'}
+      />
+      <KpiTile
+        label="Policies issued"
+        icon={<FileProtectOutlined />}
+        tone="accent"
+        value={run ? formatNumber(run.policiesIssued) : '–'}
+      />
+      <KpiTile
+        label="Contribution"
+        icon={<WalletOutlined />}
+        value={run ? formatMoney(run.totalContribution) : '–'}
+      />
+      <KpiTile
+        label="Receipts"
+        icon={<WalletOutlined />}
+        value={run ? formatNumber(run.receiptsIssued) : '–'}
+        sub={run ? `${formatMoney(run.totalReceipts)} received` : undefined}
+      />
+      <KpiTile
+        label="Status"
+        icon={<CheckCircleOutlined />}
+        tone={run ? STATUS_TONE[run.status] : 'default'}
+        value={run ? humanise(run.status) : '–'}
+        sub={run?.finishedAt ? `Completed ${formatDateTime(run.finishedAt)}` : undefined}
+      />
+    </KpiGrid>
   );
 }
 
@@ -60,20 +125,21 @@ export default function EodPage() {
           </Button>
         }
       />
-      <Card className="content-card">
-        <Table<EodRun>
-          size="middle"
+      <LatestRun run={runs.items[0]} />
+      <TableCard title="Runs">
+        <DataTable<EodRun>
           rowKey="id"
+          scroll={{}}
           loading={runs.isFetching}
           dataSource={runs.items}
           pagination={runs.pagination}
-          scroll={{ x: 'max-content' }}
-          locale={{ emptyText: 'End of day has not been run yet' }}
+          locale={{ emptyText: 'No runs' }}
           columns={[
-            { title: 'Business date', dataIndex: 'businessDate', render: formatDate },
+            dateColumn('Business date', 'businessDate', 130),
             {
               title: 'Status',
               dataIndex: 'status',
+              width: 110,
               render: (status: string, row) => (
                 <Tooltip title={row.errorMessage}>
                   <span>
@@ -85,56 +151,40 @@ export default function EodPage() {
             {
               title: 'Policies',
               dataIndex: 'policiesIssued',
+              width: 80,
               align: 'right',
               render: formatNumber,
             },
-            {
-              title: 'Contribution',
-              dataIndex: 'totalContribution',
-              align: 'right',
-              render: (value: string) => <Money value={value} />,
-            },
+            moneyColumn('Contribution', 'totalContribution', 120),
             {
               title: 'Receipts',
               dataIndex: 'receiptsIssued',
+              width: 80,
               align: 'right',
               render: formatNumber,
             },
-            {
-              title: 'Receipts total',
-              dataIndex: 'totalReceipts',
-              align: 'right',
-              render: (value: string) => <Money value={value} />,
-            },
-            { title: 'Completed', dataIndex: 'finishedAt', render: formatDateTime },
-            {
-              title: 'Run by',
-              dataIndex: 'triggeredBy',
-              render: (name: string) => <CellText text={name} width={160} />,
-            },
+            moneyColumn('Receipts total', 'totalReceipts', 130),
+            dateTimeColumn('Completed', 'finishedAt', 160),
+            textColumn('Run by', 'triggeredBy'),
             {
               title: 'Files',
               key: 'files',
+              width: 200,
               render: (_: unknown, row) => (
-                <Flex gap={0}>
-                  <FileButton documentId={row.reportDocumentId} label="EOD report" />
-                  <FileButton documentId={row.finFileDocumentId} label="FIN file" />
-                </Flex>
+                <span className="file-links">
+                  <FileLink documentId={row.reportDocumentId} label="EOD report" />
+                  <FileLink documentId={row.finFileDocumentId} label="FIN file" />
+                </span>
               ),
             },
           ]}
         />
-      </Card>
+      </TableCard>
       {running && (
         <BusinessDateModal
           title="Run end of day"
           okText="Run"
-          description={
-            <Typography.Text type="secondary">
-              Totals the policies issued and receipts of the day, produces the EOD report and queues
-              the FIN posting. Running a date again replaces its report and FIN file.
-            </Typography.Text>
-          }
+          description="Running a date again replaces its report and FIN file"
           pending={run.isPending}
           error={run.error}
           onSubmit={(businessDate) => run.mutate(businessDate)}

@@ -1,8 +1,10 @@
-import { Button, Checkbox, Empty, Flex, Form, Input, Tag } from 'antd';
+import { Button, Checkbox, Form, Input, Tag } from 'antd';
 import { api } from '../../api/client';
 import { useApiMutation } from '../../api/hooks';
 import type { Issue } from '../../api/types';
 import { formatDateTime } from '../../utils/format';
+import { ActionBar } from '../ActionBar';
+import { EmptyState } from '../EmptyState';
 import { ErrorAlert } from '../ErrorAlert';
 import '../../styles/admin.css';
 
@@ -39,7 +41,7 @@ export function IssueComments({
   return (
     <>
       {comments.length === 0 ? (
-        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No comments yet" />
+        <EmptyState label="No comments" inline />
       ) : (
         <ol className="comment-thread">
           {comments.map((comment) => (
@@ -47,17 +49,15 @@ export function IssueComments({
               key={comment.id}
               className={`comment${comment.internal ? ' comment--internal' : ''}`}
             >
-              <Flex justify="space-between" gap={8} wrap className="comment__meta">
-                <span>
-                  <strong>{comment.authorName}</strong>
-                  {comment.internal && (
-                    <Tag color="orange" variant="filled" className="comment__tag">
-                      Internal note
-                    </Tag>
-                  )}
-                </span>
+              <div className="comment__meta tag-row">
+                <strong>{comment.authorName}</strong>
+                {comment.internal && (
+                  <Tag color="orange" variant="filled" className="status-tag">
+                    Internal
+                  </Tag>
+                )}
                 <span className="muted">{formatDateTime(comment.createdAt)}</span>
-              </Flex>
+              </div>
               <div className="comment__body">{comment.body}</div>
             </li>
           ))}
@@ -74,26 +74,27 @@ export function IssueComments({
           <ErrorAlert error={add.error} className="mb-16" />
           <Form.Item
             name="body"
-            label="Add a comment"
+            label="Comment"
             rules={[
               { required: true, whitespace: true, message: 'Write a comment' },
               { max: 4000 },
             ]}
           >
-            <Input.TextArea rows={3} maxLength={4000} />
+            <Input.TextArea rows={2} maxLength={4000} />
           </Form.Item>
-          <Flex justify="space-between" align="center">
-            {canAddInternal ? (
-              <Form.Item name="internal" valuePropName="checked" noStyle>
-                <Checkbox>Internal note (not visible to the reporter)</Checkbox>
-              </Form.Item>
-            ) : (
-              <span />
-            )}
+          <ActionBar
+            start={
+              canAddInternal && (
+                <Form.Item name="internal" valuePropName="checked" noStyle>
+                  <Checkbox>Internal note</Checkbox>
+                </Form.Item>
+              )
+            }
+          >
             <Button type="primary" htmlType="submit" loading={add.isPending}>
               Send
             </Button>
-          </Flex>
+          </ActionBar>
         </Form>
       )}
     </>

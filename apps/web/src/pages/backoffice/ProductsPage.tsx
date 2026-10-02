@@ -1,14 +1,20 @@
-import { Button, Card, Col, Drawer, Flex, Form, Input, Row, Switch, Table, Tabs } from 'antd';
+import { EditOutlined } from '@ant-design/icons';
+import { Button, Drawer, Form, Input, Switch, Tabs, Tooltip } from 'antd';
 import { useState } from 'react';
 import { api } from '../../api/client';
 import { useApiMutation, useApiQuery } from '../../api/hooks';
 import type { Product } from '../../api/types';
 import { JsonField, toJsonText } from '../../components/admin/JsonField';
+import { ActionBar } from '../../components/ActionBar';
+import { DataTable, textColumn } from '../../components/DataTable';
 import { ErrorAlert } from '../../components/ErrorAlert';
+import { FormSection } from '../../components/FormSection';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryState } from '../../components/QueryState';
 import { StatusTag } from '../../components/StatusTag';
-import { humanise } from '../../utils/format';
+import { TableCard } from '../../components/TableCard';
+import { formatNumber, humanise } from '../../utils/format';
+import '../../styles/admin.css';
 
 const PATH = '/backoffice/products';
 
@@ -23,17 +29,17 @@ interface ProductValues {
   questionnaire: string;
 }
 
-const SWITCHES: { name: keyof ProductValues; label: string; extra: string }[] = [
-  { name: 'active', label: 'Offered for sale', extra: 'Inactive products cannot be quoted' },
+const SWITCHES: { name: keyof ProductValues; label: string; tooltip: string }[] = [
+  { name: 'active', label: 'Offered for sale', tooltip: 'Inactive products cannot be quoted' },
   {
     name: 'paymentBeforeIssuance',
     label: 'Payment before issuance',
-    extra: 'Otherwise the policy is issued first, with a grace period to pay',
+    tooltip: 'Otherwise the policy is issued first, with a grace period to pay',
   },
   {
     name: 'allowRenewal',
     label: 'Renewal allowed',
-    extra: 'Expiring policies are offered for renewal',
+    tooltip: 'Expiring policies are offered for renewal',
   },
 ];
 
@@ -65,13 +71,13 @@ function ProductDrawer({ product, onClose }: { product: Product; onClose(): void
       title={`${product.code} – ${product.name}`}
       onClose={onClose}
       destroyOnHidden
-      extra={
-        <Flex gap={8}>
+      footer={
+        <ActionBar>
           <Button onClick={onClose}>Cancel</Button>
           <Button type="primary" loading={save.isPending} onClick={() => form.submit()}>
             Save
           </Button>
-        </Flex>
+        </ActionBar>
       }
     >
       <ErrorAlert error={save.error} className="mb-16" />
@@ -91,84 +97,92 @@ function ProductDrawer({ product, onClose }: { product: Product; onClose(): void
           questionnaire: toJsonText(product.questionnaire),
         }}
       >
-        <Form.Item
-          name="name"
-          label="Name"
-          rules={[
-            { required: true, whitespace: true },
-            { min: 3, max: 150 },
-          ]}
-        >
-          <Input />
-        </Form.Item>
-        <Form.Item
-          name="description"
-          label="Description"
-          rules={[
-            { required: true, whitespace: true },
-            { min: 3, max: 1000 },
-          ]}
-        >
-          <Input.TextArea rows={3} maxLength={1000} showCount />
-        </Form.Item>
-        <Row gutter={16}>
+        <FormSection title="Product" columns={2}>
+          <Form.Item
+            name="name"
+            label="Name"
+            rules={[
+              { required: true, whitespace: true, message: 'Enter the product name' },
+              { min: 3, max: 150, message: '3 to 150 characters' },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item label="Line of business" required>
+            <Input value={product.lineOfBusiness} disabled />
+          </Form.Item>
+          <Form.Item
+            name="description"
+            label="Description"
+            className="field--full"
+            rules={[
+              { required: true, whitespace: true, message: 'Enter the description' },
+              { min: 3, max: 1000, message: '3 to 1,000 characters' },
+            ]}
+          >
+            <Input.TextArea rows={2} maxLength={1000} showCount />
+          </Form.Item>
+        </FormSection>
+        <FormSection title="Rules" columns={3}>
           {SWITCHES.map((item) => (
-            <Col key={item.name} xs={24} md={8}>
-              <Form.Item
-                name={item.name}
-                label={item.label}
-                extra={item.extra}
-                valuePropName="checked"
-              >
-                <Switch />
-              </Form.Item>
-            </Col>
+            <Form.Item
+              key={item.name}
+              name={item.name}
+              label={item.label}
+              tooltip={item.tooltip}
+              valuePropName="checked"
+              required
+            >
+              <Switch />
+            </Form.Item>
           ))}
-        </Row>
-        <Tabs
-          items={[
-            {
-              key: 'config',
-              label: 'Rating configuration',
-              forceRender: true,
-              children: (
-                <JsonField
-                  name="config"
-                  label="Configuration"
-                  shape="object"
-                  rows={20}
-                  extra={`Plans, terms, rates and risk fields read by the ${humanise(product.ratingEngine).toLowerCase()} rating engine`}
-                />
-              ),
-            },
-            {
-              key: 'documents',
-              label: 'Required documents',
-              forceRender: true,
-              children: (
-                <JsonField
-                  name="requiredDocuments"
-                  label="Required documents"
-                  shape="array"
-                  extra='Each entry: { "docType": "IC_COPY", "label": "IC copy", "mandatory": true }'
-                />
-              ),
-            },
-            {
-              key: 'questionnaire',
-              label: 'Questionnaire',
-              forceRender: true,
-              children: (
-                <JsonField
-                  name="questionnaire"
-                  label="Questionnaire"
-                  shape="array"
-                  extra='Each entry: { "code": "Q1", "text": "…", "referIfYes": true }'
-                />
-              ),
-            },
-          ]}
-        />
+        </FormSection>
+        <FormSection title="Configuration" columns={1}>
+          <Tabs
+            size="small"
+            items={[
+              {
+                key: 'config',
+                label: 'Rating',
+                forceRender: true,
+                children: (
+                  <JsonField
+                    name="config"
+                    label="Rating configuration"
+                    shape="object"
+                    tooltip={`Plans, terms, rates and risk fields read by the ${humanise(product.ratingEngine).toLowerCase()} rating engine`}
+                  />
+                ),
+              },
+              {
+                key: 'documents',
+                label: 'Required documents',
+                forceRender: true,
+                children: (
+                  <JsonField
+                    name="requiredDocuments"
+                    label="Required documents"
+                    shape="array"
+                    tooltip='Entries: { "docType": "IC_COPY", "label": "IC copy", "mandatory": true }'
+                  />
+                ),
+              },
+              {
+                key: 'questionnaire',
+                label: 'Questionnaire',
+                forceRender: true,
+                children: (
+                  <JsonField
+                    name="questionnaire"
+                    label="Questionnaire"
+                    shape="array"
+                    tooltip='Entries: { "code": "Q1", "text": "…", "referIfYes": true }'
+                  />
+                ),
+              },
+            ]}
+          />
+        </FormSection>
       </Form>
     </Drawer>
   );
@@ -185,57 +199,82 @@ export default function ProductsPage() {
         title="Products"
         breadcrumb={[{ title: 'Home', to: '/backoffice' }, { title: 'Products' }]}
       />
-      <Card className="content-card">
-        <QueryState query={products}>
-          {(items) => (
-            <Table<Product>
-              size="middle"
+      <QueryState query={products}>
+        {(items) => (
+          <TableCard>
+            <DataTable<Product>
               rowKey="id"
+              scroll={{}}
               pagination={false}
               dataSource={items}
-              scroll={{ x: 'max-content' }}
+              locale={{ emptyText: 'No products' }}
+              onRowClick={setEditing}
               columns={[
-                { title: 'Code', dataIndex: 'code' },
-                { title: 'Name', dataIndex: 'name' },
-                { title: 'Line of business', dataIndex: 'lineOfBusiness' },
-                { title: 'Rating engine', dataIndex: 'ratingEngine', render: humanise },
+                { title: 'Code', dataIndex: 'code', width: 100 },
+                textColumn('Name', 'name'),
+                { title: 'Line of business', dataIndex: 'lineOfBusiness', width: 150 },
+                {
+                  title: 'Rating engine',
+                  dataIndex: 'ratingEngine',
+                  width: 130,
+                  render: humanise,
+                },
                 {
                   title: 'Payment',
                   dataIndex: 'paymentBeforeIssuance',
-                  render: (before: boolean) =>
-                    before ? 'Before issuance' : 'After issuance (grace)',
+                  width: 140,
+                  render: (before: boolean) => (before ? 'Before issuance' : 'After issuance'),
                 },
                 {
                   title: 'Renewal',
                   dataIndex: 'allowRenewal',
+                  width: 110,
                   render: (allowed: boolean) => (allowed ? 'Allowed' : 'Not allowed'),
                 },
                 {
                   title: 'Documents',
                   dataIndex: 'requiredDocuments',
+                  width: 100,
                   align: 'right',
-                  render: (documents: Product['requiredDocuments']) => documents.length,
+                  render: (documents: Product['requiredDocuments']) =>
+                    formatNumber(documents.length),
+                },
+                {
+                  title: 'Questions',
+                  dataIndex: 'questionnaire',
+                  width: 90,
+                  align: 'right',
+                  render: (questions: Product['questionnaire']) => formatNumber(questions.length),
                 },
                 {
                   title: 'Status',
                   dataIndex: 'active',
+                  width: 90,
                   render: (active: boolean) => (
                     <StatusTag status={active ? 'ACTIVE' : 'INACTIVE'} />
                   ),
                 },
                 {
                   key: 'actions',
+                  width: 48,
+                  align: 'right',
                   render: (_: unknown, product) => (
-                    <Button size="small" type="link" onClick={() => setEditing(product)}>
-                      Edit
-                    </Button>
+                    <Tooltip title="Edit">
+                      <Button
+                        type="text"
+                        size="small"
+                        icon={<EditOutlined />}
+                        aria-label={`Edit ${product.name}`}
+                        onClick={() => setEditing(product)}
+                      />
+                    </Tooltip>
                   ),
                 },
               ]}
             />
-          )}
-        </QueryState>
-      </Card>
+          </TableCard>
+        )}
+      </QueryState>
       {editing && <ProductDrawer product={editing} onClose={() => setEditing(undefined)} />}
     </>
   );

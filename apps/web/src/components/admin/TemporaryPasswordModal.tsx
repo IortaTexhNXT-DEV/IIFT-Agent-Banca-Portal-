@@ -1,4 +1,5 @@
 import { Alert, Button, Modal, Typography } from 'antd';
+import { FieldGrid } from '../FieldGrid';
 import '../../styles/admin.css';
 
 interface Props {
@@ -20,18 +21,33 @@ export function TemporaryPasswordModal({ username, password, onClose }: Props) {
         </Button>
       }
       destroyOnHidden
+      width={420}
     >
       <Alert
         className="mb-16"
         type="warning"
         showIcon
-        title="This password is shown only once"
-        description={`Give it to ${username} through a secure channel. They must change it at first sign-in.`}
+        title="Shown once – the user must change it at first sign-in"
       />
-      <div className="muted">Temporary password for {username}</div>
-      <Typography.Text code copyable={{ tooltips: ['Copy', 'Copied'] }} className="temp-password">
-        {password}
-      </Typography.Text>
+      <FieldGrid
+        columns={1}
+        items={[
+          { key: 'user', label: 'User', value: username },
+          {
+            key: 'password',
+            label: 'Temporary password',
+            value: (
+              <Typography.Text
+                code
+                copyable={{ tooltips: ['Copy', 'Copied'] }}
+                className="temp-password"
+              >
+                {password}
+              </Typography.Text>
+            ),
+          },
+        ]}
+      />
     </Modal>
   );
 }

@@ -1,5 +1,5 @@
-import { DownOutlined, PlusOutlined } from '@ant-design/icons';
-import { App, Button, Card, Dropdown, Flex, Input, type MenuProps, Select, Table, Tag } from 'antd';
+import { MoreOutlined, PlusOutlined } from '@ant-design/icons';
+import { App, Button, Dropdown, Input, type MenuProps, Select, Tag, Tooltip } from 'antd';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { api } from '../../api/client';
@@ -10,11 +10,13 @@ import { useAuth } from '../../auth/AuthContext';
 import { TemporaryPasswordModal } from '../../components/admin/TemporaryPasswordModal';
 import { enumOptions } from '../../components/admin/useCodes';
 import { UserFormModal } from '../../components/admin/UserFormModal';
+import { DataTable, dateTimeColumn, textColumn } from '../../components/DataTable';
 import { ErrorAlert } from '../../components/ErrorAlert';
-import { FilterBar } from '../../components/FilterBar';
 import { PageHeader } from '../../components/PageHeader';
 import { StatusTag } from '../../components/StatusTag';
-import { formatDateTime, humanise } from '../../utils/format';
+import { TableCard } from '../../components/TableCard';
+import { humanise } from '../../utils/format';
+import '../../styles/admin.css';
 
 const USER_TYPE_LABELS: Record<UserType, string> = {
   STAFF: 'Staff',
@@ -27,6 +29,8 @@ const USER_TYPE_OPTIONS = Object.entries(USER_TYPE_LABELS).map(([value, label]) 
 }));
 const STATUSES: UserStatus[] = ['ACTIVE', 'LOCKED', 'DISABLED'];
 const INVALIDATE = ['/backoffice/users'];
+/** Roles shown as tags before the rest collapse into a "+n" tag. */
+const VISIBLE_ROLES = 1;
 
 interface Filters {
   search?: string;
@@ -34,21 +38,25 @@ interface Filters {
   status?: UserStatus;
 }
 
-type Action = 'status' | 'unlock' | 'reset';
+type Action = 'edit' | 'status' | 'unlock' | 'reset';
 
 const isLocked = (user: UserSummary) =>
   user.status === 'LOCKED' ||
   (user.lockedUntil !== null && dayjs(user.lockedUntil).isAfter(dayjs()));
 
-const menuFor = (user: UserSummary): MenuProps['items'] => [
-  {
+function menuFor(user: UserSummary, self: boolean): MenuProps['items'] {
+  const items: MenuProps['items'] = [{ key: 'edit', label: 'Edit' }];
+  if (self) return items;
+  items.push({ type: 'divider' });
+  if (isLocked(user) && user.status !== 'DISABLED') items.push({ key: 'unlock', label: 'Unlock' });
+  if (user.authSource === 'LOCAL') items.push({ key: 'reset', label: 'Reset password' });
+  items.push({
     key: 'status',
     label: user.status === 'DISABLED' ? 'Activate' : 'Disable',
     danger: user.status !== 'DISABLED',
-  },
-  ...(isLocked(user) && user.status !== 'DISABLED' ? [{ key: 'unlock', label: 'Unlock' }] : []),
-  ...(user.authSource === 'LOCAL' ? [{ key: 'reset', label: 'Reset password' }] : []),
-];
+  });
+  return items;
+}
 
 /** Activate/disable, unlock and password reset, each confirmed before it runs. */
 function useAccountActions(onPassword: (user: UserSummary, password: string) => void) {
@@ -77,14 +85,12 @@ function useAccountActions(onPassword: (user: UserSummary, password: string) => 
     },
   );
 
-  const confirm = (action: Action, user: UserSummary) => {
+  const confirm = (action: Exclude<Action, 'edit'>, user: UserSummary) => {
     const disabling = user.status !== 'DISABLED';
     const config = {
       status: {
         title: disabling ? `Disable ${user.username}?` : `Activate ${user.username}?`,
-        content: disabling
-          ? 'The user is signed out and can no longer sign in.'
-          : 'The user can sign in again.',
+        content: disabling ? 'The user is signed out and cannot sign in.' : 'The user can sign in.',
         run: () => setStatus.mutateAsync(user),
       },
       unlock: {
@@ -94,7 +100,7 @@ function useAccountActions(onPassword: (user: UserSummary, password: string) => 
       },
       reset: {
         title: `Reset the password of ${user.username}?`,
-        content: 'A temporary password is issued and all of the user’s sessions end.',
+        content: 'A temporary password is issued and all sessions end.',
         run: () => reset.mutateAsync(user),
       },
     }[action];
@@ -108,6 +114,25 @@ function useAccountActions(onPassword: (user: UserSummary, password: string) => 
   };
 
   return { confirm, error: setStatus.error ?? unlock.error ?? reset.error };
+}
+
+function RoleTags({ roles }: { roles: UserSummary['roles'] }) {
+  const names = roles.map(({ role }) => role.name);
+  const hidden = names.slice(VISIBLE_ROLES);
+  return (
+    <span className="tag-row">
+      {names.slice(0, VISIBLE_ROLES).map((name) => (
+        <Tag key={name} variant="filled">
+          {name}
+        </Tag>
+      ))}
+      {hidden.length > 0 && (
+        <Tooltip title={hidden.join(', ')}>
+          <Tag variant="filled">+{hidden.length}</Tag>
+        </Tooltip>
+      )}
+    </span>
+  );
 }
 
 /** BO-03: user administration for staff, agents and bank officers. */
@@ -124,6 +149,10 @@ export default function UsersPage() {
     setFilters((current) => ({ ...current, ...changes }));
     users.resetPage();
   };
+  const run = (action: Action, user: UserSummary) => {
+    if (action === 'edit') setEditing(user);
+    else actions.confirm(action, user);
+  };
 
   return (
     <>
@@ -136,121 +165,109 @@ export default function UsersPage() {
           </Button>
         }
       />
-      <FilterBar>
-        <Input.Search
-          allowClear
-          placeholder="User name, name or email"
-          aria-label="Search users"
-          style={{ width: 260 }}
-          onSearch={(value) => update({ search: value.trim() || undefined })}
-        />
-        <Select
-          allowClear
-          placeholder="User type"
-          aria-label="User type"
-          style={{ width: 160 }}
-          options={USER_TYPE_OPTIONS}
-          onChange={(userType?: UserType) => update({ userType })}
-        />
-        <Select
-          allowClear
-          placeholder="Status"
-          aria-label="Status"
-          style={{ width: 150 }}
-          options={enumOptions(STATUSES, humanise)}
-          onChange={(status?: UserStatus) => update({ status })}
-        />
-      </FilterBar>
       <ErrorAlert error={actions.error} className="mb-16" />
-      <Card className="content-card">
-        <Table<UserSummary>
-          size="middle"
+      <TableCard
+        toolbar={
+          <>
+            <Input.Search
+              allowClear
+              placeholder="User name, name or email"
+              aria-label="Search users"
+              className="filter-search"
+              onSearch={(value) => update({ search: value.trim() || undefined })}
+            />
+            <Select
+              allowClear
+              placeholder="User type"
+              aria-label="User type"
+              className="filter-select"
+              options={USER_TYPE_OPTIONS}
+              onChange={(userType?: UserType) => update({ userType })}
+            />
+            <Select
+              allowClear
+              placeholder="Status"
+              aria-label="Status"
+              className="filter-select"
+              options={enumOptions(STATUSES, humanise)}
+              onChange={(status?: UserStatus) => update({ status })}
+            />
+          </>
+        }
+      >
+        <DataTable<UserSummary>
           rowKey="id"
+          scroll={{}}
           loading={users.isFetching}
           dataSource={users.items}
           pagination={users.pagination}
-          scroll={{ x: 'max-content' }}
-          locale={{ emptyText: 'No users match the filters' }}
+          locale={{ emptyText: 'No users' }}
+          onRowClick={(user) => setEditing(user)}
           columns={[
             {
               title: 'User name',
               dataIndex: 'username',
+              width: 140,
               render: (username: string, user) => (
-                <Flex gap={6} align="center">
+                <span className="tag-row">
                   {username}
-                  {user.authSource === 'DIRECTORY' && <Tag variant="filled">Directory</Tag>}
-                </Flex>
+                  {user.authSource === 'DIRECTORY' && (
+                    <Tooltip title="Signs in through the corporate directory">
+                      <Tag variant="filled">Directory</Tag>
+                    </Tooltip>
+                  )}
+                </span>
               ),
             },
-            {
-              title: 'Name',
-              dataIndex: 'fullName',
-              render: (name: string, user) => (
-                <>
-                  <div>{name}</div>
-                  <div className="muted">{user.email}</div>
-                </>
-              ),
-            },
+            textColumn('Name', 'fullName', 220),
+            textColumn('Email', 'email'),
             {
               title: 'Type',
               dataIndex: 'userType',
+              width: 100,
               render: (type: UserType) => USER_TYPE_LABELS[type],
             },
             {
               title: 'Roles',
               dataIndex: 'roles',
-              width: 240,
-              render: (roles: UserSummary['roles']) => (
-                <Flex gap={4} wrap>
-                  {roles.map(({ role }) => (
-                    <Tag key={role.id} variant="filled">
-                      {role.name}
-                    </Tag>
-                  ))}
-                </Flex>
-              ),
+              width: 250,
+              render: (roles: UserSummary['roles']) => <RoleTags roles={roles} />,
             },
             {
               title: 'Status',
               dataIndex: 'status',
+              width: 90,
               render: (_: unknown, user) => (
                 <StatusTag
                   status={isLocked(user) && user.status !== 'DISABLED' ? 'LOCKED' : user.status}
                 />
               ),
             },
-            { title: 'Last sign-in', dataIndex: 'lastLoginAt', render: formatDateTime },
+            dateTimeColumn('Last sign-in', 'lastLoginAt', 150),
             {
               key: 'actions',
+              width: 48,
+              align: 'right',
               render: (_: unknown, user) => (
-                <Flex gap={4} className="table-actions">
-                  <Button size="small" type="link" onClick={() => setEditing(user)}>
-                    Edit
-                  </Button>
-                  {user.id !== me?.id && (
-                    <Dropdown
-                      menu={{
-                        items: menuFor(user),
-                        onClick: ({ key }) => actions.confirm(key as Action, user),
-                      }}
-                      trigger={['click']}
-                    >
-                      <Button
-                        size="small"
-                        type="link"
-                        aria-label={`More actions for ${user.username}`}
-                      >
-                        More <DownOutlined />
-                      </Button>
-                    </Dropdown>
-                  )}
-                </Flex>
+                <Dropdown
+                  menu={{
+                    items: menuFor(user, user.id === me?.id),
+                    onClick: ({ key }) => run(key as Action, user),
+                  }}
+                  trigger={['click']}
+                >
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={<MoreOutlined />}
+                    aria-label={`Actions for ${user.username}`}
+                  />
+                </Dropdown>
               ),
             },
           ]}
         />
-      </Card>
+      </TableCard>
       {editing && (
         <UserFormModal
           user={editing === 'new' ? undefined : editing}
