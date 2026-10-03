@@ -1,4 +1,4 @@
-import { Button, Card, Popconfirm } from 'antd';
+import { Button, Card, Col, Popconfirm, Row } from 'antd';
 import { useNavigate, useParams } from 'react-router';
 import { api } from '../../api/client';
 import { useApiMutation, useApiQuery } from '../../api/hooks';
@@ -12,7 +12,7 @@ import { ErrorAlert } from '../../components/ErrorAlert';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryState } from '../../components/QueryState';
 import { StatusTag } from '../../components/StatusTag';
-import { humanise } from '../../utils/format';
+import { formatDateTime, humanise } from '../../utils/format';
 
 /** AP-49..51: status, submitted details, decisions and remarks of one request. */
 export default function RequestDetailPage() {
@@ -37,7 +37,14 @@ export default function RequestDetailPage() {
             <PageHeader
               title={data.requestNo}
               tags={<StatusTag status={data.status} />}
-              meta={[{ label: 'Type', value: humanise(data.type) }]}
+              meta={[
+                { label: 'Type', value: humanise(data.type) },
+                { label: 'Submitted', value: formatDateTime(data.submittedAt) },
+                data.status === 'PENDING' && {
+                  label: 'Level',
+                  value: `${data.currentLevel} of ${data.totalLevels}`,
+                },
+              ]}
               breadcrumb={[
                 { title: 'Home', to: '/portal' },
                 { title: 'My requests', to: '/portal/requests' },
@@ -53,7 +60,6 @@ export default function RequestDetailPage() {
                   {data.status === 'PENDING' && data.makerId === user?.id && (
                     <Popconfirm
                       title="Withdraw this request?"
-                      description="It will no longer be reviewed by IIFT."
                       okText="Withdraw"
                       okButtonProps={{ danger: true }}
                       onConfirm={() => withdraw.mutate(undefined)}
@@ -67,23 +73,22 @@ export default function RequestDetailPage() {
               }
             />
             <ErrorAlert error={withdraw.error} className="mb-16" />
-            <RejectionAlert
-              request={data}
-              resubmitHint={
-                record
-                  ? 'Open the record to correct the details and submit a new request.'
-                  : undefined
-              }
-            />
-            <Card title="Request" className="content-card">
-              <RequestSummary request={data} />
-            </Card>
-            <Card title="Submitted details" className="content-card">
-              <PayloadView payload={data.payload} />
-            </Card>
-            <Card title="Approval history" className="content-card">
-              <ApprovalHistory approvals={[data]} />
-            </Card>
+            <RejectionAlert request={data} />
+            <Row gutter={16}>
+              <Col xs={24} xl={16}>
+                <Card title="Request" className="content-card">
+                  <RequestSummary request={data} />
+                </Card>
+                <Card title="Submitted details" className="content-card">
+                  <PayloadView payload={data.payload} />
+                </Card>
+              </Col>
+              <Col xs={24} xl={8}>
+                <Card title="Approval history" className="content-card">
+                  <ApprovalHistory approvals={[data]} compact />
+                </Card>
+              </Col>
+            </Row>
           </>
         );
       }}

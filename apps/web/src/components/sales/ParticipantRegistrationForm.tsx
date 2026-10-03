@@ -1,10 +1,12 @@
-import { Alert, Button, Col, Flex, Form, Input, Radio, Row, Segmented, Typography } from 'antd';
+import { Alert, Button, Form, Input, Radio, Segmented } from 'antd';
 import { type ReactNode, useState } from 'react';
 import { api } from '../../api/client';
 import { useApiMutation } from '../../api/hooks';
 import type { ParticipantInput, ParticipantLookup, ParticipantMatch } from '../../api/sales-types';
 import type { Participant } from '../../api/types';
+import { ActionBar } from '../ActionBar';
 import { ErrorAlert } from '../ErrorAlert';
+import { FormSection } from '../FormSection';
 import { ID_TYPE_LABELS } from './options';
 import {
   ParticipantDetailsFields,
@@ -77,81 +79,68 @@ export function ParticipantRegistrationForm({
           form.setFieldsValue({ idType: changed.type === 'CORPORATE' ? 'BUSINESS_REG' : 'NRIC' });
       }}
     >
-      <Form.Item name="type" label="Participant type">
-        <Segmented
-          options={[
-            { value: 'INDIVIDUAL', label: 'Individual' },
-            { value: 'CORPORATE', label: 'Corporate' },
+      <FormSection title="Identification" columns={2}>
+        <Form.Item name="type" label="Participant type" rules={[{ required: true }]}>
+          <Segmented
+            options={[
+              { value: 'INDIVIDUAL', label: 'Individual' },
+              { value: 'CORPORATE', label: 'Corporate' },
+            ]}
+          />
+        </Form.Item>
+        <Form.Item name="idType" label="ID type" rules={[{ required: true }]}>
+          <Radio.Group
+            optionType="button"
+            options={(individual ? INDIVIDUAL_ID_TYPES : (['BUSINESS_REG'] as const)).map(
+              (value) => ({ value, label: ID_TYPE_LABELS[value] }),
+            )}
+          />
+        </Form.Item>
+        <Form.Item
+          name="idNumber"
+          label="ID number"
+          rules={[
+            { required: true, message: 'Enter the ID number' },
+            {
+              pattern: /^[A-Za-z0-9-/ ]{5,30}$/,
+              message: '5 to 30 letters, digits, spaces, - or /',
+            },
           ]}
-        />
-      </Form.Item>
-
-      <Typography.Title level={5} className="form-section-title">
-        Identification
-      </Typography.Title>
-      <Row gutter={16}>
-        <Col xs={24} md={12}>
-          <Form.Item name="idType" label="ID type" rules={[{ required: true }]}>
+        >
+          <Input maxLength={30} autoComplete="off" />
+        </Form.Item>
+        {individual && (
+          <Form.Item name="gender" label="Gender">
             <Radio.Group
-              optionType="button"
-              options={(individual ? INDIVIDUAL_ID_TYPES : (['BUSINESS_REG'] as const)).map(
-                (value) => ({ value, label: ID_TYPE_LABELS[value] }),
-              )}
+              options={[
+                { value: 'MALE', label: 'Male' },
+                { value: 'FEMALE', label: 'Female' },
+              ]}
             />
           </Form.Item>
-        </Col>
-        <Col xs={24} md={12}>
-          <Form.Item
-            name="idNumber"
-            label="ID number"
-            rules={[
-              { required: true, message: 'Enter the ID number' },
-              {
-                pattern: /^[A-Za-z0-9-/ ]{5,30}$/,
-                message: '5 to 30 letters, digits, spaces, - or /',
-              },
-            ]}
-          >
-            <Input maxLength={30} autoComplete="off" />
-          </Form.Item>
-        </Col>
-        {individual && (
-          <Col xs={24} md={12}>
-            <Form.Item name="gender" label="Gender">
-              <Radio.Group
-                options={[
-                  { value: 'MALE', label: 'Male' },
-                  { value: 'FEMALE', label: 'Female' },
-                ]}
-              />
-            </Form.Item>
-          </Col>
         )}
-      </Row>
+      </FormSection>
 
-      <Typography.Title level={5} className="form-section-title">
-        {individual ? 'Personal details' : 'Company details'}
-      </Typography.Title>
-      <ParticipantDetailsFields individual={individual} />
+      <FormSection title={individual ? 'Personal details' : 'Company details'} columns={2}>
+        <ParticipantDetailsFields individual={individual} />
+      </FormSection>
 
       {duplicate ? (
         <Alert
           className="mb-16"
           type="warning"
           showIcon
-          title={`${duplicate.fullName} is already registered as ${duplicate.participantNo}`}
-          description="Each participant has a single profile shared across agencies. Use the existing record instead of registering again."
+          title={`Already registered as ${duplicate.participantNo} (${duplicate.fullName}) – use the existing profile`}
           action={renderDuplicateAction(duplicate)}
         />
       ) : (
         <ErrorAlert error={create.error} className="mb-16" />
       )}
-      <Flex gap={8} justify="flex-end">
-        {onCancel && <Button onClick={onCancel}>Cancel</Button>}
+      <ActionBar start={onCancel && <Button onClick={onCancel}>Cancel</Button>}>
         <Button type="primary" htmlType="submit" loading={create.isPending}>
           {submitLabel}
         </Button>
-      </Flex>
+      </ActionBar>
     </Form>
   );
 }

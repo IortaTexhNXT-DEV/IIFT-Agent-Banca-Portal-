@@ -1,10 +1,11 @@
-import { Form, Typography } from 'antd';
+import { Alert, Form } from 'antd';
 import dayjs from 'dayjs';
 import { useState } from 'react';
 import { api } from '../../api/client';
 import { useApiMutation } from '../../api/hooks';
 import type { ParticipantInput } from '../../api/sales-types';
 import type { ApprovalRequest, Participant } from '../../api/types';
+import { FormSection } from '../FormSection';
 import { FormModal } from './FormModal';
 import {
   ParticipantDetailsFields,
@@ -78,12 +79,15 @@ export function ParticipantUpdateModal({
       error={request.error}
       width={760}
     >
-      <Typography.Paragraph type={unchanged ? 'danger' : 'secondary'}>
-        {unchanged
-          ? 'Nothing has been changed yet.'
-          : 'Edit the particulars that have changed. The profile is updated once IIFT approves the request.'}
-      </Typography.Paragraph>
-      <ParticipantDetailsFields individual={participant.type === 'INDIVIDUAL'} />
+      {unchanged && (
+        <Alert className="mb-16" type="warning" showIcon title="Change at least one field" />
+      )}
+      <FormSection
+        title={participant.type === 'INDIVIDUAL' ? 'Personal details' : 'Company details'}
+        columns={2}
+      >
+        <ParticipantDetailsFields individual={participant.type === 'INDIVIDUAL'} />
+      </FormSection>
     </FormModal>
   );
 }

@@ -1,9 +1,10 @@
-import { Card, Col, Descriptions, Row } from 'antd';
+import { Card, Col, Row } from 'antd';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import type { Claim, RequiredDocument } from '../../api/types';
 import { formatDate, formatDateTime } from '../../utils/format';
 import { DocumentPanel } from '../DocumentPanel';
+import { FieldGrid } from '../FieldGrid';
 import { Money } from '../Money';
 import { PageHeader } from '../PageHeader';
 import { StatusTag } from '../StatusTag';
@@ -31,6 +32,7 @@ export function ClaimDetailView({ claim, actions, uploadTypes }: Props) {
         tags={<StatusTag status={claim.status} />}
         meta={[
           { label: 'Type', value: claimTypes.label(claim.claimType) },
+          { label: 'Policy', value: policy.policyNo },
           { label: 'Participant', value: policy.participant.fullName },
         ]}
         breadcrumb={[
@@ -40,69 +42,81 @@ export function ClaimDetailView({ claim, actions, uploadTypes }: Props) {
         ]}
         extra={actions}
       />
-      <Row gutter={[16, 0]}>
-        <Col xs={24} xl={14}>
+      <Row gutter={16}>
+        <Col xs={24} xl={16}>
           <Card title="Claim" className="content-card">
-            <Descriptions
-              size="small"
-              column={{ xs: 1, md: 2 }}
+            <FieldGrid
+              columns={3}
               items={[
-                { key: 'type', label: 'Claim type', children: claimTypes.label(claim.claimType) },
-                { key: 'event', label: 'Event date', children: formatDate(claim.eventDate) },
+                { key: 'type', label: 'Claim type', value: claimTypes.label(claim.claimType) },
+                { key: 'event', label: 'Event date', value: formatDate(claim.eventDate) },
                 {
                   key: 'amount',
                   label: 'Amount claimed',
-                  children: <Money value={claim.claimedAmount} />,
+                  value: <Money value={claim.claimedAmount} strong />,
                 },
-                { key: 'notified', label: 'Notified', children: formatDateTime(claim.createdAt) },
-                { key: 'description', label: 'Description', children: claim.description, span: 2 },
-                { key: 'remarks', label: 'IIFT remarks', children: claim.remarks ?? '–', span: 2 },
+                { key: 'notified', label: 'Notified', value: formatDateTime(claim.createdAt) },
+                { key: 'status', label: 'Status', value: <StatusTag status={claim.status} /> },
+                {
+                  key: 'description',
+                  label: 'Description',
+                  value: claim.description,
+                  span: 'full',
+                },
+                { key: 'remarks', label: 'IIFT remarks', value: claim.remarks, span: 'full' },
               ]}
             />
           </Card>
+          <Card className="content-card">
+            <DocumentPanel
+              ownerType="CLAIM"
+              ownerId={claim.id}
+              uploadTypes={uploadTypes}
+              canUpload={uploadTypes !== undefined}
+              title="Supporting documents"
+            />
+          </Card>
         </Col>
-        <Col xs={24} xl={10}>
+        <Col xs={24} xl={8}>
           <Card title="Policy" className="content-card">
-            <Descriptions
-              size="small"
-              column={1}
+            <FieldGrid
+              columns={2}
               items={[
                 {
                   key: 'policy',
                   label: 'Policy no.',
-                  children: <Link to={links.policy(policy.id)}>{policy.policyNo}</Link>,
+                  value: <Link to={links.policy(policy.id)}>{policy.policyNo}</Link>,
                 },
-                { key: 'product', label: 'Product', children: policy.product.name },
+                {
+                  key: 'participantNo',
+                  label: 'Participant no.',
+                  value: policy.participant.participantNo,
+                },
+                { key: 'product', label: 'Product', value: policy.product.name, span: 2 },
                 {
                   key: 'participant',
                   label: 'Participant',
-                  children: `${policy.participant.fullName} (${policy.participant.participantNo})`,
+                  value: policy.participant.fullName,
+                  span: 2,
                 },
                 {
                   key: 'cover',
                   label: 'Period of cover',
-                  children: `${formatDate(policy.startDate)} to ${formatDate(policy.endDate)}`,
+                  value: `${formatDate(policy.startDate)} – ${formatDate(policy.endDate)}`,
+                  span: 2,
                 },
                 {
                   key: 'agent',
                   label: 'Agent',
-                  children: `${policy.agent.fullName} (${policy.agent.agentCode})`,
+                  value: `${policy.agent.fullName} (${policy.agent.agentCode})`,
+                  span: 2,
                 },
-                { key: 'agency', label: 'Agency / bank', children: policy.agency.name },
+                { key: 'agency', label: 'Agency / bank', value: policy.agency.name, span: 2 },
               ]}
             />
           </Card>
         </Col>
       </Row>
-      <Card className="content-card">
-        <DocumentPanel
-          ownerType="CLAIM"
-          ownerId={claim.id}
-          uploadTypes={uploadTypes}
-          canUpload={uploadTypes !== undefined}
-          title="Supporting documents"
-        />
-      </Card>
     </>
   );
 }

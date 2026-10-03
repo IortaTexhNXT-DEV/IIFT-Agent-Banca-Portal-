@@ -60,7 +60,7 @@ function ClaimStatusModal({ claim, onClose }: { claim: Claim; onClose(): void })
       <Form.Item
         name="remarks"
         label="Remarks"
-        extra="Shared with the agent who notified the claim"
+        tooltip="Shared with the agent who notified the claim"
         rules={[
           { required: true, whitespace: true, message: 'Enter the remarks' },
           { min: 3, max: 1000, message: 'Between 3 and 1,000 characters' },

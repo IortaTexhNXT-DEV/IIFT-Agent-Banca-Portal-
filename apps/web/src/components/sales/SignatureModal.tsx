@@ -1,9 +1,10 @@
-import { Modal, Typography } from 'antd';
+import { Modal } from 'antd';
 import { useState } from 'react';
 import { api } from '../../api/client';
 import { useApiMutation } from '../../api/hooks';
 import type { PolicyDetail } from '../../api/types';
 import { ErrorAlert } from '../ErrorAlert';
+import { FieldGrid } from '../FieldGrid';
 import { SignaturePad } from '../SignaturePad';
 
 export type Signer = 'PARTICIPANT' | 'AGENT';
@@ -49,10 +50,15 @@ export function SignatureModal({
       width={600}
     >
       <ErrorAlert error={capture.error} className="mb-16" />
-      <Typography.Paragraph>{DECLARATIONS[signer]}</Typography.Paragraph>
-      <Typography.Paragraph type="secondary">
-        Signing as {name} for {policy.quotationNo}.
-      </Typography.Paragraph>
+      <FieldGrid
+        columns={2}
+        className="mb-16"
+        items={[
+          { key: 'signer', label: 'Signing as', value: name },
+          { key: 'quotation', label: 'Quotation', value: policy.quotationNo },
+        ]}
+      />
+      <p className="declaration">{DECLARATIONS[signer]}</p>
       <SignaturePad onChange={setSignature} />
     </Modal>
   );

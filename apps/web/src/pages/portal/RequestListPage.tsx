@@ -1,20 +1,22 @@
-import { Card, Select, Table } from 'antd';
+import { Select } from 'antd';
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { usePagedQuery } from '../../api/hooks';
 import type { ApprovalRequest, ApprovalStatus } from '../../api/types';
 import { CellText } from '../../components/admin/CellText';
 import { enumOptions } from '../../components/admin/useCodes';
-import { FilterBar } from '../../components/FilterBar';
+import { DataTable, dateColumn, statusColumn, textColumn } from '../../components/DataTable';
+import { EmptyState } from '../../components/EmptyState';
 import { PageHeader } from '../../components/PageHeader';
-import { StatusTag } from '../../components/StatusTag';
-import { formatDateTime, humanise } from '../../utils/format';
+import { TableCard } from '../../components/TableCard';
+import { humanise } from '../../utils/format';
 
 const STATUSES: ApprovalStatus[] = ['PENDING', 'APPROVED', 'REJECTED', 'WITHDRAWN'];
 
 /** AP-49..51: requests submitted by the user (or their team) and their approval status. */
 export default function RequestListPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [status, setStatus] = useState(
     (searchParams.get('status') as ApprovalStatus | null) ?? undefined,
   );
@@ -26,63 +28,58 @@ export default function RequestListPage() {
         title="My requests"
         breadcrumb={[{ title: 'Home', to: '/portal' }, { title: 'My requests' }]}
       />
-      <FilterBar>
-        <Select
-          allowClear
-          placeholder="All statuses"
-          aria-label="Status"
-          style={{ width: 180 }}
-          value={status}
-          options={enumOptions(STATUSES, humanise)}
-          onChange={(value?: ApprovalStatus) => {
-            setStatus(value);
-            requests.resetPage();
-          }}
-        />
-      </FilterBar>
-      <Card className="content-card">
-        <Table<ApprovalRequest>
-          size="middle"
+      <TableCard
+        toolbar={
+          <Select
+            allowClear
+            placeholder="Status"
+            aria-label="Status"
+            className="filter-select"
+            value={status}
+            options={enumOptions(STATUSES, humanise)}
+            onChange={(value?: ApprovalStatus) => {
+              setStatus(value);
+              requests.resetPage();
+            }}
+          />
+        }
+      >
+        <DataTable<ApprovalRequest>
           rowKey="id"
           loading={requests.isFetching}
           dataSource={requests.items}
           pagination={requests.pagination}
-          scroll={{ x: 'max-content' }}
-          locale={{ emptyText: 'No requests found' }}
+          scroll={{}}
+          onRowClick={(request) => navigate(`/portal/requests/${request.id}`)}
+          locale={{ emptyText: <EmptyState label="No requests" /> }}
           columns={[
             {
               title: 'Request no.',
               dataIndex: 'requestNo',
+              width: 130,
               render: (no: string, row) => <Link to={`/portal/requests/${row.id}`}>{no}</Link>,
             },
-            { title: 'Type', dataIndex: 'type', render: humanise },
-            {
-              title: 'Summary',
-              dataIndex: 'summary',
-              render: (summary: string) => <CellText text={summary} />,
-            },
-            {
-              title: 'Status',
-              dataIndex: 'status',
-              render: (value: string) => <StatusTag status={value} />,
-            },
-            { title: 'Submitted by', dataIndex: 'makerName' },
-            { title: 'Submitted', dataIndex: 'submittedAt', render: formatDateTime },
-            { title: 'Decided', dataIndex: 'decidedAt', render: formatDateTime },
+            { title: 'Type', dataIndex: 'type', width: 170, ellipsis: true, render: humanise },
+            textColumn('Summary', 'summary'),
+            statusColumn('Status', 'status', 115),
+            textColumn('Submitted by', 'makerName', 150),
+            dateColumn('Submitted', 'submittedAt', 110),
+            dateColumn('Decided', 'decidedAt', 110),
             {
               title: 'Remarks',
               dataIndex: 'finalRemarks',
+              width: 180,
               render: (remarks: string | null, row) => (
                 <CellText
                   text={remarks}
-                  width={260}
+                  width={150}
                   type={row.status === 'REJECTED' ? 'danger' : undefined}
                 />
               ),
             },
           ]}
         />
-      </Card>
+      </TableCard>
     </>
   );
 }

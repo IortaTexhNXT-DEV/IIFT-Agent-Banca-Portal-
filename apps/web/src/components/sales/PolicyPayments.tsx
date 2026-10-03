@@ -1,8 +1,8 @@
-import { Table, Typography } from 'antd';
 import { Link } from 'react-router';
-import type { Money as MoneyValue, PolicyDetail } from '../../api/types';
+import type { PolicyDetail } from '../../api/types';
 import { formatDate, humanise } from '../../utils/format';
-import { Money } from '../Money';
+import { DataTable, moneyColumn } from '../DataTable';
+import { EmptyState } from '../EmptyState';
 import { StatusTag } from '../StatusTag';
 import { ReceiptsTable } from './ReceiptsTable';
 import { useSalesLinks } from './useSalesLinks';
@@ -14,19 +14,20 @@ export function PolicyPayments({ policy }: { policy: PolicyDetail }) {
   const links = useSalesLinks();
   return (
     <>
-      <Typography.Title level={5}>Payments</Typography.Title>
-      <Table<Allocation>
+      <h3 className="form-section__title mb-12">Payments</h3>
+      <DataTable<Allocation>
         size="small"
         rowKey="id"
         pagination={false}
         dataSource={policy.allocations}
         className="mb-16"
-        scroll={{ x: 'max-content' }}
-        locale={{ emptyText: 'No payments submitted for this policy' }}
+        scroll={{}}
+        locale={{ emptyText: <EmptyState label="No payments" inline /> }}
         columns={[
           {
             title: 'Payment no.',
             key: 'paymentNo',
+            width: 140,
             render: (_, row) => (
               <Link to={links.payment(row.payment.id)}>{row.payment.paymentNo}</Link>
             ),
@@ -34,24 +35,31 @@ export function PolicyPayments({ policy }: { policy: PolicyDetail }) {
           {
             title: 'Payment date',
             key: 'paymentDate',
+            width: 120,
             render: (_, row) => formatDate(row.payment.paymentDate),
           },
-          { title: 'Method', key: 'method', render: (_, row) => humanise(row.payment.method) },
-          { title: 'Reference', key: 'referenceNo', render: (_, row) => row.payment.referenceNo },
+          {
+            title: 'Method',
+            key: 'method',
+            width: 130,
+            render: (_, row) => humanise(row.payment.method),
+          },
+          {
+            title: 'Reference',
+            key: 'referenceNo',
+            ellipsis: true,
+            render: (_, row) => row.payment.referenceNo,
+          },
           {
             title: 'Status',
             key: 'status',
+            width: 150,
             render: (_, row) => <StatusTag status={row.payment.status} />,
           },
-          {
-            title: 'Allocated',
-            dataIndex: 'amount',
-            align: 'right',
-            render: (value: MoneyValue) => <Money value={value} />,
-          },
+          moneyColumn('Allocated', 'amount', 130),
         ]}
       />
-      <Typography.Title level={5}>Receipts</Typography.Title>
+      <h3 className="form-section__title mb-12">Receipts</h3>
       <ReceiptsTable receipts={policy.receipts} />
     </>
   );

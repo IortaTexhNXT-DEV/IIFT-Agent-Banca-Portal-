@@ -1,16 +1,12 @@
 import {
   Button,
-  Col,
   DatePicker,
   Drawer,
   Flex,
   Form,
   Input,
   InputNumber,
-  Row,
   Select,
-  Table,
-  Typography,
   Upload,
   type UploadFile,
 } from 'antd';
@@ -20,7 +16,9 @@ import { api } from '../../api/client';
 import { useApiMutation } from '../../api/hooks';
 import type { OutstandingPolicy, Payment, PaymentMethod } from '../../api/types';
 import { formatMoney } from '../../utils/format';
+import { DataTable, moneyColumn, textColumn } from '../DataTable';
 import { ErrorAlert } from '../ErrorAlert';
+import { FormSection } from '../FormSection';
 import { Money } from '../Money';
 import { ISO_DATE, PAYMENT_METHOD_OPTIONS, policyReference } from './options';
 import { useCodes } from './useCodes';
@@ -87,15 +85,15 @@ export function PaymentDrawer({ policies, onClose, onSubmitted }: Props) {
   return (
     <Drawer
       open
-      title={`Submit payment for ${policies.length} ${policies.length === 1 ? 'policy' : 'policies'}`}
+      title={`Submit payment – ${policies.length} ${policies.length === 1 ? 'policy' : 'policies'}`}
       size={720}
       onClose={onClose}
       destroyOnHidden
       footer={
         <Flex justify="space-between" align="center">
-          <Typography.Text>
+          <span>
             Total <Money value={total} strong />
-          </Typography.Text>
+          </span>
           <Flex gap={8}>
             <Button onClick={onClose}>Cancel</Button>
             <Button type="primary" loading={submit.isPending} onClick={send}>
@@ -118,134 +116,118 @@ export function PaymentDrawer({ policies, onClose, onSubmitted }: Props) {
           ),
         }}
       >
-        <Typography.Title level={5} className="form-section-title">
-          Allocation
-        </Typography.Title>
-        <Table<OutstandingPolicy>
-          size="small"
-          rowKey="id"
-          pagination={false}
-          dataSource={policies}
-          className="mb-16"
-          columns={[
-            {
-              title: 'Policy / quotation no.',
-              key: 'reference',
-              render: (_, policy) => policyReference(policy),
-            },
-            { title: 'Participant', dataIndex: ['participant', 'fullName'] },
-            {
-              title: 'Outstanding',
-              dataIndex: 'outstandingAmount',
-              align: 'right',
-              render: (value: string) => <Money value={value} />,
-            },
-            {
-              title: 'Amount paid',
-              key: 'amount',
-              width: 170,
-              render: (_, policy) => (
-                <Form.Item
-                  name={['amounts', policy.id]}
-                  className="cell-form-item"
-                  rules={[
-                    { required: true, message: 'Enter the amount' },
-                    {
-                      type: 'number',
-                      min: 0.01,
-                      max: Number(policy.outstandingAmount),
-                      message: `Up to ${formatMoney(policy.outstandingAmount)}`,
-                    },
-                  ]}
-                >
-                  <InputNumber
-                    aria-label={`Amount paid for ${policyReference(policy)}`}
-                    className="full-width"
-                    min={0.01}
-                    max={Number(policy.outstandingAmount)}
-                    precision={2}
-                    prefix="B$"
-                  />
-                </Form.Item>
-              ),
-            },
-          ]}
-        />
+        <FormSection title="Allocation" columns={1}>
+          <DataTable<OutstandingPolicy>
+            size="small"
+            rowKey="id"
+            pagination={false}
+            dataSource={policies}
+            className="mb-16"
+            scroll={{}}
+            columns={[
+              {
+                title: 'Policy / quotation',
+                key: 'reference',
+                width: 165,
+                render: (_, policy) => policyReference(policy),
+              },
+              textColumn('Participant', ['participant', 'fullName']),
+              moneyColumn('Outstanding', 'outstandingAmount', 120),
+              {
+                title: 'Amount paid',
+                key: 'amount',
+                width: 170,
+                render: (_, policy) => (
+                  <Form.Item
+                    name={['amounts', policy.id]}
+                    className="cell-form-item"
+                    rules={[
+                      { required: true, message: 'Enter the amount' },
+                      {
+                        type: 'number',
+                        min: 0.01,
+                        max: Number(policy.outstandingAmount),
+                        message: `Up to ${formatMoney(policy.outstandingAmount)}`,
+                      },
+                    ]}
+                  >
+                    <InputNumber
+                      aria-label={`Amount paid for ${policyReference(policy)}`}
+                      className="full-width"
+                      min={0.01}
+                      max={Number(policy.outstandingAmount)}
+                      precision={2}
+                      prefix="B$"
+                    />
+                  </Form.Item>
+                ),
+              },
+            ]}
+          />
+        </FormSection>
 
-        <Typography.Title level={5} className="form-section-title">
-          Payment details
-        </Typography.Title>
-        <Row gutter={16}>
-          <Col xs={24} md={12}>
-            <Form.Item name="method" label="Method" rules={[{ required: true }]}>
-              <Select options={PAYMENT_METHOD_OPTIONS} />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={12}>
-            <Form.Item name="bankName" label="Bank">
-              <Select
-                allowClear
-                loading={banks.loading}
-                options={banks.options.map((bank) => ({ value: bank.label, label: bank.label }))}
-              />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={12}>
-            <Form.Item
-              name="referenceNo"
-              label="Bank reference"
-              rules={[
-                {
-                  required: true,
-                  whitespace: true,
-                  message: 'Enter the transaction or cheque reference',
-                },
-                {
-                  pattern: /^[A-Za-z0-9\-/ ]{3,50}$/,
-                  message: '3 to 50 letters, digits, spaces, - or /',
-                },
-              ]}
-            >
-              <Input maxLength={50} />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={12}>
-            <Form.Item
-              name="paymentDate"
-              label="Payment date"
-              rules={[{ required: true, message: 'Choose the payment date' }]}
-            >
-              <DatePicker
-                className="full-width"
-                format="DD MMM YYYY"
-                disabledDate={(date) => date.isAfter(dayjs(), 'day')}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-        <Form.Item name="remarks" label="Remarks" rules={[{ max: 500 }]}>
-          <Input.TextArea rows={2} maxLength={500} />
-        </Form.Item>
-        <Form.Item
-          label="Proof of payment"
-          required
-          extra="Bank slip, transfer confirmation or cheque copy – PDF, PNG or JPEG"
-          validateStatus={proofMissing ? 'error' : undefined}
-          help={proofMissing ? 'Attach the proof of payment' : undefined}
-        >
-          <Upload.Dragger
-            accept={ACCEPT}
-            maxCount={1}
-            fileList={proof}
-            beforeUpload={() => false}
-            onChange={({ fileList }) => {
-              setProof(fileList.slice(-1));
-              setProofMissing(false);
-            }}
+        <FormSection title="Payment details" columns={2}>
+          <Form.Item name="method" label="Method" rules={[{ required: true }]}>
+            <Select options={PAYMENT_METHOD_OPTIONS} />
+          </Form.Item>
+          <Form.Item name="bankName" label="Bank">
+            <Select
+              allowClear
+              loading={banks.loading}
+              options={banks.options.map((bank) => ({ value: bank.label, label: bank.label }))}
+            />
+          </Form.Item>
+          <Form.Item
+            name="referenceNo"
+            label="Bank reference"
+            tooltip="Transaction or cheque reference"
+            rules={[
+              { required: true, whitespace: true, message: 'Enter the bank reference' },
+              {
+                pattern: /^[A-Za-z0-9\-/ ]{3,50}$/,
+                message: '3 to 50 letters, digits, spaces, - or /',
+              },
+            ]}
           >
-            <p className="ant-upload-text">Click or drag the file here</p>
-          </Upload.Dragger>
-        </Form.Item>
+            <Input maxLength={50} />
+          </Form.Item>
+          <Form.Item
+            name="paymentDate"
+            label="Payment date"
+            rules={[{ required: true, message: 'Choose the payment date' }]}
+          >
+            <DatePicker
+              className="full-width"
+              format="DD MMM YYYY"
+              disabledDate={(date) => date.isAfter(dayjs(), 'day')}
+            />
+          </Form.Item>
+          <Form.Item name="remarks" label="Remarks" rules={[{ max: 500 }]} className="field--full">
+            <Input.TextArea rows={2} maxLength={500} />
+          </Form.Item>
+          <Form.Item
+            label="Proof of payment"
+            required
+            tooltip="Bank slip, transfer confirmation or cheque copy"
+            extra="PDF, PNG or JPEG, up to 10 MB"
+            validateStatus={proofMissing ? 'error' : undefined}
+            help={proofMissing ? 'Attach the proof of payment' : undefined}
+            className="field--full"
+          >
+            <Upload.Dragger
+              accept={ACCEPT}
+              maxCount={1}
+              fileList={proof}
+              beforeUpload={() => false}
+              onChange={({ fileList }) => {
+                setProof(fileList.slice(-1));
+                setProofMissing(false);
+              }}
+            >
+              <p className="ant-upload-text">Click or drag a file here</p>
+            </Upload.Dragger>
+          </Form.Item>
+        </FormSection>
       </Form>
     </Drawer>
   );

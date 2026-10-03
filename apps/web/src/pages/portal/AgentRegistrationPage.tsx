@@ -1,27 +1,33 @@
-import { Alert, Button, Card, Col, Descriptions, Flex, Form, Row, Select, Steps } from 'antd';
+import { Alert, Button, Card, Form, Select, Steps } from 'antd';
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { api } from '../../api/client';
 import { useApiMutation, useApiQuery } from '../../api/hooks';
 import type { RegisterAgentInput } from '../../api/admin-types';
 import type { Agency, AgentType, AgentView, Page } from '../../api/types';
 import { useAuth } from '../../auth/AuthContext';
+import { ActionBar } from '../../components/ActionBar';
 import { AgentDocuments } from '../../components/admin/AgentDocuments';
 import {
   AgentFormFields,
   type AgentFormValues,
   toRegisterInput,
 } from '../../components/admin/AgentFormFields';
-import { AGENT_TYPE_LABELS, PARENT_TYPE } from '../../components/admin/agents';
+import { PARENT_TYPE } from '../../components/admin/agents';
 import { ErrorAlert } from '../../components/ErrorAlert';
+import { FieldGrid } from '../../components/FieldGrid';
+import { FormSection } from '../../components/FormSection';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryState } from '../../components/QueryState';
 import { StatusTag } from '../../components/StatusTag';
 import { P } from '../../utils/permissions';
+import '../../styles/sales.css';
 
 interface FormValues extends AgentFormValues {
   parentAgentId?: string;
 }
+
+const STEPS = [{ title: 'Applicant' }, { title: 'Documents' }, { title: 'IIFT approval' }];
 
 /** Portal users register sub-agents (agency channel) or bank officers (banca channel). */
 const PORTAL_TYPE: Record<Agency['channel'], AgentType> = { AGENCY: 'SUB_AGENT', BANCA: 'BANKER' };
@@ -41,28 +47,30 @@ function ReportingLineField({ agentType }: { agentType: AgentType }) {
 
   if (!parentType) return null;
   return (
-    <Form.Item
-      name="parentAgentId"
-      label="Reports to"
-      extra={
-        agentType === 'BANKER'
-          ? 'Leave empty if the officer does not report to a senior bank officer'
-          : undefined
-      }
-      rules={[
-        {
-          required: agentType === 'SUB_AGENT',
-          message: 'Choose the main agent this sub-agent reports to',
-        },
-      ]}
-    >
-      <Select
-        allowClear={agentType === 'BANKER'}
-        loading={candidates.isLoading}
-        options={options}
-        showSearch={{ optionFilterProp: 'label' }}
-      />
-    </Form.Item>
+    <FormSection title="Reporting line" columns={2}>
+      <Form.Item
+        name="parentAgentId"
+        label="Reports to"
+        tooltip={
+          agentType === 'BANKER'
+            ? 'Empty: the officer reports to no senior bank officer'
+            : undefined
+        }
+        rules={[
+          {
+            required: agentType === 'SUB_AGENT',
+            message: 'Choose the main agent this sub-agent reports to',
+          },
+        ]}
+      >
+        <Select
+          allowClear={agentType === 'BANKER'}
+          loading={candidates.isLoading}
+          options={options}
+          showSearch={{ optionFilterProp: 'label' }}
+        />
+      </Form.Item>
+    </FormSection>
   );
 }
 
@@ -74,6 +82,7 @@ function RegistrationForm({
   onRegistered(agent: AgentView): void;
 }) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [form] = Form.useForm<FormValues>();
   const agentType = PORTAL_TYPE[agency.channel];
   const register = useApiMutation(
@@ -86,13 +95,14 @@ function RegistrationForm({
   );
 
   return (
-    <Card title={`${AGENT_TYPE_LABELS[agentType]} details`} className="content-card">
+    <Card className="content-card">
+      <Steps current={0} items={STEPS} size="small" className="wizard-steps" />
       {agency.status !== 'ACTIVE' && (
         <Alert
           className="mb-16"
           type="error"
           showIcon
-          title="Registrations are only accepted while your agency or bank is active"
+          title="Registrations are only accepted while the agency or bank is active"
         />
       )}
       <ErrorAlert error={register.error} className="mb-16" />
@@ -109,13 +119,9 @@ function RegistrationForm({
           })
         }
       >
-        <Row gutter={16}>
-          <Col xs={24} md={12}>
-            <ReportingLineField agentType={agentType} />
-          </Col>
-        </Row>
+        <ReportingLineField agentType={agentType} />
         <AgentFormFields />
-        <Flex justify="flex-end">
+        <ActionBar start={<Button onClick={() => navigate('/portal/team')}>Cancel</Button>}>
           <Button
             type="primary"
             htmlType="submit"
@@ -124,21 +130,21 @@ function RegistrationForm({
           >
             Submit registration
           </Button>
-        </Flex>
+        </ActionBar>
       </Form>
     </Card>
   );
 }
 
-const AML_OUTCOME: Record<string, { type: 'success' | 'warning' | 'info'; text: string }> = {
-  CLEAR: { type: 'success', text: 'No watch-list match was found.' },
+const AML_OUTCOME: Record<string, { type: 'success' | 'warning' | 'info'; title: string }> = {
+  CLEAR: { type: 'success', title: 'AML screening clear' },
   FLAGGED: {
     type: 'warning',
-    text: 'A possible watch-list match was found. IIFT Compliance will review it before the registration can be approved.',
+    title: 'Possible watch-list match – Compliance clearance required before approval',
   },
   NOT_SCREENED: {
     type: 'info',
-    text: 'Screening has not been completed yet. IIFT will screen the applicant before approval.',
+    title: 'Not yet screened – IIFT screens the applicant before approval',
   },
 };
 
@@ -154,37 +160,35 @@ function RegistrationSubmitted({
   return (
     <>
       <Card title="Registration submitted" className="content-card">
-        <Descriptions
-          size="small"
-          column={{ xs: 1, md: 3 }}
+        <Steps current={1} items={STEPS} size="small" className="wizard-steps" />
+        <FieldGrid
+          columns={4}
           className="mb-16"
           items={[
-            { key: 'code', label: 'Agent code', children: <strong>{agent.agentCode}</strong> },
-            { key: 'name', label: 'Name', children: agent.fullName },
+            { key: 'code', label: 'Agent code', value: <strong>{agent.agentCode}</strong> },
+            { key: 'name', label: 'Name', value: agent.fullName },
             {
               key: 'status',
               label: 'Status',
-              children: <StatusTag status={agent.status} label="Pending approval" />,
+              value: <StatusTag status={agent.status} label="Pending approval" />,
             },
             {
               key: 'aml',
               label: 'AML screening',
-              children: <StatusTag status={agent.amlStatus} />,
+              value: <StatusTag status={agent.amlStatus} />,
             },
           ]}
         />
-        <Alert
-          className="mb-16"
-          type={aml.type}
-          showIcon
-          title="AML/KYC screening"
-          description={aml.text}
-        />
+        <Alert className="mb-16" type={aml.type} showIcon title={aml.title} />
         <Alert
           type="info"
           showIcon
-          title="Next steps"
-          description="Upload a copy of the applicant's IC below. IIFT then reviews the registration; once approved, the portal login is created and the sign-in details are sent to the applicant's email. You can follow the request under My requests."
+          title="Next: upload the applicant's IC copy – sign-in details are e-mailed once IIFT approves"
+          action={
+            <Link to="/portal/requests">
+              <Button size="small">My requests</Button>
+            </Link>
+          }
         />
       </Card>
       <Card className="content-card">
@@ -196,13 +200,12 @@ function RegistrationSubmitted({
           checkRequired
           title="Supporting documents"
         />
+        <ActionBar start={<Button onClick={onRegisterAnother}>Register another</Button>}>
+          <Button type="primary" onClick={() => navigate(`/portal/team/${agent.id}`)}>
+            View team member
+          </Button>
+        </ActionBar>
       </Card>
-      <Flex gap={8} justify="flex-end">
-        <Button onClick={onRegisterAnother}>Register another</Button>
-        <Button type="primary" onClick={() => navigate(`/portal/team/${agent.id}`)}>
-          View team member
-        </Button>
-      </Flex>
     </>
   );
 }
@@ -220,7 +223,7 @@ export default function AgentRegistrationPage() {
         title={title}
         meta={[
           agency.data && {
-            label: 'Agency / bank',
+            label: banca ? 'Bank' : 'Agency',
             value: `${agency.data.name} (${agency.data.code})`,
           },
         ]}
@@ -230,16 +233,6 @@ export default function AgentRegistrationPage() {
           { title },
         ]}
       />
-      <Card className="content-card">
-        <Steps
-          current={registered ? 1 : 0}
-          items={[
-            { title: 'Applicant details', content: 'Identity, contact and licence' },
-            { title: 'Documents', content: 'IC copy and supporting files' },
-            { title: 'IIFT approval', content: 'Screening and verification' },
-          ]}
-        />
-      </Card>
       <QueryState query={agency}>
         {(data) =>
           registered ? (

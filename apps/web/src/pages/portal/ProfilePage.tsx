@@ -1,5 +1,5 @@
 import { EditOutlined } from '@ant-design/icons';
-import { Alert, Button, Card, Form, Input, Modal } from 'antd';
+import { Alert, Button, Card, Col, Form, Input, Row, Tabs } from 'antd';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { api } from '../../api/client';
@@ -10,9 +10,12 @@ import { AgentDocuments } from '../../components/admin/AgentDocuments';
 import { mobileRule } from '../../components/admin/AgentFormFields';
 import { AgentProfile } from '../../components/admin/AgentProfile';
 import { ApprovalHistory } from '../../components/ApprovalHistory';
-import { ErrorAlert } from '../../components/ErrorAlert';
+import { FieldGrid } from '../../components/FieldGrid';
+import { FormSection } from '../../components/FormSection';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryState } from '../../components/QueryState';
+import { FormModal } from '../../components/sales/FormModal';
+import { StatusTag } from '../../components/StatusTag';
 import { formatDateTime } from '../../utils/format';
 import { P } from '../../utils/permissions';
 
@@ -50,42 +53,26 @@ function UpdateRequestModal({ profile, onClose }: { profile: AgentDetail; onClos
   };
 
   return (
-    <Modal
-      open
+    <FormModal<ContactValues>
       title="Request profile update"
       okText="Submit for approval"
-      okButtonProps={{ loading: request.isPending }}
-      onCancel={onClose}
-      onOk={() => form.submit()}
-      destroyOnHidden
+      form={form}
+      width={640}
+      initialValues={{
+        email: profile.email,
+        mobile: profile.mobile,
+        address: profile.address ?? '',
+        branchName: profile.branchName ?? '',
+      }}
+      onSubmit={submit}
+      onClose={onClose}
+      pending={request.isPending}
+      error={request.error}
     >
-      <Alert
-        className="mb-16"
-        type="info"
-        showIcon
-        title="Changes take effect once IIFT approves the request."
-      />
       {unchanged && (
-        <Alert
-          className="mb-16"
-          type="warning"
-          showIcon
-          title="Change at least one field before submitting."
-        />
+        <Alert className="mb-16" type="warning" showIcon title="Change at least one field" />
       )}
-      <ErrorAlert error={request.error} className="mb-16" />
-      <Form
-        form={form}
-        onFinish={submit}
-        layout="vertical"
-        requiredMark="optional"
-        initialValues={{
-          email: profile.email,
-          mobile: profile.mobile,
-          address: profile.address ?? '',
-          branchName: profile.branchName ?? '',
-        }}
-      >
+      <FormSection title="Contact details" columns={2}>
         <Form.Item
           name="email"
           label="Email"
@@ -96,15 +83,19 @@ function UpdateRequestModal({ profile, onClose }: { profile: AgentDetail; onClos
         <Form.Item name="mobile" label="Mobile" rules={[mobileRule]}>
           <Input inputMode="tel" />
         </Form.Item>
-        <Form.Item name="address" label="Address" rules={[{ max: 300 }]}>
-          <Input.TextArea rows={2} />
-        </Form.Item>
         <Form.Item name="branchName" label="Branch" rules={[{ max: 100 }]}>
           <Input />
         </Form.Item>
-      </Form>
-    </Modal>
+        <Form.Item name="address" label="Address" rules={[{ max: 300 }]} className="field--full">
+          <Input.TextArea rows={2} />
+        </Form.Item>
+      </FormSection>
+    </FormModal>
   );
+}
+
+function count(label: string, total: number): string {
+  return total > 0 ? `${label} (${total})` : label;
 }
 
 /** AP-05/06/47: own profile, documents with validity, and profile update requests. */
@@ -123,9 +114,14 @@ export default function ProfilePage() {
           <>
             <PageHeader
               title="My profile"
+              tags={<StatusTag status={data.status} />}
               meta={[
                 { label: 'Name', value: data.fullName },
                 { label: 'Code', value: data.agentCode },
+                {
+                  label: data.agency.channel === 'BANCA' ? 'Bank' : 'Agency',
+                  value: data.agency.name,
+                },
               ]}
               breadcrumb={[{ title: 'Home', to: '/portal' }, { title: 'My profile' }]}
               extra={
@@ -145,46 +141,71 @@ export default function ProfilePage() {
                 className="mb-16"
                 type="info"
                 showIcon
-                title={
-                  <>
-                    Update request{' '}
-                    <Link to={`/portal/requests/${pendingUpdate.id}`}>
-                      {pendingUpdate.requestNo}
-                    </Link>{' '}
-                    is awaiting IIFT approval.
-                  </>
+                title={`Update request ${pendingUpdate.requestNo} awaiting IIFT approval`}
+                action={
+                  <Link to={`/portal/requests/${pendingUpdate.id}`}>
+                    <Button size="small">View request</Button>
+                  </Link>
                 }
               />
             )}
-            <Card title="Profile" className="content-card">
-              <AgentProfile
-                agent={data}
-                extra={[
-                  {
-                    key: 'username',
-                    label: 'Portal user name',
-                    children: data.user?.username ?? '–',
-                  },
-                  {
-                    key: 'lastLogin',
-                    label: 'Last sign-in',
-                    children: formatDateTime(data.user?.lastLoginAt),
-                  },
-                ]}
-              />
-            </Card>
-            <Card className="content-card">
-              <AgentDocuments
-                agentId={data.id}
-                idType={data.idType}
-                channel={data.agency.channel}
-                canUpload={can(P.portalProfileUpdate)}
-                title="My documents"
-              />
-            </Card>
-            <Card title="Change requests" className="content-card">
-              <ApprovalHistory approvals={data.approvals} />
-            </Card>
+            <Row gutter={16}>
+              <Col xs={24} xl={16}>
+                <Card title="Profile" className="content-card">
+                  <AgentProfile agent={data} />
+                </Card>
+              </Col>
+              <Col xs={24} xl={8}>
+                <Card title="Portal account" className="content-card">
+                  <FieldGrid
+                    columns={2}
+                    items={[
+                      { key: 'username', label: 'User name', value: data.user?.username },
+                      {
+                        key: 'userStatus',
+                        label: 'Account status',
+                        value: <StatusTag status={data.user?.status} />,
+                      },
+                      {
+                        key: 'lastLogin',
+                        label: 'Last sign-in',
+                        value: formatDateTime(data.user?.lastLoginAt),
+                        span: 2,
+                      },
+                    ]}
+                  />
+                </Card>
+              </Col>
+            </Row>
+            <Tabs
+              className="page-tabs"
+              items={[
+                {
+                  key: 'documents',
+                  label: count('Documents', data.documents.length),
+                  children: (
+                    <Card className="content-card">
+                      <AgentDocuments
+                        agentId={data.id}
+                        idType={data.idType}
+                        channel={data.agency.channel}
+                        canUpload={can(P.portalProfileUpdate)}
+                        title="My documents"
+                      />
+                    </Card>
+                  ),
+                },
+                {
+                  key: 'requests',
+                  label: count('Change requests', data.approvals.length),
+                  children: (
+                    <Card className="content-card">
+                      <ApprovalHistory approvals={data.approvals} />
+                    </Card>
+                  ),
+                },
+              ]}
+            />
             {editing && <UpdateRequestModal profile={data} onClose={() => setEditing(false)} />}
           </>
         );

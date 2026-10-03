@@ -54,6 +54,9 @@ export function QuestionnaireModal({ policy, onClose }: { policy: PolicyDetail; 
           <Form.Item
             name={[question.code, 'answer']}
             label={`${index + 1}. ${question.text}`}
+            tooltip={
+              question.referIfYes ? 'A yes answer is referred to IIFT underwriting' : undefined
+            }
             rules={[{ required: true, message: 'Answer yes or no' }]}
           >
             <Radio.Group
@@ -67,9 +70,6 @@ export function QuestionnaireModal({ policy, onClose }: { policy: PolicyDetail; 
             <Form.Item
               name={[question.code, 'details']}
               label="Details"
-              extra={
-                question.referIfYes ? 'A "yes" answer is referred to IIFT underwriting.' : undefined
-              }
               rules={[
                 { required: true, whitespace: true, message: 'Give details for a "yes" answer' },
                 { max: 500, message: 'Up to 500 characters' },

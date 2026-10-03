@@ -1,8 +1,9 @@
-import { App, Form, Input, Typography } from 'antd';
+import { App, Form, Input } from 'antd';
 import { api } from '../../api/client';
 import { useApiMutation } from '../../api/hooks';
 import type { SentTo } from '../../api/sales-types';
 import type { PolicyDetail } from '../../api/types';
+import { FieldGrid } from '../FieldGrid';
 import { FormModal } from './FormModal';
 import { useSalesLinks } from './useSalesLinks';
 
@@ -15,6 +16,15 @@ export function hasIssuedDocuments(policy: PolicyDetail): boolean {
   return policy.documents.some(
     (doc) => doc.docType === 'POLICY_SCHEDULE' || doc.docType === 'RECEIPT',
   );
+}
+
+const ISSUED_LABELS: Record<string, string> = {
+  POLICY_SCHEDULE: 'e-Policy schedule',
+  RECEIPT: 'e-Receipt',
+};
+
+function issuedDocuments(policy: PolicyDetail): string[] {
+  return [...new Set(policy.documents.map((doc) => ISSUED_LABELS[doc.docType]).filter(Boolean))];
 }
 
 /** AP-45: e-mail the e-Policy schedule and e-Receipts to the participant (or another address). */
@@ -51,14 +61,22 @@ export function EmailDocumentsModal({
       pending={send.isPending}
       error={send.error}
     >
-      <Typography.Paragraph>
-        The e-Policy schedule and e-Receipts of {policy.policyNo ?? policy.quotationNo} are attached
-        to the e-mail.
-      </Typography.Paragraph>
+      <FieldGrid
+        columns={2}
+        className="mb-16"
+        items={[
+          { key: 'policy', label: 'Policy', value: policy.policyNo ?? policy.quotationNo },
+          {
+            key: 'documents',
+            label: 'Attachments',
+            value: issuedDocuments(policy).join(', '),
+          },
+        ]}
+      />
       <Form.Item
         name="email"
         label="Send to"
-        extra="Defaults to the participant's e-mail address"
+        tooltip="Empty: the participant's e-mail address"
         rules={[{ type: 'email', message: 'Enter a valid e-mail address' }]}
       >
         <Input

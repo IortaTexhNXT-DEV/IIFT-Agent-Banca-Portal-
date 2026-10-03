@@ -1,7 +1,6 @@
-import { Table } from 'antd';
 import type { IsoDate, Money as MoneyValue } from '../../api/types';
-import { formatDateTime } from '../../utils/format';
-import { Money } from '../Money';
+import { DataTable, dateTimeColumn, moneyColumn } from '../DataTable';
+import { EmptyState } from '../EmptyState';
 import { DocumentDownloadButton } from './DocumentDownloadButton';
 
 interface ReceiptRow {
@@ -15,21 +14,17 @@ interface ReceiptRow {
 /** e-Receipts issued after payment verification (AP-41/44), each downloadable as PDF. */
 export function ReceiptsTable({ receipts }: { receipts: ReceiptRow[] }) {
   return (
-    <Table<ReceiptRow>
+    <DataTable<ReceiptRow>
       size="small"
       rowKey="id"
       pagination={false}
       dataSource={receipts}
-      locale={{ emptyText: 'No receipts issued yet' }}
+      scroll={{}}
+      locale={{ emptyText: <EmptyState label="No receipts issued" inline /> }}
       columns={[
         { title: 'Receipt no.', dataIndex: 'receiptNo' },
-        { title: 'Issued', dataIndex: 'issuedAt', render: formatDateTime },
-        {
-          title: 'Amount',
-          dataIndex: 'amount',
-          align: 'right',
-          render: (value: MoneyValue) => <Money value={value} />,
-        },
+        dateTimeColumn('Issued', 'issuedAt', 160),
+        moneyColumn('Amount', 'amount', 140),
         {
           key: 'download',
           width: 56,

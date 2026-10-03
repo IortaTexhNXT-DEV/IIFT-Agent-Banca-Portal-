@@ -1,11 +1,11 @@
-import { Card, Table, Tabs } from 'antd';
+import { Card, Tabs } from 'antd';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import type { PolicyDetail, RequiredDocument } from '../../api/types';
-import { formatDate } from '../../utils/format';
 import { ApprovalHistory } from '../ApprovalHistory';
+import { DataTable, dateColumn, statusColumn } from '../DataTable';
 import { DocumentPanel } from '../DocumentPanel';
-import { StatusTag } from '../StatusTag';
+import { EmptyState } from '../EmptyState';
 import { PolicyEventsTimeline } from './PolicyEventsTimeline';
 import { PolicyOverview } from './PolicyOverview';
 import { PolicyPayments } from './PolicyPayments';
@@ -21,25 +21,23 @@ function PolicyClaims({ claims }: { claims: PolicyClaim[] }) {
   const links = useSalesLinks();
   const claimTypes = useCodes('CLAIM_TYPE');
   return (
-    <Table<PolicyClaim>
+    <DataTable<PolicyClaim>
       size="small"
       rowKey="id"
       pagination={false}
       dataSource={claims}
-      locale={{ emptyText: 'No claims notified on this policy' }}
+      scroll={{}}
+      locale={{ emptyText: <EmptyState label="No claims" inline /> }}
       columns={[
         {
           title: 'Claim no.',
           dataIndex: 'claimNo',
+          width: 150,
           render: (claimNo: string, claim) => <Link to={links.claim(claim.id)}>{claimNo}</Link>,
         },
         { title: 'Type', dataIndex: 'claimType', render: claimTypes.label },
-        { title: 'Event date', dataIndex: 'eventDate', render: formatDate },
-        {
-          title: 'Status',
-          dataIndex: 'status',
-          render: (status: string) => <StatusTag status={status} />,
-        },
+        dateColumn('Event date', 'eventDate', 130),
+        statusColumn('Status', 'status', 140),
       ]}
     />
   );

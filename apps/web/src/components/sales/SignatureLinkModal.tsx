@@ -1,8 +1,9 @@
-import { App, Form, Input, Typography } from 'antd';
+import { App, Form, Input } from 'antd';
 import { api } from '../../api/client';
 import { useApiMutation } from '../../api/hooks';
 import type { SentTo } from '../../api/sales-types';
 import type { PolicyDetail } from '../../api/types';
+import { FieldGrid } from '../FieldGrid';
 import { FormModal } from './FormModal';
 
 interface Values {
@@ -35,13 +36,18 @@ export function SignatureLinkModal({ policy, onClose }: { policy: PolicyDetail; 
       pending={send.isPending}
       error={send.error}
     >
-      <Typography.Paragraph>
-        {policy.participant.fullName} receives a link to review quotation {policy.quotationNo} and
-        sign it. The link can be used once and expires after the period set by IIFT.
-      </Typography.Paragraph>
+      <FieldGrid
+        columns={2}
+        className="mb-16"
+        items={[
+          { key: 'participant', label: 'Participant', value: policy.participant.fullName },
+          { key: 'quotation', label: 'Quotation', value: policy.quotationNo },
+        ]}
+      />
       <Form.Item
         name="email"
         label="Participant e-mail"
+        tooltip="One-time link; expires after the period set by IIFT"
         rules={[
           { required: true, message: 'Enter the e-mail address' },
           { type: 'email', message: 'Enter a valid e-mail address' },

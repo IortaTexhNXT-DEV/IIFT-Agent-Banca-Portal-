@@ -40,7 +40,7 @@ export function NomineesModal({ policy, onClose }: { policy: PolicyDetail; onClo
           className="mb-16"
           type="info"
           showIcon
-          title="Leave the IC / passport number blank to keep the number already on record."
+          title="Leave the IC / passport number blank to keep the number on record"
         />
       )}
       <NomineesEditor required={policy.product.config.requiresNominee === true} />

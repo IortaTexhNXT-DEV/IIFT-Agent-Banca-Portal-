@@ -1,9 +1,12 @@
-import { Alert, Card, Col, Descriptions, Row, Table } from 'antd';
+import { Alert, Card, Col, Row } from 'antd';
 import type { ReactNode } from 'react';
-import type { Money as MoneyValue, Payment } from '../../api/types';
+import type { Payment } from '../../api/types';
 import { formatDate, formatDateTime, humanise } from '../../utils/format';
 import { ApprovalHistory } from '../ApprovalHistory';
+import { DataTable, moneyColumn, textColumn } from '../DataTable';
 import { DocumentPanel } from '../DocumentPanel';
+import { EmptyState } from '../EmptyState';
+import { FieldGrid } from '../FieldGrid';
 import { Money } from '../Money';
 import { PageHeader } from '../PageHeader';
 import { StatusTag } from '../StatusTag';
@@ -37,6 +40,7 @@ export function PaymentDetailView({ payment, actions }: Props) {
         title={payment.paymentNo}
         tags={<StatusTag status={payment.status} />}
         meta={[
+          { label: 'Amount', value: <Money value={payment.totalAmount} /> },
           { label: 'Agency / bank', value: payment.agency.name },
           { label: 'Submitted', value: formatDateTime(payment.createdAt) },
         ]}
@@ -48,74 +52,63 @@ export function PaymentDetailView({ payment, actions }: Props) {
           className="mb-16"
           type="error"
           showIcon
-          title="Payment rejected by Finance"
-          description={`${payment.rejectionReason ?? 'No reason was recorded.'} The policies are open for payment again.`}
+          title="Rejected by Finance – the policies are open for payment again"
+          description={payment.rejectionReason}
         />
       )}
-      <Row gutter={[16, 0]}>
-        <Col xs={24} xl={10}>
+      <Row gutter={16}>
+        <Col xs={24} xl={16}>
           <Card title="Payment" className="content-card">
-            <Descriptions
-              size="small"
-              column={1}
+            <FieldGrid
+              columns={3}
               items={[
                 {
                   key: 'amount',
                   label: 'Total amount',
-                  children: <Money value={payment.totalAmount} strong />,
+                  value: <Money value={payment.totalAmount} strong />,
                 },
-                { key: 'method', label: 'Method', children: humanise(payment.method) },
-                { key: 'bank', label: 'Bank', children: payment.bankName ?? '–' },
-                { key: 'reference', label: 'Reference', children: payment.referenceNo },
-                { key: 'date', label: 'Payment date', children: formatDate(payment.paymentDate) },
-                {
-                  key: 'verified',
-                  label: 'Verified',
-                  children: formatDateTime(payment.verifiedAt),
-                },
-                { key: 'remarks', label: 'Remarks', children: payment.remarks ?? '–' },
+                { key: 'method', label: 'Method', value: humanise(payment.method) },
+                { key: 'bank', label: 'Bank', value: payment.bankName },
+                { key: 'reference', label: 'Bank reference', value: payment.referenceNo },
+                { key: 'date', label: 'Payment date', value: formatDate(payment.paymentDate) },
+                { key: 'verified', label: 'Verified', value: formatDateTime(payment.verifiedAt) },
+                { key: 'remarks', label: 'Remarks', value: payment.remarks, span: 'full' },
               ]}
             />
           </Card>
-        </Col>
-        <Col xs={24} xl={14}>
-          <Card title="Allocated to" className="content-card">
-            <Table<Allocation>
+          <Card title="Allocated to" className="content-card content-card--flush">
+            <DataTable<Allocation>
               size="small"
               rowKey="id"
               pagination={false}
               dataSource={payment.allocations}
+              scroll={{}}
+              locale={{ emptyText: <EmptyState label="No allocations" /> }}
               columns={[
                 {
-                  title: 'Policy / quotation no.',
+                  title: 'Policy / quotation',
                   key: 'policy',
+                  width: 180,
                   render: (_, allocation) => <PolicyLink policy={allocation.policy} />,
                 },
-                {
-                  title: 'Participant',
-                  key: 'participant',
-                  render: (_, allocation) => allocation.policy.participant.fullName,
-                },
-                {
-                  title: 'Amount',
-                  dataIndex: 'amount',
-                  align: 'right',
-                  render: (value: MoneyValue) => <Money value={value} />,
-                },
+                textColumn('Participant', ['policy', 'participant', 'fullName']),
+                moneyColumn('Amount', 'amount', 140),
               ]}
             />
           </Card>
-          <Card title="e-Receipts" className="content-card">
+          <Card title="e-Receipts" className="content-card content-card--flush">
             <ReceiptsTable receipts={payment.receipts} />
+          </Card>
+          <Card className="content-card">
+            <DocumentPanel ownerType="PAYMENT" ownerId={payment.id} title="Proof of payment" />
+          </Card>
+        </Col>
+        <Col xs={24} xl={8}>
+          <Card title="Verification" className="content-card">
+            <ApprovalHistory approvals={payment.approvals ?? []} />
           </Card>
         </Col>
       </Row>
-      <Card className="content-card">
-        <DocumentPanel ownerType="PAYMENT" ownerId={payment.id} title="Proof of payment" />
-      </Card>
-      <Card title="Verification" className="content-card">
-        <ApprovalHistory approvals={payment.approvals ?? []} />
-      </Card>
     </>
   );
 }

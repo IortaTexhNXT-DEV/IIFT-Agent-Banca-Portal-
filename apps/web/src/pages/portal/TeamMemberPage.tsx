@@ -17,6 +17,10 @@ const parentLink = (parent: { id: string; agentCode: string; fullName: string })
   <Link to={`/portal/team/${parent.id}`}>{`${parent.fullName} (${parent.agentCode})`}</Link>
 );
 
+function count(label: string, total: number): string {
+  return total > 0 ? `${label} (${total})` : label;
+}
+
 /** AP-09/46/47: a team member's profile, documents, reporting line and approval history. */
 export default function TeamMemberPage() {
   const { id = '' } = useParams();
@@ -29,11 +33,20 @@ export default function TeamMemberPage() {
         <>
           <PageHeader
             title={data.fullName}
-            tags={<StatusTag status={data.status} />}
+            tags={
+              <>
+                <StatusTag status={data.status} />
+                <StatusTag status={data.amlStatus} />
+              </>
+            }
             meta={[
               { label: 'Code', value: data.agentCode },
               { label: 'Type', value: AGENT_TYPE_LABELS[data.agentType] },
-              { label: 'Agency / bank', value: data.agency.name },
+              {
+                label: data.agency.channel === 'BANCA' ? 'Bank' : 'Agency',
+                value: data.agency.name,
+              },
+              data.parent && { label: 'Reports to', value: data.parent.fullName },
             ]}
             breadcrumb={[
               { title: 'Home', to: '/portal' },
@@ -42,16 +55,17 @@ export default function TeamMemberPage() {
             ]}
           />
           <Card title="Profile" className="content-card">
-            <AgentProfile agent={data} parentLink={parentLink} />
+            <AgentProfile agent={data} parentLink={parentLink} columns={4} />
           </Card>
-          <Card className="content-card">
-            <Tabs
-              destroyOnHidden
-              items={[
-                {
-                  key: 'documents',
-                  label: 'Documents',
-                  children: (
+          <Tabs
+            className="page-tabs"
+            destroyOnHidden
+            items={[
+              {
+                key: 'documents',
+                label: count('Documents', data.documents.length),
+                children: (
+                  <Card className="content-card">
                     <AgentDocuments
                       agentId={data.id}
                       idType={data.idType}
@@ -59,26 +73,32 @@ export default function TeamMemberPage() {
                       canUpload={can(P.portalAgentRegister) && data.status !== 'TERMINATED'}
                       checkRequired={data.status === 'PENDING'}
                     />
-                  ),
-                },
-                {
-                  key: 'team',
-                  label: `Reporting agents (${data.subAgents.length})`,
-                  children: (
+                  </Card>
+                ),
+              },
+              {
+                key: 'team',
+                label: count('Reporting agents', data.subAgents.length),
+                children: (
+                  <Card className="content-card content-card--flush">
                     <SubAgentTable
                       agents={data.subAgents}
                       memberPath={(agentId) => `/portal/team/${agentId}`}
                     />
-                  ),
-                },
-                {
-                  key: 'approvals',
-                  label: 'Approval history',
-                  children: <ApprovalHistory approvals={data.approvals} />,
-                },
-              ]}
-            />
-          </Card>
+                  </Card>
+                ),
+              },
+              {
+                key: 'approvals',
+                label: count('Approval history', data.approvals.length),
+                children: (
+                  <Card className="content-card">
+                    <ApprovalHistory approvals={data.approvals} />
+                  </Card>
+                ),
+              },
+            ]}
+          />
         </>
       )}
     </QueryState>

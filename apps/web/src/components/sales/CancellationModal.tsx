@@ -3,6 +3,7 @@ import dayjs, { type Dayjs } from 'dayjs';
 import { api } from '../../api/client';
 import { useApiMutation } from '../../api/hooks';
 import type { ApprovalRequest, PolicyDetail } from '../../api/types';
+import { FormSection } from '../FormSection';
 import { FormModal } from './FormModal';
 import { ISO_DATE } from './options';
 import { useCodes } from './useCodes';
@@ -35,7 +36,7 @@ export function CancellationModal({ policy, onClose }: { policy: PolicyDetail; o
   return (
     <FormModal<Values>
       title={`Cancel ${policy.policyNo}`}
-      okText="Submit cancellation request"
+      okText="Submit request"
       danger
       form={form}
       initialValues={{ effectiveDate: dayjs() }}
@@ -48,36 +49,39 @@ export function CancellationModal({ policy, onClose }: { policy: PolicyDetail; o
         className="mb-16"
         type="warning"
         showIcon
-        title="The policy stays in force until IIFT approves the cancellation."
+        title="The policy stays in force until IIFT approves the cancellation"
       />
-      <Form.Item
-        name="reasonCode"
-        label="Reason"
-        rules={[{ required: true, message: 'Choose the reason' }]}
-      >
-        <Select options={reasons.options} loading={reasons.loading} />
-      </Form.Item>
-      <Form.Item
-        name="effectiveDate"
-        label="Effective date"
-        rules={[{ required: true, message: 'Choose the effective date' }]}
-      >
-        <DatePicker
-          className="full-width"
-          format="DD MMM YYYY"
-          disabledDate={(date) => (coverStart ? date.isBefore(coverStart, 'day') : false)}
-        />
-      </Form.Item>
-      <Form.Item
-        name="remarks"
-        label="Remarks"
-        rules={[
-          { required: true, whitespace: true, message: 'Enter the remarks' },
-          { min: 5, max: 1000, message: 'Between 5 and 1,000 characters' },
-        ]}
-      >
-        <Input.TextArea rows={3} maxLength={1000} showCount />
-      </Form.Item>
+      <FormSection columns={2}>
+        <Form.Item
+          name="reasonCode"
+          label="Reason"
+          rules={[{ required: true, message: 'Choose the reason' }]}
+        >
+          <Select options={reasons.options} loading={reasons.loading} />
+        </Form.Item>
+        <Form.Item
+          name="effectiveDate"
+          label="Effective date"
+          rules={[{ required: true, message: 'Choose the effective date' }]}
+        >
+          <DatePicker
+            className="full-width"
+            format="DD MMM YYYY"
+            disabledDate={(date) => (coverStart ? date.isBefore(coverStart, 'day') : false)}
+          />
+        </Form.Item>
+        <Form.Item
+          name="remarks"
+          label="Remarks"
+          className="field--full"
+          rules={[
+            { required: true, whitespace: true, message: 'Enter the remarks' },
+            { min: 5, max: 1000, message: 'Between 5 and 1,000 characters' },
+          ]}
+        >
+          <Input.TextArea rows={3} maxLength={1000} showCount />
+        </Form.Item>
+      </FormSection>
     </FormModal>
   );
 }

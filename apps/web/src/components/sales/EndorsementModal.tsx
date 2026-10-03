@@ -63,7 +63,7 @@ export function EndorsementModal({ policy, onClose }: { policy: PolicyDetail; on
       </Form.Item>
       <Form.Item
         name="description"
-        label="Description of the change"
+        label="Description"
         rules={[
           { required: true, whitespace: true, message: 'Describe the change' },
           { min: 5, max: 1000, message: 'Between 5 and 1,000 characters' },
