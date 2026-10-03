@@ -10,6 +10,8 @@ tender proposal in `docs/proposal` and use the same styling.
 | Production Support Handover (IIFT-SV2-PSH, DEL-26/27) | `SalesVerse-2.0-Production-Support-Handover.docx` / `.pdf` | Support tiers, hours and SLA, incident, problem, change and release processes, escalation, monitoring and alerts, twelve runbooks, backup and DR, managed services operating model for Option B (roster, on-call, runbook equivalents, cost and SLA reporting), configuration reference, scheduled jobs, knowledge transfer, Option C source code handover and transition (8-week plan, repository handover, handover certificate, post-handover support models), developer onboarding, handover checklist, monthly report template, exit plan |
 | Code Standards & Quality Report (IIFT-SV2-CSQ) | `SalesVerse-2.0-Code-Standards-and-Quality-Report.docx` / `.pdf` | Built from `evidence/`; see `README-reports.md` |
 | Security Assessment Report (IIFT-SV2-SAR) | `SalesVerse-2.0-Security-Assessment-Report.docx` / `.pdf` | Built from `evidence/`; see `README-reports.md` |
+| Test Strategy (IIFT-SV2-TST, DEL-12) | `SalesVerse-2.0-Test-Strategy.docx` / `.pdf` | Test levels (unit to UAT, SIT, performance, security and VAPT, regression, migration rehearsal, DR drill, operational readiness), environments and data, entry/exit criteria, defect severity and priority, roles, tooling, traceability, schedule within the 24-week plan, metrics, risks, and the status of testing on the current build (counted from `evidence/`) |
+| Test Cases (IIFT-SV2-TCS, DEL-13/14) | `SalesVerse-2.0-Test-Cases.xlsx` | Read-me, Summary (formulas over the Cases sheet), Scenarios, Conditions, Cases (steps, data, expected result, level, automation, status, evidence), Defects, Traceability (RFP requirement to case), Execution log; see `README-reports.md` for how the status is produced |
 
 ## Rebuilding
 
@@ -17,7 +19,9 @@ Requirements: Python 3 with `python-docx`, `openpyxl` and `Pillow`; LibreOffice 
 for PDF export; `pdfinfo` (poppler) for page counts.
 
 ```bash
-python3 docs/technical/build/build_all.py              # all three documents, with PDFs
+python3 docs/technical/build/build_all.py              # the whole pack, with PDFs, then the strategy/workbook drift check
+python3 docs/technical/build/build_test_cases.py       # workbook only (recalculated with LibreOffice to check the formulas)
+python3 docs/technical/build/build_test_strategy.py    # strategy only
 python3 docs/technical/build/build_architecture.py     # one document
 python3 docs/technical/build/build_data_dictionary.py --no-pdf
 ```
@@ -36,7 +40,10 @@ refreshes when the document is opened.
 | `build/dictionary_text.py` | Business descriptions of tables, columns, enumeration values, sequences and checks; the Data Dictionary build stops if anything in the schema lacks a description |
 | `build/source_facts.py` | Reads facts from the code: environment variables (`app-config.ts`), business parameters (`setting-keys.ts`), roles, permissions, API operations (`docs/api/openapi.json`), package versions, test inventory, and holds the sizing model |
 | `build/sad_part1.py`, `build/sad_part2.py` | Solution Architecture content |
-| `build/build_*.py` | One builder per document; `build_all.py` runs the three above |
+| `build/test_scenarios.py`, `build/test_cases_manual.py`, `build/rfp_requirements.py` | The test catalogue: areas, scenarios, conditions, hand-written cases (the executed API run, the end-to-end suite decomposed into business cases, manual UI runs with screen captures, cases that need IIFT's environment) and the RFP identifiers for traceability |
+| `build/test_automated.py`, `build/test_status.py` | Derive cases from the evidence files (unit, end-to-end, security checks, API run, re-runs), join everything, number the cases, compute the counts used by both test documents and verify every reference; `verify_pack()` reads the finished DOCX and XLSX back and fails if they disagree |
+| `build/collect_ui_evidence.py` | Copies the screen captures cited by the manual cases into `evidence/ui-screens` (JPEG) |
+| `build/build_*.py` | One builder per document; `build_all.py` runs them all |
 
 Because the configuration reference, parameters, roles, API list, versions and data dictionary are read from the
 source at build time, rebuild the pack after every release that changes them. A schema change also needs new

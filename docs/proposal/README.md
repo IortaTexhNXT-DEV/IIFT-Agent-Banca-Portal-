@@ -15,7 +15,7 @@ IIFT Agent/Banca Portal & Back-office. The technical document pack referenced in
 | `IIFT-Bill-of-Materials-iorta-TechNXT.xlsx` | Bill of Materials: summary by category and option, on-premise infrastructure (Option A, sized as in the Solution Architecture), cloud services (Option B, at actuals), software components and licences, third-party services with treatment (included / pass-through / IIFT procures / not required) |
 | `assets/iift-logo.png` | Client logo, used only in the "Prepared for" block on the cover |
 | `assets/iorta-logo.png` | iorta TechNXT logo: cover, running header of the proposal, Summary sheets of both workbooks |
-| `screenshots/` | Application screens inserted in Section 20.2 (see list below) |
+| `screenshots/` | Application screens inserted in the personas chapter (see below) |
 | `build/` | Scripts that produce all of the above |
 
 ### Build scripts
@@ -25,14 +25,15 @@ IIFT Agent/Banca Portal & Back-office. The technical document pack referenced in
 | `build/build_proposal.py` | Assembles the Word document: cover, cover letter, front matter, chapters in `numbering.CHAPTERS` order, annexes |
 | `build/numbering.py` | Chapter order and `sec("key")` helper used for every cross-reference |
 | `build/sections_scope.py` | Scope of work following the RFP structure (3.1, 4.1–4.4, 5, 7, 8) and the solution fitment chapter |
-| `build/sections_people.py` | Personas, user journeys (swim-lane diagrams and step tables) and the screen catalogue with sample screens |
+| `build/sections_people.py` | Chapter 7: personas (profile, navigation map, screens, screen sequence), navigation model, ten end-to-end journeys (vertical swim-lane figures and step tables) and the screen index |
+| `build/screen_manifest.py` | Manifest of every screen image: file, persona, demo user, route, capture actions, caption, width; read by the build and exported as JSON for `tools/screenshots/capture.mjs` |
 | `build/sections_solution.py` | Understanding, functional rules, products and flows, architecture, security, deployment, infrastructure |
 | `build/sections_delivery.py` | Technical document pack, methodology, timeline, maintenance, team, assumptions, risks |
 | `build/sections_commercial.py` | Commercial proposal (options A/B/C, client format, RFP section 10, OPE, BOM summary, rate card, payment schedules, commercial terms), validity, supporting information, terms and conditions, Annexes A–D |
 | `build/compliance_matrix.py` | Compliance and fitment data for every RFP requirement ID (Annex A, fitment chapter) |
 | `build/pricing_data.py` | **Single source of truth for all prices and the bill of materials**; the DOCX and both XLSX files read from it and it self-checks the totals |
 | `build/docx_kit.py` | Layout helpers (branded headings, tables, call-outs, figures, header/footer fields) |
-| `build/diagrams.py` | Architecture, deployment, integration, lifecycle, governance, Gantt and swim-lane diagrams (Pillow) |
+| `build/diagrams.py` | Architecture, deployment, integration, lifecycle, governance, Gantt diagrams, plus the persona navigation maps, vertical journey flows and the navigation model (Pillow) |
 | `build/build_pricing.py` | Writes the pricing workbook with live Excel formulas and verifies every total (Python evaluator, then LibreOffice recalculation) |
 | `build/build_bom.py` | Writes the Bill of Materials workbook; checks the on-premise sizing against `docs/technical/build/sad_part2.py` and verifies the totals |
 | `build/xlsx_kit.py` | Shared styling, layout and verification helpers for both workbooks |
@@ -67,37 +68,16 @@ workbooks. If the file is removed, the cover falls back to a text wordmark and t
 
 ## Application screenshots
 
-Save screens in `docs/proposal/screenshots/` with exactly these names (PNG, ideally 1440 × 900). Missing files
-are replaced by a grey placeholder box, so the document always builds; rebuild once the screens are available.
-The list lives in `SCREENSHOTS` in `build/sections_people.py`; when the final set of file names is provided, edit that
-list (file name and caption) and rebuild.
+The screens are listed in `build/screen_manifest.py` (`PERSONA_SCREENS`): file name, persona, demo user,
+route, the steps taken before the capture, caption and width. Files live in `docs/proposal/screenshots/`
+as PNG, 1440 × 900 at device scale factor 1.5 (2160 × 1350 px). A missing file is replaced by a grey
+placeholder so the document always builds.
 
-| File | Caption |
-|---|---|
-| `01-login.png` | Secure login |
-| `02-portal-dashboard.png` | Agent/Banca dashboard |
-| `03-quotation-product.png` | Product selection |
-| `04-quotation-wizard.png` | Quotation – participant & coverage |
-| `05-quotation-summary.png` | Quotation summary & contribution |
-| `06-policy-list.png` | Policy listing & search |
-| `07-policy-detail.png` | Policy details, documents & history |
-| `08-participants.png` | Participant management |
-| `09-billing-payment.png` | Payment submission (single/bulk) |
-| `10-claims.png` | Claim notification |
-| `11-issues.png` | Issue reporting & tracking |
-| `12-bo-dashboard.png` | Back-office management dashboard |
-| `13-bo-approvals.png` | Maker-checker approvals inbox |
-| `14-bo-agents.png` | Agent/Banca administration |
-| `15-bo-agent-detail.png` | Agent profile, hierarchy & documents |
-| `16-bo-aml-review.png` | AML/KYC compliance review |
-| `17-bo-payment-verification.png` | Payment verification & receipts |
-| `18-bo-reports.png` | Reports & export |
-| `19-bo-audit.png` | Audit trail search |
-| `20-bo-users-roles.png` | Users, roles & permissions |
-| `21-bo-config.png` | System parameters & master data |
-| `22-bo-integration-monitor.png` | Integration monitor & reconciliation |
-| `23-bo-eod.png` | End-of-day processing |
-| `24-policy-schedule-pdf.png` | Generated e-Policy schedule |
+Capture them with `node tools/screenshots/capture.mjs` (see `tools/screenshots/README.md`), then
+rebuild. `python3 docs/proposal/build/screen_manifest.py` prints the list; `--json` exports it for the
+capture script. Files `01` to `24` are the original set, reused where they fit the persona sequences;
+`25` onwards were added for the personas chapter. `24-policy-schedule-pdf.png` is a page of a
+generated e-Policy and is produced by hand.
 
 ## Placeholders to complete before submission
 

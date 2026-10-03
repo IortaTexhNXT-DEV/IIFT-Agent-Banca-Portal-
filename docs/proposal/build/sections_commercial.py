@@ -878,7 +878,7 @@ def supporting_information(w: ProposalWriter):
     w.table(["Item", "Benefit to IIFT"], VALUE_ADDS, widths=[5.4, 11.6], font_size=8, bold_first_col=True,
             caption="Value-added items included at no extra cost")
     w.para(f"Further supporting material: the technical document pack (Section {sec('techdocs')}), the screen "
-           f"catalogue with sample screens (Section {sec('screens')}), the pricing workbook and the Bill of "
+           f"screen index (Section {sec('screens')}), the pricing workbook and the Bill of "
            "Materials workbook.")
 
 

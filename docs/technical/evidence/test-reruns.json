@@ -1,0 +1,1127 @@
+{
+ "description": "Re-runs of the automated suites by iorta QA on the build under test, recorded by the test case workbook as the latest result of each automated case. The original evidence files (api-unit-tests.json, api-e2e-tests.json, web-unit-tests.json) are kept unchanged.",
+ "suites": {
+  "api-unit": {
+   "command": "npm test -w apps/api",
+   "startTime": 1790977501256,
+   "startedAt": "2026-10-02T21:45:01.256000Z",
+   "total": 59,
+   "passed": 59,
+   "failed": 0,
+   "tests": [
+    {
+     "file": "apps/api/src/config/app-config.spec.ts",
+     "fullName": "AppConfig loads a minimal development configuration with safe defaults",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/config/app-config.spec.ts",
+     "fullName": "AppConfig fails fast on missing or weak secrets",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/config/app-config.spec.ts",
+     "fullName": "AppConfig refuses insecure production settings",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/config/app-config.spec.ts",
+     "fullName": "AppConfig accepts a complete production configuration",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/common/crypto/field-crypto.service.spec.ts",
+     "fullName": "FieldCryptoService round-trips a value and never produces the same ciphertext twice",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/common/crypto/field-crypto.service.spec.ts",
+     "fullName": "FieldCryptoService detects tampering through the authentication tag",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/common/crypto/field-crypto.service.spec.ts",
+     "fullName": "FieldCryptoService produces the same blind index for differently formatted identifiers",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/common/crypto/field-crypto.service.spec.ts",
+     "fullName": "FieldCryptoService normalises and masks identifiers",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/common/util/dates.spec.ts",
+     "fullName": "date helpers computes age at next birthday",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/common/util/dates.spec.ts",
+     "fullName": "date helpers uses the Brunei calendar day (UTC+8) as the business date",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/common/util/dates.spec.ts",
+     "fullName": "date helpers returns the UTC instants bounding a Brunei business day",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/common/util/dates.spec.ts",
+     "fullName": "date helpers adds months and counts days",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/aml/name-matching.spec.ts",
+     "fullName": "name matching normalises case, punctuation, honorifics and common spellings",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/aml/name-matching.spec.ts",
+     "fullName": "name matching scores identical names 100 regardless of honorific",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/aml/name-matching.spec.ts",
+     "fullName": "name matching scores close transliterations above the default review threshold",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/aml/name-matching.spec.ts",
+     "fullName": "name matching scores unrelated names low",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/aml/name-matching.spec.ts",
+     "fullName": "name matching implements Jaro-Winkler",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/aml/watchlist.spec.ts",
+     "fullName": "parseCsv handles quoted fields, escaped quotes and CRLF line endings",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/auth/password.service.spec.ts",
+     "fullName": "PasswordService accepts a password meeting every rule",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/auth/password.service.spec.ts",
+     "fullName": "PasswordService reports every unmet rule together",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/auth/password.service.spec.ts",
+     "fullName": "PasswordService rejects passwords containing the username",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/auth/password.service.spec.ts",
+     "fullName": "PasswordService hashes with Argon2id and verifies",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/auth/password.service.spec.ts",
+     "fullName": "PasswordService expires passwords after the configured number of days",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/auth/password.service.spec.ts",
+     "fullName": "PasswordService generates temporary passwords that satisfy the policy",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/documents/file-inspector.spec.ts",
+     "fullName": "FileInspector identifies files by content and forces a matching extension",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/documents/file-inspector.spec.ts",
+     "fullName": "FileInspector rejects content that is not PDF, PNG or JPEG whatever its name",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/documents/file-inspector.spec.ts",
+     "fullName": "FileInspector enforces the size limit and requires a file",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/documents/file-inspector.spec.ts",
+     "fullName": "FileInspector builds safe file names",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/plan-label.spec.ts",
+     "fullName": "describePlan uses the configured names",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/plan-label.spec.ts",
+     "fullName": "describePlan falls back to the code for a retired plan",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/plan-label.spec.ts",
+     "fullName": "describePlan returns null when the product has no plans",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/product-definitions.spec.ts",
+     "fullName": "product definitions returns referral reasons for \"yes\" answers that require underwriting",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/product-definitions.spec.ts",
+     "fullName": "product definitions requires every question to be answered and details for \"yes\"",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/product-definitions.spec.ts",
+     "fullName": "product definitions rejects answers to questions the product does not ask",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/product-definitions.spec.ts",
+     "fullName": "product definitions treats documents as mandatory unless stated otherwise",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/reports/reports.spec.ts",
+     "fullName": "report export quotes CSV cells and neutralises spreadsheet formulas",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/reports/reports.spec.ts",
+     "fullName": "report scheduling runs daily reports at 07:00 Brunei time (23:00 UTC)",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/reports/reports.spec.ts",
+     "fullName": "report scheduling runs weekly reports on Monday and monthly reports on the 1st (local time)",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/reports/reports.spec.ts",
+     "fullName": "report scheduling resolves relative periods to date ranges",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/workflow/workflow-payload.spec.ts",
+     "fullName": "withoutCiphertext removes encrypted values at any depth and keeps everything else",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/workflow/workflow-payload.spec.ts",
+     "fullName": "withoutCiphertext leaves scalar and empty payloads untouched",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/rating/financing.engine.spec.ts",
+     "fullName": "FinancingRatingEngine calculates a decreasing-term contribution on the flat-rate financing total",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/rating/financing.engine.spec.ts",
+     "fullName": "FinancingRatingEngine refers financing above the B$150,000 high-risk limit to IIFT Sales",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/rating/financing.engine.spec.ts",
+     "fullName": "FinancingRatingEngine does not refer financing exactly at the high-risk limit",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/rating/financing.engine.spec.ts",
+     "fullName": "FinancingRatingEngine rejects cover that would run past the maximum age at expiry",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/rating/financing.engine.spec.ts",
+     "fullName": "FinancingRatingEngine applies no profit loading when the product uses NONE as profit basis",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/rating/financing.engine.spec.ts",
+     "fullName": "FinancingRatingEngine lists every missing risk field at once",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/rating/financing.engine.spec.ts",
+     "fullName": "FinancingRatingEngine validates its configuration",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/rating/fixed-plan.engine.spec.ts",
+     "fullName": "FixedPlanRatingEngine prices Professional Plan B with the optional additional cover (FFR03)",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/rating/fixed-plan.engine.spec.ts",
+     "fullName": "FixedPlanRatingEngine accepts only Occupational Class I for the Professional plan",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/rating/fixed-plan.engine.spec.ts",
+     "fullName": "FixedPlanRatingEngine applies the Wider (Child) loading for Khairat (FFR04)",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/rating/fixed-plan.engine.spec.ts",
+     "fullName": "FixedPlanRatingEngine requires a coverage type when the product defines them",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/rating/fixed-plan.engine.spec.ts",
+     "fullName": "FixedPlanRatingEngine offers 1- and 2-year cover for Personal Home Assistant (FFR02)",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/rating/fixed-plan.engine.spec.ts",
+     "fullName": "FixedPlanRatingEngine Overseas Student Assist eligibility (FFR05) accepts a registered Brunei citizen student",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/rating/fixed-plan.engine.spec.ts",
+     "fullName": "FixedPlanRatingEngine Overseas Student Assist eligibility (FFR05) rejects a participant who is not a Brunei citizen",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/rating/fixed-plan.engine.spec.ts",
+     "fullName": "FixedPlanRatingEngine Overseas Student Assist eligibility (FFR05) requires confirmation of student registration",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/rating/fixed-plan.engine.spec.ts",
+     "fullName": "FixedPlanRatingEngine Overseas Student Assist eligibility (FFR05) rejects participants older than 65 next birthday",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/rating/fixed-plan.engine.spec.ts",
+     "fullName": "FixedPlanRatingEngine drops risk details that the product does not define",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/src/modules/products/rating/fixed-plan.engine.spec.ts",
+     "fullName": "FixedPlanRatingEngine validates every catalogue product configuration",
+     "status": "passed",
+     "failure": null
+    }
+   ]
+  },
+  "api-e2e": {
+   "command": "npm run test:e2e -w apps/api",
+   "startTime": 1790978431813,
+   "startedAt": "2026-10-02T22:00:31.813000Z",
+   "total": 32,
+   "passed": 31,
+   "failed": 1,
+   "tests": [
+    {
+     "file": "apps/api/test/access-control.e2e-spec.ts",
+     "fullName": "Access control and input handling (AP-59, BO-02, COM-02, NFR-10/14/15) rejects unauthenticated requests",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/access-control.e2e-spec.ts",
+     "fullName": "Access control and input handling (AP-59, BO-02, COM-02, NFR-10/14/15) keeps portal users out of the back-office API and vice versa",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/access-control.e2e-spec.ts",
+     "fullName": "Access control and input handling (AP-59, BO-02, COM-02, NFR-10/14/15) enforces permissions within the back-office",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/access-control.e2e-spec.ts",
+     "fullName": "Access control and input handling (AP-59, BO-02, COM-02, NFR-10/14/15) restricts records to the agent hierarchy and agency",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/access-control.e2e-spec.ts",
+     "fullName": "Access control and input handling (AP-59, BO-02, COM-02, NFR-10/14/15) treats injection attempts in search parameters as plain text",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/access-control.e2e-spec.ts",
+     "fullName": "Access control and input handling (AP-59, BO-02, COM-02, NFR-10/14/15) rejects unknown and malformed fields",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/access-control.e2e-spec.ts",
+     "fullName": "Access control and input handling (AP-59, BO-02, COM-02, NFR-10/14/15) never exposes internal error details and returns a correlation id",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/access-control.e2e-spec.ts",
+     "fullName": "Access control and input handling (AP-59, BO-02, COM-02, NFR-10/14/15) sends security headers and hides the framework",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/access-control.e2e-spec.ts",
+     "fullName": "Access control and input handling (AP-59, BO-02, COM-02, NFR-10/14/15) authenticates system-to-system calls with an API key",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/access-control.e2e-spec.ts",
+     "fullName": "Access control and input handling (AP-59, BO-02, COM-02, NFR-10/14/15) stores identification numbers encrypted and shows them masked",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/access-control.e2e-spec.ts",
+     "fullName": "Access control and input handling (AP-59, BO-02, COM-02, NFR-10/14/15) keeps the audit trail append-only at database level",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/auth.e2e-spec.ts",
+     "fullName": "Authentication and session security (AP-01..04, BO-01) rejects wrong credentials with a generic message",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/auth.e2e-spec.ts",
+     "fullName": "Authentication and session security (AP-01..04, BO-01) issues an HttpOnly, SameSite=Strict session cookie and never returns secrets",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/auth.e2e-spec.ts",
+     "fullName": "Authentication and session security (AP-01..04, BO-01) locks the account after the configured number of failed attempts",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/auth.e2e-spec.ts",
+     "fullName": "Authentication and session security (AP-01..04, BO-01) requires the CSRF token on state-changing requests",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/auth.e2e-spec.ts",
+     "fullName": "Authentication and session security (AP-01..04, BO-01) ends the session on logout",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/auth.e2e-spec.ts",
+     "fullName": "Authentication and session security (AP-01..04, BO-01) keeps only one active session per user",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/auth.e2e-spec.ts",
+     "fullName": "Authentication and session security (AP-01..04, BO-01) forces a temporary password to be changed before anything else",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/operations.e2e-spec.ts",
+     "fullName": "Back-office operations onboards a sub-agent through registration, AML, documents and approval (AP-07, BO-10/13)",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/operations.e2e-spec.ts",
+     "fullName": "Back-office operations asks passport holders for a passport copy instead of an IC copy",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/operations.e2e-spec.ts",
+     "fullName": "Back-office operations closes a pending registration when Compliance confirms an AML match",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/operations.e2e-spec.ts",
+     "fullName": "Back-office operations routes a watch-list match to Compliance and records the review (AP-16, BO-13..15)",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/operations.e2e-spec.ts",
+     "fullName": "Back-office operations manages an issue through assignment, comments and resolution with SLA dates (AP-55..57, BO-29..31)",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/operations.e2e-spec.ts",
+     "fullName": "Back-office operations accepts claim notifications only within the period of cover (AP-43)",
+     "status": "failed",
+     "failure": "Error: expected 201 \"Created\", got 422 \"Unprocessable Entity\"\n    at /home/user/IIFT-Agent-Banca-Portal-/apps/api/test/operations.e2e-spec.ts:242:8\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at file:///home/user/IIFT-Agent-Banca-Portal-/node_modules/@vitest/runner"
+    },
+    {
+     "file": "apps/api/test/operations.e2e-spec.ts",
+     "fullName": "Back-office operations runs every standard report and exports it in each format (BO-22..24)",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/operations.e2e-spec.ts",
+     "fullName": "Back-office operations runs end-of-day, posts to FIN, reconciles and delivers integration messages (FFR EOD, INT-13..15)",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/operations.e2e-spec.ts",
+     "fullName": "Back-office operations administers users, roles, parameters, master data and workflows with an audit trail (BO-03/04/26..33, COM-04)",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/operations.e2e-spec.ts",
+     "fullName": "Back-office operations serves the dashboards (AP-52/53, BO-20/21)",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/policy-lifecycle.e2e-spec.ts",
+     "fullName": "Quotation to e-Policy and e-Receipt (FFR03, AP-17..45, BO-16..19) runs the full Professional Takaful Plan journey with maker-checker payment verification",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/policy-lifecycle.e2e-spec.ts",
+     "fullName": "Quotation to e-Policy and e-Receipt (FFR03, AP-17..45, BO-16..19) blocks new business for an agency with overdue contributions (AP-42)",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/policy-lifecycle.e2e-spec.ts",
+     "fullName": "Quotation to e-Policy and e-Receipt (FFR03, AP-17..45, BO-16..19) refers high-risk financing for approval and prevents self-approval",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/api/test/policy-lifecycle.e2e-spec.ts",
+     "fullName": "Quotation to e-Policy and e-Receipt (FFR03, AP-17..45, BO-16..19) renews a policy only inside its renewal window",
+     "status": "passed",
+     "failure": null
+    }
+   ]
+  },
+  "web-unit": {
+   "command": "npm test -w apps/web",
+   "startTime": 1790977501100,
+   "startedAt": "2026-10-02T21:45:01.100000Z",
+   "total": 91,
+   "passed": 91,
+   "failed": 0,
+   "tests": [
+    {
+     "file": "apps/web/src/api/client.test.ts",
+     "fullName": "api requests prefixes the API base path, drops empty query parameters and returns the JSON body",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/api/client.test.ts",
+     "fullName": "api requests sends the CSRF token and a JSON body on state-changing requests",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/api/client.test.ts",
+     "fullName": "api requests does not send the CSRF token on GET requests",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/api/client.test.ts",
+     "fullName": "api requests sends uploads as form data without a JSON content type",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/api/client.test.ts",
+     "fullName": "api requests resolves to undefined for 204 No Content",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/api/client.test.ts",
+     "fullName": "api errors turns an error response into an ApiError with details and correlation id",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/api/client.test.ts",
+     "fullName": "api errors uses a generic error when the response body is not JSON",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/api/client.test.ts",
+     "fullName": "api errors notifies session-ended listeners on 401",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/api/client.test.ts",
+     "fullName": "api errors does not end the session when the login itself is rejected",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/api/client.test.ts",
+     "fullName": "api errors stops notifying a listener after it unsubscribes",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/api/client.test.ts",
+     "fullName": "api errors does not end the session on other client errors",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/api/client.test.ts",
+     "fullName": "download raises an ApiError when the file cannot be downloaded",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/ErrorAlert.test.tsx",
+     "fullName": "ErrorAlert renders nothing when there is no error",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/ErrorAlert.test.tsx",
+     "fullName": "ErrorAlert shows the API message and each validation detail",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/ErrorAlert.test.tsx",
+     "fullName": "ErrorAlert shows the support reference for server errors only",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/ErrorAlert.test.tsx",
+     "fullName": "ErrorAlert falls back to a generic message for unexpected errors",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/FieldGrid.test.tsx",
+     "fullName": "FieldGrid pairs each label with its value",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/FieldGrid.test.tsx",
+     "fullName": "FieldGrid shows a dash for empty values and skips conditional items",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/FieldGrid.test.tsx",
+     "fullName": "FieldGrid widens full-width fields across the grid",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/Money.test.tsx",
+     "fullName": "Money shows the formatted amount",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/Money.test.tsx",
+     "fullName": "Money can be emphasised",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/PageHeader.test.tsx",
+     "fullName": "PageHeader shows the breadcrumb, title, status tags and key facts",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/PageHeader.test.tsx",
+     "fullName": "PageHeader leaves out the facts row when there are none",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/RequirePermission.test.tsx",
+     "fullName": "RequirePermission renders the page when the user holds the permission",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/RequirePermission.test.tsx",
+     "fullName": "RequirePermission shows the not-authorised page when the permission is missing",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/StatusTag.test.tsx",
+     "fullName": "StatusTag shows the humanised status with its colour",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/StatusTag.test.tsx",
+     "fullName": "StatusTag prefers an explicit label",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/StatusTag.test.tsx",
+     "fullName": "StatusTag renders nothing without a status",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/layouts/UserMenu.test.ts",
+     "fullName": "initials uses the first two given names",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/layouts/UserMenu.test.ts",
+     "fullName": "initials skips honorifics and patronymic particles",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/layouts/menus.test.ts",
+     "fullName": "selectedMenuKeys highlights the dashboard only on the module root",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/layouts/menus.test.ts",
+     "fullName": "selectedMenuKeys highlights nothing on pages without a menu entry",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/layouts/menus.test.ts",
+     "fullName": "selectedMenuKeys highlights the entry whose path is a parent of the current page",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/layouts/menus.test.ts",
+     "fullName": "selectedMenuKeys prefers the longest matching entry",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/layouts/menus.test.ts",
+     "fullName": "selectedMenuKeys does not match entries that merely share a prefix",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/layouts/menus.test.ts",
+     "fullName": "selectedMenuKeys ignores a trailing slash",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/layouts/menus.test.ts",
+     "fullName": "groupOfPath returns the group holding the highlighted entry",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/layouts/menus.test.ts",
+     "fullName": "groupOfPath returns nothing for top-level entries and pages outside the menu",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/utils/format.test.ts",
+     "fullName": "formatMoney formats amounts in Brunei dollars with two decimals and thousands separators",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/utils/format.test.ts",
+     "fullName": "formatMoney rounds to the nearest cent and keeps zero as an amount",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/utils/format.test.ts",
+     "fullName": "formatMoney shows a dash when there is no amount",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/utils/format.test.ts",
+     "fullName": "formatNumber groups thousands and shows a dash when there is no value",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/utils/format.test.ts",
+     "fullName": "formatDate and formatDateTime formats a calendar date as day, short month and year",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/utils/format.test.ts",
+     "fullName": "formatDate and formatDateTime formats a local timestamp with a 24-hour time",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/utils/format.test.ts",
+     "fullName": "formatDate and formatDateTime shows a dash for missing dates",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/utils/format.test.ts",
+     "fullName": "humanise turns an enum code into sentence case",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/utils/format.test.ts",
+     "fullName": "humanise shows a dash for an empty value",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/utils/format.test.ts",
+     "fullName": "labelFromKey splits camel-case keys into a sentence-case label",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/utils/format.test.ts",
+     "fullName": "fileSize uses bytes, kilobytes or megabytes depending on size",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/utils/permissions.test.ts",
+     "fullName": "permission codes are unique",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/utils/permissions.test.ts",
+     "fullName": "permission codes use the portal or back-office prefix matching their key",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/utils/permissions.test.ts",
+     "fullName": "permission codes group every approval permission and nothing else",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/utils/status.test.ts",
+     "fullName": "statusColour maps statuses to the tag colour of their stage",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/utils/status.test.ts",
+     "fullName": "statusColour falls back to the default colour for unknown or missing statuses",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/admin/CellText.test.tsx",
+     "fullName": "CellText shows the text within the given width",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/admin/CellText.test.tsx",
+     "fullName": "CellText shows a dash when there is no text",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/admin/links.test.ts",
+     "fullName": "recordPath links to the record page regardless of the entity type spelling",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/admin/links.test.ts",
+     "fullName": "recordPath uses the portal routes for portal users",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/admin/links.test.ts",
+     "fullName": "recordPath returns null when the audience has no page for the record or the id is missing",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/admin/links.test.ts",
+     "fullName": "notificationPath keeps links that already point into a module",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/admin/links.test.ts",
+     "fullName": "notificationPath prefixes audience-neutral links with the user module",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/admin/values.test.ts",
+     "fullName": "isHiddenKey hides optimistic-lock versions and encrypted or hashed values only",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/admin/values.test.ts",
+     "fullName": "keyLabel uses curated labels where needed and sentence case otherwise",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/admin/values.test.ts",
+     "fullName": "isRecord accepts plain objects only",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/admin/values.test.ts",
+     "fullName": "formatValue shows a dash for empty values and Yes/No for booleans",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/admin/values.test.ts",
+     "fullName": "formatValue formats numeric values of amount-like keys as money",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/admin/values.test.ts",
+     "fullName": "formatValue formats ISO dates and timestamps",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/admin/values.test.ts",
+     "fullName": "formatValue humanises enum codes that contain underscores or sit under an enum-like key",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/admin/values.test.ts",
+     "fullName": "formatValue serialises nested values as JSON",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/sales/NomineesEditor.test.ts",
+     "fullName": "nomineeRows starts with a single full-share nominee row when there are no nominees",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/sales/NomineesEditor.test.ts",
+     "fullName": "nomineeRows carries the id and masked ID number of existing nominees",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/sales/NomineesEditor.test.ts",
+     "fullName": "nomineeRows converts decimal-string shares to numbers",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/sales/NomineesEditor.test.ts",
+     "fullName": "toNomineeInputs returns no inputs when the form has no rows",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/sales/NomineesEditor.test.ts",
+     "fullName": "toNomineeInputs keeps the id of an existing nominee and trims the text fields",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/sales/NomineesEditor.test.ts",
+     "fullName": "toNomineeInputs drops a blank ID number so the stored one is kept",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/sales/NomineesEditor.test.ts",
+     "fullName": "toNomineeInputs sends new rows without an id and fills defaults for missing fields",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/sales/NomineesEditor.test.ts",
+     "fullName": "toNomineeInputs round-trips existing nominees without changing them",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/sales/PaymentList.test.tsx",
+     "fullName": "paymentFiltersFromUrl reads a known payment status",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/sales/PaymentList.test.tsx",
+     "fullName": "paymentFiltersFromUrl ignores missing or unknown statuses",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/sales/PaymentList.test.tsx",
+     "fullName": "PaymentList starts filtered by the status in the URL",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/sales/options.test.ts",
+     "fullName": "status and role options label each code in sentence case",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/sales/options.test.ts",
+     "fullName": "policyReference uses the policy number once the policy is issued",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/sales/options.test.ts",
+     "fullName": "policyReference falls back to the quotation number before issuance",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/components/sales/options.test.ts",
+     "fullName": "formatTerm shows whole years in years and anything else in months",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/pages/auth/LoginPage.test.tsx",
+     "fullName": "LoginPage renders the username and password fields",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/pages/auth/LoginPage.test.tsx",
+     "fullName": "LoginPage asks for both fields when submitted empty",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/pages/auth/LoginPage.test.tsx",
+     "fullName": "LoginPage signs in with the typed credentials and opens the home page",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/pages/auth/LoginPage.test.tsx",
+     "fullName": "LoginPage sends users who must change their password to the change-password page",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/pages/auth/LoginPage.test.tsx",
+     "fullName": "LoginPage shows the error returned for rejected credentials",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/pages/auth/LoginPage.test.tsx",
+     "fullName": "LoginPage shows the product, release and vendor credit without marketing copy",
+     "status": "passed",
+     "failure": null
+    },
+    {
+     "file": "apps/web/src/pages/auth/LoginPage.test.tsx",
+     "fullName": "LoginPage explains that the previous session ended",
+     "status": "passed",
+     "failure": null
+    }
+   ]
+  }
+ }
+}

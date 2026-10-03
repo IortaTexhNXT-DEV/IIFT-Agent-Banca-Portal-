@@ -163,7 +163,7 @@ def functional_solution(w: ProposalWriter, figs: dict):
            "from B$300,000 sum covered. On final approval a handler applies the change in the same database "
            "transaction as the audit record and the notification event. The API rejects any attempt by the maker to "
            f"approve their own request. When Compliance confirms an AML match, the pending requests for that agent or "
-           "participant are rejected automatically with the Compliance remarks and the maker is notified. Journey 9 "
+           "participant are rejected automatically with the Compliance remarks and the maker is notified. Journey 4 "
            f"in Section {sec('journeys')} shows the flow.")
     w.table(["Transaction", "Level 1 checker", "Level 2 checker", "Rule"], WORKFLOWS, widths=[5.6, 3.8, 3.8, 3.8],
             font_size=8, caption="Default workflow definitions, confirmed in design")

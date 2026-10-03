@@ -1,0 +1,1146 @@
+{
+  "summary": {
+    "baseUrl": "http://localhost:3000",
+    "startedAt": "2026-10-02T22:12:47.414Z",
+    "finishedAt": "2026-10-02T22:15:14.178Z",
+    "commit": "af2fb05",
+    "executedBy": "iorta TechNXT QA (API run)",
+    "total": 113,
+    "passed": 111,
+    "failed": 2,
+    "runId": "RIR5X2",
+    "relogins": []
+  },
+  "results": [
+    {
+      "id": "EX-001",
+      "title": "Wrong password and unknown user get the same generic 401",
+      "actor": "anonymous",
+      "expected": "HTTP 401 INVALID_CREDENTIALS for both; identical message",
+      "executedAt": "2026-10-02T22:12:47.415Z",
+      "request": "POST /api/v1/auth/login (unknown user; finance with wrong password)",
+      "response": "401 INVALID_CREDENTIALS – Invalid username or password | 401 INVALID_CREDENTIALS – Invalid username or password",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-002",
+      "title": "Successful sign-in issues a HttpOnly SameSite=Strict cookie and a CSRF token",
+      "actor": "ag-000001",
+      "expected": "HTTP 200; Set-Cookie has HttpOnly and SameSite=Strict; csrfToken present; no password hash in body",
+      "executedAt": "2026-10-02T22:12:47.676Z",
+      "request": "POST /api/v1/auth/login",
+      "response": "200; Set-Cookie flags: Path=/, HttpOnly, SameSite=Strict; csrfToken present",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-003",
+      "title": "State-changing request without the CSRF token is refused",
+      "actor": "ag-000001",
+      "expected": "HTTP 403 CSRF_TOKEN_INVALID without token and with a forged token; 204 with the session token",
+      "executedAt": "2026-10-02T22:12:47.731Z",
+      "request": "POST /api/v1/common/notifications/read-all (no token; forged token; session token)",
+      "response": "403 CSRF_TOKEN_INVALID – Security token missing or invalid. Refresh the page. | 403 CSRF_TOKEN_INVALID – Security token missing or invalid. Refresh the page. | 204",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-004",
+      "title": "Portal user cannot call back-office routes and vice versa",
+      "actor": "ag-000001, finance",
+      "expected": "HTTP 403 WRONG_AUDIENCE in both directions",
+      "executedAt": "2026-10-02T22:12:47.747Z",
+      "request": "GET /api/v1/backoffice/agents as agent; GET /api/v1/portal/policies as finance",
+      "response": "403 WRONG_AUDIENCE – This function is not available to your account type | 403 WRONG_AUDIENCE – This function is not available to your account type",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-005",
+      "title": "Permission guard inside the back-office",
+      "actor": "ops.maker",
+      "expected": "HTTP 403 FORBIDDEN on user administration for the operations officer",
+      "executedAt": "2026-10-02T22:12:47.793Z",
+      "request": "GET /api/v1/backoffice/users",
+      "response": "403 FORBIDDEN – You do not have permission to perform this action",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-006",
+      "title": "Password policy is enforced on change-password",
+      "actor": "ag-000002",
+      "expected": "HTTP 422 PASSWORD_POLICY for a weak password; 422 CURRENT_PASSWORD_INCORRECT when the current password is wrong; the demo password is unchanged",
+      "executedAt": "2026-10-02T22:12:47.830Z",
+      "request": "POST /api/v1/auth/change-password (weak new password; wrong current password)",
+      "response": "422 PASSWORD_POLICY – Password does not meet the password policy [At least 12 characters; An upper-case letter; A symbol] | 422 CURRENT_PASSWORD_INCORRECT – Current password is incorrect | session still valid: 200",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-007",
+      "title": "Logout ends the session server-side",
+      "actor": "ag-000003",
+      "expected": "GET /auth/me 200 before logout, 401 NOT_AUTHENTICATED after",
+      "executedAt": "2026-10-02T22:12:47.999Z",
+      "request": "GET /api/v1/auth/me; POST /api/v1/auth/logout; GET /api/v1/auth/me",
+      "response": "200 | 204 | 401 NOT_AUTHENTICATED – Please sign in",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-008",
+      "title": "Signing in again ends the earlier session (single active session)",
+      "actor": "ag-000003",
+      "expected": "The first session receives 401 NOT_AUTHENTICATED after the second sign-in",
+      "executedAt": "2026-10-02T22:12:48.044Z",
+      "request": "Two sign-ins as ag-000003, then GET /api/v1/auth/me with the first cookie",
+      "response": "401 NOT_AUTHENTICATED – Please sign in",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-009",
+      "title": "Sub-agents see their own business; the principal sees the whole agency",
+      "actor": "ag-000001, ag-000002",
+      "expected": "ag-000002 lists only policies with agent AG-000002; ag-000001 lists more policies, including those of AG-000002",
+      "executedAt": "2026-10-02T22:13:48.569Z",
+      "request": "GET /api/v1/portal/policies as ag-000002 and as ag-000001",
+      "response": "sub-agent total=13 onlyOwn=true | principal total=46 includesSubAgent=true",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-010",
+      "title": "Register an individual participant",
+      "actor": "ag-000001",
+      "expected": "HTTP 201; participantNo PT/yy/nnnnnn; amlStatus CLEAR; IC returned masked only",
+      "executedAt": "2026-10-02T22:13:48.603Z",
+      "request": "POST /api/v1/portal/participants (NRIC, class 1 professional)",
+      "response": "201 PT/26/000076 aml=CLEAR id=*****8603",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-011",
+      "title": "Duplicate participant (same IC) is refused with the existing record",
+      "actor": "ag-000001",
+      "expected": "HTTP 422 DUPLICATE_PARTICIPANT naming the existing participant number",
+      "executedAt": "2026-10-02T22:13:48.626Z",
+      "request": "POST /api/v1/portal/participants (same IC)",
+      "response": "422 DUPLICATE_PARTICIPANT – This participant is already registered as PT/26/000076 [6558a123-ebc2-4cd2-878e-79354f702c6b]",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-012",
+      "title": "Corporate participant must use a business registration number",
+      "actor": "ag-000001",
+      "expected": "HTTP 422 INVALID_ID_TYPE",
+      "executedAt": "2026-10-02T22:13:48.633Z",
+      "request": "POST /api/v1/portal/participants (CORPORATE with NRIC)",
+      "response": "422 INVALID_ID_TYPE – Corporate participants are identified by business registration number",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-013",
+      "title": "Unknown and malformed fields are rejected",
+      "actor": "ag-000001",
+      "expected": "HTTP 400 listing isAdmin as not allowed and the invalid mobile",
+      "executedAt": "2026-10-02T22:13:48.637Z",
+      "request": "POST /api/v1/portal/participants (isAdmin, mobile=abc)",
+      "response": "400 BAD_REQUEST – Some fields are invalid [property isAdmin should not exist; dateOfBirth must be a valid ISO 8601 date string; mobile must match /^\\+?[0-9]{7,15}$/ regular expression]",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-014",
+      "title": "Exact-ID lookup from another agency returns a masked summary only (single shared profile)",
+      "actor": "ag-000003",
+      "expected": "HTTP 200 found=true with participant number and masked name; no address or contact details",
+      "executedAt": "2026-10-02T22:13:48.642Z",
+      "request": "GET /api/v1/portal/participants/lookup",
+      "response": "200 {\"found\":true,\"participant\":{\"id\":\"6558a123-ebc2-4cd2-878e-79354f702c6b\",\"participantNo\":\"PT/26/000076\",\"fullName\":\"Nur Hidayah binti Kamal RIR5X2\",\"idNumberMas",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-015",
+      "title": "Full profile is not visible to an agency without business with the participant",
+      "actor": "ag-000003",
+      "expected": "HTTP 403 or 404 (not disclosed)",
+      "executedAt": "2026-10-02T22:13:48.647Z",
+      "request": "GET /api/v1/portal/participants/6558a123-ebc2-4cd2-878e-79354f702c6b",
+      "response": "403 FORBIDDEN – This participant is not shared with your agency",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-016",
+      "title": "Participant update goes through approval; empty and duplicate requests are refused",
+      "actor": "ag-000001",
+      "expected": "Empty body → 422 NO_CHANGES; a change → 201 approval request (PARTICIPANT_UPDATE, PENDING) with before/after values; a second request while one is pending → 422 REQUEST_ALREADY_PENDING",
+      "executedAt": "2026-10-02T22:13:48.654Z",
+      "request": "POST /api/v1/portal/participants/6558a123-ebc2-4cd2-878e-79354f702c6b/update-requests (empty; changed mobile; another change)",
+      "response": "422 NO_CHANGES – No changes were submitted | 201 PARTICIPANT_UPDATE PENDING before={\"mobile\":\"6738111222\",\"addressLine2\":null} | 422 REQUEST_ALREADY_PENDING – A request for this record is already awaiting approval",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-017",
+      "title": "Maker sees and withdraws their own pending request",
+      "actor": "ag-000001",
+      "expected": "GET /portal/requests lists the request; POST withdraw returns 200 with status WITHDRAWN",
+      "executedAt": "2026-10-02T22:13:48.698Z",
+      "request": "GET /api/v1/portal/requests; POST /api/v1/portal/requests/{id}/withdraw",
+      "response": "listed=true | 200 WITHDRAWN",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-020",
+      "title": "Product catalogue lists the seven IIFT products with their rules",
+      "actor": "ag-000001",
+      "expected": "HTTP 200 with FTP-HP, FTP-NP, PFT, PHA, PRO, KHR, OSA; KHR has allowRenewal=false; PRO/KHR/OSA/PHA pay before issuance",
+      "executedAt": "2026-10-02T22:13:48.726Z",
+      "request": "GET /api/v1/common/products",
+      "response": "FTP-HP,FTP-NP,KHR,OSA,PFT,PHA,PRO; KHR.allowRenewal=false; PRO.paymentBeforeIssuance=true",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-021",
+      "title": "Professional Plan B with additional cover is rated 135 + 120",
+      "actor": "ag-000001",
+      "expected": "contribution 255.00, sumCovered 30,000",
+      "executedAt": "2026-10-02T22:13:48.727Z",
+      "request": "POST /api/v1/portal/policies/calculate (PRO, plan B, additional cover)",
+      "response": "200 contribution=255 sumCovered=30000",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-022",
+      "title": "Khairat Plan A with Wider (Child) cover applies the 1.6 loading",
+      "actor": "ag-000001",
+      "expected": "contribution 64.00 (40 × 1.6)",
+      "executedAt": "2026-10-02T22:13:48.735Z",
+      "request": "POST /api/v1/portal/policies/calculate (KHR, plan A, WIDER)",
+      "response": "200 contribution=64",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-023",
+      "title": "Personal Home Assistant two-year cover",
+      "actor": "ag-000001",
+      "expected": "contribution 220.00 for 24 months",
+      "executedAt": "2026-10-02T22:13:48.742Z",
+      "request": "POST /api/v1/portal/policies/calculate (PHA, 24 months)",
+      "response": "200 contribution=220 ",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-024",
+      "title": "Overseas Student Assist refuses a participant who is not a Brunei citizen",
+      "actor": "ag-000001",
+      "expected": "HTTP 422 NOT_ELIGIBLE",
+      "executedAt": "2026-10-02T22:13:48.749Z",
+      "request": "POST /api/v1/portal/policies/calculate (OSA, Malaysian participant)",
+      "response": "422 NOT_ELIGIBLE – The quotation does not meet the product rules [Only brunei nationals are eligible]",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-025",
+      "title": "Professional Plan accepts Occupational Class I only",
+      "actor": "ag-000001",
+      "expected": "HTTP 422 NOT_ELIGIBLE for a class 3 participant",
+      "executedAt": "2026-10-02T22:13:48.782Z",
+      "request": "POST /api/v1/portal/policies/calculate (PRO, occupation class 3)",
+      "response": "422 NOT_ELIGIBLE – The quotation does not meet the product rules [Only occupational class 1 is eligible]",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-026",
+      "title": "Hire purchase financing above B$150,000 is referred; at the limit it is not",
+      "actor": "ag-000001",
+      "expected": "200 with a high-risk referral reason for 200,000; 200 without referral reasons for 150,000",
+      "executedAt": "2026-10-02T22:13:48.808Z",
+      "request": "POST /api/v1/portal/policies/calculate (FTP-HP 200,000; 150,000)",
+      "response": "200 referral=[\"Financing amount B$200,000 exceeds the high-risk limit of B$150,000 – refer to IIFT Sales team\"] | 200 referral=[]",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-027",
+      "title": "Financing quotation lists every missing risk field at once",
+      "actor": "ag-000001",
+      "expected": "HTTP 422 naming financingAmount, tenureMonths, profitRatePercent, financierName and financingReference",
+      "executedAt": "2026-10-02T22:13:48.825Z",
+      "request": "POST /api/v1/portal/policies/calculate (FTP-NP, empty risk details)",
+      "response": "422 NOT_ELIGIBLE – The quotation does not meet the product rules [Personal financing amount (B$) is required; Financing period (months) is required; Profit rate of financing (% p.a.) is required; Financier is required; Financing agreement / approval reference is required]",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-028",
+      "title": "Cover that would run past the maximum age at expiry is refused",
+      "actor": "ag-000001",
+      "expected": "HTTP 422 NOT_ELIGIBLE for a 64-year-old with a 108-month hire purchase (max age at expiry 70)",
+      "executedAt": "2026-10-02T22:13:48.832Z",
+      "request": "POST /api/v1/portal/policies/calculate (FTP-HP, age 64, 108 months)",
+      "response": "422 NOT_ELIGIBLE – The quotation does not meet the product rules [Cover must end by age 70; reduce the tenure]",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-030",
+      "title": "Create a quotation and save it as draft",
+      "actor": "ag-000001",
+      "expected": "HTTP 201; status DRAFT; quotationNo QT/yy/nnnnnn; contribution 255",
+      "executedAt": "2026-10-02T22:13:48.859Z",
+      "request": "POST /api/v1/portal/policies (PRO plan B + additional cover)",
+      "response": "201 QT/26/000076 DRAFT contribution=255",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-031",
+      "title": "Submission is blocked while the questionnaire is incomplete",
+      "actor": "ag-000001",
+      "expected": "HTTP 422 QUESTIONNAIRE_INCOMPLETE",
+      "executedAt": "2026-10-02T22:13:48.884Z",
+      "request": "POST /api/v1/portal/policies/f16fde6b-2488-470c-a7fd-a0d20332c6bb/submit",
+      "response": "422 QUESTIONNAIRE_INCOMPLETE – The questionnaire is incomplete [Please answer: Are you currently suffering from any illness or medical condition, or receiving medical treatment?; Please answer: In the past 5 years, have you been hospitalised or advised to undergo surgery?; Please answer: Has any tak",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-032",
+      "title": "A \"yes\" declaration requires details",
+      "actor": "ag-000001",
+      "expected": "HTTP 422 QUESTIONNAIRE_INCOMPLETE asking for details",
+      "executedAt": "2026-10-02T22:13:48.894Z",
+      "request": "PUT /api/v1/portal/policies/f16fde6b-2488-470c-a7fd-a0d20332c6bb/questionnaire (yes without details)",
+      "response": "422 QUESTIONNAIRE_INCOMPLETE – The questionnaire is incomplete [Please give details for: Are you currently suffering from any illness or medical condition, or receiving medical treatment?]",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-033",
+      "title": "Completed questionnaire is saved",
+      "actor": "ag-000001",
+      "expected": "HTTP 200",
+      "executedAt": "2026-10-02T22:13:48.910Z",
+      "request": "PUT /api/v1/portal/policies/f16fde6b-2488-470c-a7fd-a0d20332c6bb/questionnaire (all no)",
+      "response": "200 DRAFT",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-034",
+      "title": "Nominee shares must total 100%",
+      "actor": "ag-000001",
+      "expected": "HTTP 422 INVALID_SHARES for 60%; 200 for 100%",
+      "executedAt": "2026-10-02T22:13:48.919Z",
+      "request": "PUT /api/v1/portal/policies/f16fde6b-2488-470c-a7fd-a0d20332c6bb/nominees (60%; 100%)",
+      "response": "422 INVALID_SHARES – Nominee shares must add up to 100% (currently 60.00%) | 200",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-035",
+      "title": "Submission lists the missing documents and signature",
+      "actor": "ag-000001",
+      "expected": "HTTP 422 SUBMISSION_INCOMPLETE with \"Upload: IC copy\", nominee IC and participant signature",
+      "executedAt": "2026-10-02T22:13:48.953Z",
+      "request": "POST /api/v1/portal/policies/f16fde6b-2488-470c-a7fd-a0d20332c6bb/submit",
+      "response": "422 SUBMISSION_INCOMPLETE – The application is not ready for submission [Upload: IC copy; Upload: IC copy of nominee(s), beneficiary or executor; Participant signature is required (sign on screen, send an e-signature link or upload the signed proposal form)]",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-036",
+      "title": "Disguised executable is refused; PDF documents are accepted",
+      "actor": "ag-000001",
+      "expected": "HTTP 422 FILE_TYPE_NOT_ALLOWED for \"ic.pdf\" with MZ content; 201 for the IC and nominee IC copies",
+      "executedAt": "2026-10-02T22:13:48.965Z",
+      "request": "POST /api/v1/common/documents (ownerType POLICY)",
+      "response": "422 FILE_TYPE_NOT_ALLOWED – Only PDF, PNG and JPEG files are accepted | 201 | 201",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-037",
+      "title": "E-signature link is sent to the participant and an invalid public token reveals nothing",
+      "actor": "ag-000001, anonymous",
+      "expected": "HTTP 200/201 with sentTo and expiresAt about 72 hours ahead; GET /public/esign/{bad token} returns 404 or 422 without policy data",
+      "executedAt": "2026-10-02T22:13:49.003Z",
+      "request": "POST /api/v1/portal/policies/f16fde6b-2488-470c-a7fd-a0d20332c6bb/signatures/link; GET /api/v1/public/esign/{unknown}",
+      "response": "200 sentTo=hidayah@mail.example in 72.0 h | 422 LINK_INVALID – This signature link is invalid, expired or has already been used | 404 NOT_FOUND – Signature request not found",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-038",
+      "title": "Participant signs on screen (PNG signature)",
+      "actor": "ag-000001",
+      "expected": "HTTP 201 with a documentId; a non-PNG signature is refused with 422 INVALID_SIGNATURE",
+      "executedAt": "2026-10-02T22:13:49.022Z",
+      "request": "POST /api/v1/portal/policies/f16fde6b-2488-470c-a7fd-a0d20332c6bb/signatures",
+      "response": "422 INVALID_SIGNATURE – The signature must be a PNG image | 201 documentId=present",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-039",
+      "title": "Complete application is submitted and waits for payment",
+      "actor": "ag-000001",
+      "expected": "HTTP 200; status PENDING_PAYMENT (pay-before-issuance product, no referral)",
+      "executedAt": "2026-10-02T22:13:49.045Z",
+      "request": "POST /api/v1/portal/policies/f16fde6b-2488-470c-a7fd-a0d20332c6bb/submit",
+      "response": "200 PENDING_PAYMENT",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-040",
+      "title": "Payment rules: future date, missing proof and wrong amount are refused",
+      "actor": "ag-000001",
+      "expected": "HTTP 422 INVALID_DATE; 422 PROOF_REQUIRED; 422 INVALID_ALLOCATION",
+      "executedAt": "2026-10-02T22:13:49.075Z",
+      "request": "POST /api/v1/portal/billing/payments (future date; no proof; amount 999)",
+      "response": "422 INVALID_DATE – Payment date cannot be in the future | 422 PROOF_REQUIRED – Please attach the proof of payment | 422 INVALID_ALLOCATION – The payment cannot be accepted [QT/26/000076: amount exceeds the outstanding B$ 255.00]",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-041",
+      "title": "Payment with proof is accepted and routed for verification",
+      "actor": "ag-000001",
+      "expected": "HTTP 201; status PENDING_VERIFICATION; policy paymentStatus PENDING_VERIFICATION",
+      "executedAt": "2026-10-02T22:13:49.094Z",
+      "request": "POST /api/v1/portal/billing/payments (255.00 with PDF proof)",
+      "response": "201 PENDING_VERIFICATION | policy paymentStatus=PENDING_VERIFICATION",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-042",
+      "title": "Only Finance can verify a payment; rejection needs remarks",
+      "actor": "ops.maker, finance",
+      "expected": "ops.maker approve → 403; finance reject with empty remarks → 400; request is in the Finance inbox",
+      "executedAt": "2026-10-02T22:13:49.169Z",
+      "request": "GET /api/v1/backoffice/approvals/inbox; POST approvals/06506b00-9ead-447a-93ae-f9605166189c/approve (ops.maker); POST reject (finance, empty remarks)",
+      "response": "inbox has request: true | 403 FORBIDDEN – You are not an approver for this step | 400 BAD_REQUEST – Some fields are invalid [remarks must be longer than or equal to 3 characters]",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-043",
+      "title": "Finance verifies the payment: policy issued with e-Policy, e-Receipt and FIN messages",
+      "actor": "finance",
+      "expected": "HTTP 200; policy ACTIVE and PAID; policyNo PRO/yy/nnnnnn; one receipt; POLICY_SCHEDULE and RECEIPT documents",
+      "executedAt": "2026-10-02T22:13:49.187Z",
+      "request": "POST /api/v1/backoffice/approvals/06506b00-9ead-447a-93ae-f9605166189c/approve; GET /api/v1/portal/policies/f16fde6b-2488-470c-a7fd-a0d20332c6bb",
+      "response": "200 | ACTIVE PAID PRO/26/000058 receipts=1 docs=POLICY_SCHEDULE,RECEIPT,SIGNATURE_PARTICIPANT,NOMINEE_IC,IC_COPY",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-044",
+      "title": "Policy schedule downloads as a PDF",
+      "actor": "ag-000001",
+      "expected": "HTTP 200, content-type application/pdf, body starts with %PDF-",
+      "executedAt": "2026-10-02T22:13:49.306Z",
+      "request": "GET /api/v1/common/documents/da5a288e-f761-41f8-8f81-b7fafc3f1942/content",
+      "response": "200 application/pdf %PDF-",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-045",
+      "title": "Policy history records every step and the approval trail",
+      "actor": "ag-000001",
+      "expected": "Detail shows events SUBMITTED, ISSUED (or PAYMENT_VERIFIED) and the payment verification request",
+      "executedAt": "2026-10-02T22:13:49.316Z",
+      "request": "GET /api/v1/portal/policies/f16fde6b-2488-470c-a7fd-a0d20332c6bb (events)",
+      "response": "events=QUOTATION_CREATED,ESIGN_LINK_SENT,PARTICIPANT_SIGNED,SUBMITTED,AWAITING_PAYMENT,PAYMENT_SUBMITTED,PAYMENT_APPLIED,ISSUED; approval history entries=0",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-046",
+      "title": "Documents are e-mailed to the participant; an invalid address is refused",
+      "actor": "ag-000001",
+      "expected": "HTTP 422 EMAIL_REQUIRED for \"not-an-email\"; 200/201 for a valid address",
+      "executedAt": "2026-10-02T22:13:49.316Z",
+      "request": "POST /api/v1/portal/policies/f16fde6b-2488-470c-a7fd-a0d20332c6bb/email-documents",
+      "response": "422 EMAIL_REQUIRED – A valid e-mail address is required | 200",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-047",
+      "title": "Issued policy is invisible to another agency and cannot be changed",
+      "actor": "ag-000003, ag-000001",
+      "expected": "GET by another agency → 404; PUT questionnaire on an issued policy → 422 NOT_DRAFT",
+      "executedAt": "2026-10-02T22:13:49.335Z",
+      "request": "GET /api/v1/portal/policies/f16fde6b-2488-470c-a7fd-a0d20332c6bb (ag-000003); PUT questionnaire (ag-000001)",
+      "response": "404 NOT_FOUND – Policy not found | 422 NOT_DRAFT – Only draft quotations can be changed",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-048",
+      "title": "Policy search filters by status and treats injection text as plain text",
+      "actor": "ag-000001",
+      "expected": "status=ACTIVE returns only active policies; search with SQL text returns 200 and an empty list",
+      "executedAt": "2026-10-02T22:13:49.352Z",
+      "request": "GET /api/v1/portal/policies?status=ACTIVE; ?search=<SQL>; ?search=<policyNo>",
+      "response": "200 onlyActive=true | 200 items=0 | byNo items=1",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-049",
+      "title": "Draft quotation can be discarded; discarding an issued policy is refused",
+      "actor": "ag-000001",
+      "expected": "POST discard on a new draft → 204; on the issued policy → 422 CANNOT_DISCARD",
+      "executedAt": "2026-10-02T22:13:49.384Z",
+      "request": "POST /api/v1/portal/policies/{draft}/discard; /{issued}/discard",
+      "response": "204 | 422 CANNOT_DISCARD – Only unpaid quotations that have not been issued can be discarded",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-050",
+      "title": "High-risk hire purchase application is referred for underwriting",
+      "actor": "ag-000001",
+      "expected": "After documents, questionnaire and signature the submission returns status PENDING_APPROVAL with the high-risk and quality-check reasons",
+      "executedAt": "2026-10-02T22:13:49.422Z",
+      "request": "POST /api/v1/portal/policies (FTP-HP 200,000) … submit",
+      "response": "200 PENDING_APPROVAL; reasons=[\"Financing amount B$200,000 exceeds the high-risk limit of B$150,000 – refer to IIFT Sales team\",\"Quality check by IIFT before contract issuance\"]",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-051",
+      "title": "Referral appears in the underwriter inbox; the maker cannot decide it",
+      "actor": "underwriter, ag-000001",
+      "expected": "Inbox lists a POLICY_REFERRAL request for the quotation; the agent has no back-office access (403 WRONG_AUDIENCE)",
+      "executedAt": "2026-10-02T22:13:49.570Z",
+      "request": "GET /api/v1/backoffice/approvals/inbox (underwriter); POST approve as the agent",
+      "response": "request POLICY_REFERRAL PENDING | 403 WRONG_AUDIENCE – This function is not available to your account type",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-052",
+      "title": "Underwriter approves: financing policy issued immediately with a payment due date (grace period)",
+      "actor": "underwriter",
+      "expected": "HTTP 200; policy ACTIVE, paymentStatus UNPAID, paymentDueDate = today + 7 days, policyNo FTP-HP/yy/nnnnnn",
+      "executedAt": "2026-10-02T22:13:49.617Z",
+      "request": "POST /api/v1/backoffice/approvals/48e501c3-f7bf-4a6d-ad54-1e15e6a4e63b/approve",
+      "response": "200 | ACTIVE UNPAID FTP-HP/26/000059 due=2026-10-10",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-053",
+      "title": "A decided request cannot be decided again",
+      "actor": "underwriter",
+      "expected": "HTTP 422 REQUEST_NOT_PENDING",
+      "executedAt": "2026-10-02T22:13:49.681Z",
+      "request": "POST /api/v1/backoffice/approvals/48e501c3-f7bf-4a6d-ad54-1e15e6a4e63b/reject",
+      "response": "422 REQUEST_NOT_PENDING – This request has already been decided",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-054",
+      "title": "Blocked bank: new business is refused for every officer of the bank",
+      "actor": "bk-000005",
+      "expected": "HTTP 422 AGENCY_BLOCKED on submit; portal dashboard shows the AGENCY_BLOCKED pending action",
+      "executedAt": "2026-10-02T22:13:49.689Z",
+      "request": "GET /api/v1/portal/dashboard; POST /api/v1/portal/policies; POST …/submit (bk-000005)",
+      "response": "issuanceBlocked=true pendingAction=true | quotation 201 | 422 AGENCY_BLOCKED – New business is blocked for your agency/bank because contribution payments are overdue. Submit the outstanding payments to continue.",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-060",
+      "title": "Endorsement request (nominee change) is routed for approval",
+      "actor": "ag-000001",
+      "expected": "HTTP 201; type POLICY_ENDORSEMENT, status PENDING; an invalid endorsement type is refused with 422 INVALID_CODE",
+      "executedAt": "2026-10-02T22:13:49.813Z",
+      "request": "POST /api/v1/portal/policies/f16fde6b-2488-470c-a7fd-a0d20332c6bb/endorsements",
+      "response": "422 INVALID_CODE – \"NOT_A_TYPE\" is not a valid endorsement type | 201 POLICY_ENDORSEMENT PENDING",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-061",
+      "title": "Approval request view never contains ciphertext",
+      "actor": "ops.checker",
+      "expected": "GET approvals/{id} returns the nominees with masked ID numbers and no idNumberEnc",
+      "executedAt": "2026-10-02T22:13:49.847Z",
+      "request": "GET /api/v1/backoffice/approvals/c844812b-ba22-49bb-9b4c-2bc58c91b1e6",
+      "response": "200 contains idNumberEnc=false masked=true",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-062",
+      "title": "Operations supervisor approves the endorsement and the nominees change",
+      "actor": "ops.checker",
+      "expected": "HTTP 200; policy detail shows two nominees with 50% each",
+      "executedAt": "2026-10-02T22:13:49.884Z",
+      "request": "POST /api/v1/backoffice/approvals/c844812b-ba22-49bb-9b4c-2bc58c91b1e6/approve",
+      "response": "200 | nominees=2 shares=50/50",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-063",
+      "title": "Cancellation request validation and rejection with mandatory remarks",
+      "actor": "ag-000001, ops.checker",
+      "expected": "Effective date before cover start → 422 INVALID_DATE; valid request → 201; reject without remarks → 400; reject with remarks → 200 and the policy stays ACTIVE",
+      "executedAt": "2026-10-02T22:13:49.939Z",
+      "request": "POST /api/v1/portal/policies/f16fde6b-2488-470c-a7fd-a0d20332c6bb/cancellations; POST approvals/{id}/reject",
+      "response": "422 INVALID_DATE – Cancellation cannot take effect before the cover start date | 201 | 400 | 200 REJECTED | policy ACTIVE",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-064",
+      "title": "Rejection remarks are visible to the maker in the request list",
+      "actor": "ag-000001",
+      "expected": "GET /portal/requests/{id} shows status REJECTED with the remarks",
+      "executedAt": "2026-10-02T22:13:50.003Z",
+      "request": "GET /api/v1/portal/requests?status=REJECTED; GET /api/v1/portal/requests/{id}",
+      "response": "200 REJECTED remarks=Participant withdrew the request",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-065",
+      "title": "Renewal is only possible inside the renewal window and for renewable products",
+      "actor": "ag-000001",
+      "expected": "Renew the new PRO policy (ends in a year) → 422 OUTSIDE_RENEWAL_WINDOW; renew a Khairat policy → 422 NOT_RENEWABLE; renewals-due lists policies ending within 45 days",
+      "executedAt": "2026-10-02T22:13:50.019Z",
+      "request": "POST /api/v1/portal/policies/f16fde6b-2488-470c-a7fd-a0d20332c6bb/renew; POST …/96c15cdb-bd2d-4e38-b0ab-1ee3734ca02c/renew (KHR); GET renewals-due",
+      "response": "422 OUTSIDE_RENEWAL_WINDOW – Renewal opens 45 days before the policy ends and closes 30 days after it | 422 NOT_RENEWABLE – Khairat Takaful Plan cannot be renewed through the portal | due=0 allWithin45d=true",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-066",
+      "title": "Renewal quotation is created from a policy that is due",
+      "actor": "ag-000001",
+      "expected": "POST renew → 201 DRAFT quotation carrying the nominees; a second renewal → 422 RENEWAL_EXISTS",
+      "executedAt": "2026-10-02T22:13:50.058Z",
+      "request": "GET /api/v1/portal/policies/renewals-due (ag-000001, ag-000002)",
+      "response": "Pre-condition not met: no renewable policy is due for renewal in the demonstration data (earlier runs already renewed them)",
+      "result": "Blocked"
+    },
+    {
+      "id": "EX-067",
+      "title": "Claim notification is validated against the policy and the period of cover",
+      "actor": "ag-000001",
+      "expected": "validate-policy → 200; event before cover start → 422 CLAIM_NOT_VALID; valid → 201 with claimNo CL/yy/nnnnnn",
+      "executedAt": "2026-10-02T22:13:50.077Z",
+      "request": "GET /api/v1/portal/claims/validate-policy; POST /api/v1/portal/claims (2020-01-01; today)",
+      "response": "200 | 422 CLAIM_NOT_VALID – The claim cannot be notified [The event date must fall within the period of cover] | 201 CL/26/000006 SUBMITTED",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-068",
+      "title": "Claim status follows the defined transitions in the back-office",
+      "actor": "ops.maker",
+      "expected": "SUBMITTED → CLOSED refused (422 INVALID_STATUS_CHANGE); SUBMITTED → UNDER_REVIEW accepted (200); the agent sees the new status",
+      "executedAt": "2026-10-02T22:13:50.112Z",
+      "request": "PUT /api/v1/backoffice/claims/e492485c-3011-4185-b73a-f30117b935e5/status (CLOSED; UNDER_REVIEW)",
+      "response": "422 INVALID_STATUS_CHANGE – A SUBMITTED claim cannot move to CLOSED | 200 | agent sees UNDER_REVIEW",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-069",
+      "title": "Claims cannot be notified on a quotation that is not in force",
+      "actor": "ag-000001",
+      "expected": "HTTP 422 CLAIM_NOT_VALID stating that the policy is not in force",
+      "executedAt": "2026-10-02T22:13:50.140Z",
+      "request": "POST /api/v1/portal/claims (draft quotation)",
+      "response": "422 CLAIM_NOT_VALID – The claim cannot be notified [The policy is not in force; The event date must fall within the period of cover]",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-070",
+      "title": "Only an agency principal can register agents through the portal",
+      "actor": "ag-000002",
+      "expected": "HTTP 403 FORBIDDEN for a sub-agent",
+      "executedAt": "2026-10-02T22:13:50.158Z",
+      "request": "POST /api/v1/portal/agents (ag-000002)",
+      "response": "403 FORBIDDEN – You do not have permission to perform this action",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-071",
+      "title": "Hierarchy rules: a bank officer cannot be registered under an agency; a main agent cannot report to another agent",
+      "actor": "ag-000001",
+      "expected": "HTTP 422 INVALID_AGENT_TYPE; HTTP 422 INVALID_PARENT",
+      "executedAt": "2026-10-02T22:13:50.162Z",
+      "request": "POST /api/v1/portal/agents (BANKER; MAIN_AGENT with parent)",
+      "response": "422 INVALID_AGENT_TYPE – Agencies register main agents or sub-agents | 422 INVALID_PARENT – A main agent cannot report to another agent",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-072",
+      "title": "Principal registers a sub-agent: unique code, PENDING status, duplicate IC refused",
+      "actor": "ag-000001",
+      "expected": "HTTP 201 with agentCode AG-nnnnnn and status PENDING; same IC again → 422 DUPLICATE_AGENT",
+      "executedAt": "2026-10-02T22:13:50.173Z",
+      "request": "POST /api/v1/portal/agents (twice with the same IC)",
+      "response": "201 AG-000015 PENDING | 422 DUPLICATE_AGENT – An agent with this identification number is already registered",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-073",
+      "title": "Registration cannot be approved until the IC copy is uploaded",
+      "actor": "ops.checker",
+      "expected": "HTTP 422 DOCUMENTS_MISSING before upload",
+      "executedAt": "2026-10-02T22:13:50.211Z",
+      "request": "POST /api/v1/backoffice/approvals/a001a16e-4903-4ee3-bbbd-388b78d5fa27/approve",
+      "response": "422 DOCUMENTS_MISSING – Required documents have not been uploaded [IC_COPY]",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-074",
+      "title": "After the IC copy is uploaded the checker approves: agent ACTIVE with a portal account",
+      "actor": "ag-000001, ops.checker",
+      "expected": "HTTP 200; GET /portal/agents/{id} shows status ACTIVE; a user named after the agent code exists",
+      "executedAt": "2026-10-02T22:13:50.230Z",
+      "request": "POST /api/v1/common/documents (AGENT IC_COPY); POST approvals/{id}/approve; GET /api/v1/portal/agents/{id}; GET /api/v1/backoffice/users",
+      "response": "200 | agent ACTIVE | user ag-000015 mustChangePassword=true",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-075",
+      "title": "Segregation of duties: a back-office maker cannot approve their own registration",
+      "actor": "ops.maker",
+      "expected": "HTTP 422 SEGREGATION_OF_DUTIES",
+      "executedAt": "2026-10-02T22:13:50.333Z",
+      "request": "POST /api/v1/backoffice/agents; POST approvals/{id}/approve by the same user",
+      "response": "201 AG-000016 | 422 SEGREGATION_OF_DUTIES – You cannot approve or reject a request you submitted",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-076",
+      "title": "Checker rejects with mandatory remarks; the maker sees the reason",
+      "actor": "ops.checker, ops.maker",
+      "expected": "Reject without remarks → 400; with remarks → 200 and status REJECTED; agent status REJECTED",
+      "executedAt": "2026-10-02T22:13:50.388Z",
+      "request": "POST /api/v1/backoffice/approvals/bbdcfa8d-7e0e-4183-a9f8-faf2d24b91aa/reject",
+      "response": "400 | 200 REJECTED | agent REJECTED",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-077",
+      "title": "Profile update request from the portal and the hierarchy view",
+      "actor": "ag-000002",
+      "expected": "POST profile/update-requests → 201 PENDING; GET /portal/hierarchy → 200 with the reporting line; GET /portal/agency → 200",
+      "executedAt": "2026-10-02T22:13:50.413Z",
+      "request": "POST /api/v1/portal/profile/update-requests; GET /api/v1/portal/hierarchy; GET /api/v1/portal/agency",
+      "response": "201 AGENT_PROFILE_UPDATE PENDING | 200 | 200 AGY-SA",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-078",
+      "title": "Agent status change request with an invalid transition is refused",
+      "actor": "ops.maker",
+      "expected": "ACTIVE → ACTIVE refused with 422 INVALID_STATUS_CHANGE; ACTIVE → SUSPENDED creates a request (201)",
+      "executedAt": "2026-10-02T22:13:50.459Z",
+      "request": "POST /api/v1/backoffice/agents/f8fad9ca-f327-4a4a-b2aa-c516fb82000f/status-requests (ACTIVE; SUSPENDED); withdraw",
+      "response": "422 INVALID_STATUS_CHANGE – Status cannot change from ACTIVE to ACTIVE | 201 PENDING | withdraw 200 WITHDRAWN",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-079",
+      "title": "Agency maintenance: validation and creation",
+      "actor": "manager",
+      "expected": "Invalid code → 400; valid agency → 201 with status ACTIVE",
+      "executedAt": "2026-10-02T22:13:50.501Z",
+      "request": "POST /api/v1/backoffice/agencies",
+      "response": "400 | 201 AGY-RIR5X2 ACTIVE",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-080",
+      "title": "Participant matching a watch-list name is flagged and routed to Compliance",
+      "actor": "ag-000001",
+      "expected": "HTTP 201 with amlStatus FLAGGED; quotation submission → 422 AML_REVIEW_PENDING",
+      "executedAt": "2026-10-02T22:13:50.587Z",
+      "request": "POST /api/v1/portal/participants (Rashid Al Mansouri); … submit",
+      "response": "201 aml=FLAGGED | 422 AML_REVIEW_PENDING – The participant is under compliance review. Submission is possible once Compliance clears the case.",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-081",
+      "title": "Compliance reviews the case: remarks mandatory, decision recorded once",
+      "actor": "compliance",
+      "expected": "Case listed PENDING_REVIEW with score ≥ 85; review without remarks → 400/422; CLEARED → 201; second review → 422 ALREADY_REVIEWED; participant amlStatus CLEAR",
+      "executedAt": "2026-10-02T22:13:50.692Z",
+      "request": "GET /api/v1/backoffice/aml/cases; POST aml/cases/6d10df55-9e1f-4026-ba3d-ec419307ffae/review (no remarks; CLEARED; again)",
+      "response": "score=100 PENDING_REVIEW | 400 BAD_REQUEST – Some fields are invalid [remarks must be longer than or equal to 3 characters] | 201 | 422 ALREADY_REVIEWED – This case has already been reviewed | participant CLEAR",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-082",
+      "title": "Cleared participant can now be submitted",
+      "actor": "ag-000001",
+      "expected": "POST submit → 200 PENDING_PAYMENT",
+      "executedAt": "2026-10-02T22:13:50.729Z",
+      "request": "POST /api/v1/portal/policies/75fad4ce-8360-4955-ae1d-eb9e5a5866cf/submit",
+      "response": "200 PENDING_PAYMENT",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-083",
+      "title": "Watch-list maintenance: manual entry and CSV import validation",
+      "actor": "compliance",
+      "expected": "POST watchlist → 201; CSV with a wrong header → 422 INVALID_CSV; valid CSV → 201 imported=1",
+      "executedAt": "2026-10-02T22:13:50.756Z",
+      "request": "POST /api/v1/backoffice/aml/watchlist; POST aml/watchlist/import (bad header; valid)",
+      "response": "201 | 422 INVALID_CSV – The first line must be: list_name,full_name,id_number,country,reference | 201 imported=1",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-084",
+      "title": "AML functions are restricted to Compliance",
+      "actor": "ops.maker",
+      "expected": "GET /backoffice/aml/cases → 403 FORBIDDEN for the operations officer",
+      "executedAt": "2026-10-02T22:13:50.778Z",
+      "request": "GET /api/v1/backoffice/aml/cases",
+      "response": "403 FORBIDDEN – You do not have permission to perform this action",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-090",
+      "title": "Agent reports an issue and receives a reference and SLA targets",
+      "actor": "ag-000002",
+      "expected": "HTTP 201; issueNo IS/yy/nnnnnn; HIGH priority → responseDueAt = created + 2 h, resolutionDueAt = created + 24 h",
+      "executedAt": "2026-10-02T22:13:50.825Z",
+      "request": "POST /api/v1/common/issues (HIGH)",
+      "response": "201 IS/26/000007 OPEN response+2h resolution+24h",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-091",
+      "title": "Support assigns the issue and changes the priority; SLA targets are recomputed",
+      "actor": "support",
+      "expected": "PUT assignment → 200 status ASSIGNED; PUT priority CRITICAL → 200 with responseDueAt = now + 1 h",
+      "executedAt": "2026-10-02T22:13:50.858Z",
+      "request": "PUT /api/v1/backoffice/issues/24c6efa5-7183-4b64-8b0b-940c1cfe1c63/assignment; PUT …/priority",
+      "response": "200 ASSIGNED | 200 CRITICAL response in 1.00 h",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-092",
+      "title": "Internal comments stay hidden from the reporter; resolution needs a description",
+      "actor": "support, ag-000002",
+      "expected": "Two comments (one internal); reporter sees one; RESOLVED without resolution → 422 RESOLUTION_REQUIRED; with resolution → 200",
+      "executedAt": "2026-10-02T22:13:50.886Z",
+      "request": "POST /api/v1/common/issues/24c6efa5-7183-4b64-8b0b-940c1cfe1c63/comments ×2; PUT …/status",
+      "response": "422 RESOLUTION_REQUIRED – Describe the resolution | 200 | reporter sees comments internal=[false] status=RESOLVED",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-093",
+      "title": "Reporter closes the resolved issue; the issue list filters by status",
+      "actor": "ag-000002",
+      "expected": "PUT status CLOSED → 200; GET /common/issues?status=CLOSED lists it",
+      "executedAt": "2026-10-02T22:13:50.927Z",
+      "request": "PUT /api/v1/common/issues/24c6efa5-7183-4b64-8b0b-940c1cfe1c63/status (CLOSED); GET /api/v1/common/issues?status=CLOSED",
+      "response": "200 CLOSED | listed=true",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-094",
+      "title": "Issues of another agency are not visible to an agent",
+      "actor": "ag-000003",
+      "expected": "GET /common/issues/{id} → 404 (or 403) for an issue of agency AGY-SA",
+      "executedAt": "2026-10-02T22:13:50.944Z",
+      "request": "GET /api/v1/common/issues/24c6efa5-7183-4b64-8b0b-940c1cfe1c63 (ag-000003)",
+      "response": "404 NOT_FOUND – Issue not found",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-100",
+      "title": "Standard report catalogue and filtered preview",
+      "actor": "manager",
+      "expected": "12 reports; POLICY_REGISTER preview with a date range returns rows and columns",
+      "executedAt": "2026-10-02T22:13:50.949Z",
+      "request": "GET /api/v1/backoffice/reports; GET /api/v1/backoffice/reports/POLICY_REGISTER?from&to",
+      "response": "12 reports | 200 rows=59",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-101",
+      "title": "Every standard report runs",
+      "actor": "manager",
+      "expected": "HTTP 200 with a rows array for each of the 12 reports",
+      "executedAt": "2026-10-02T22:13:50.964Z",
+      "request": "GET /api/v1/backoffice/reports/{code} for every report",
+      "response": "12 reports returned rows",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-102",
+      "title": "Report export in XLSX, CSV and PDF",
+      "actor": "manager",
+      "expected": "HTTP 200 with the matching content type for each format",
+      "executedAt": "2026-10-02T22:13:51.065Z",
+      "request": "GET /api/v1/backoffice/reports/POLICY_REGISTER/export?format=",
+      "response": "XLSX:200 application/vnd.openxmlformats-officedocument.spreadsheetml.sheet | CSV:200 text/csv | PDF:200 application/pdf",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-103",
+      "title": "Portal reports are limited to the agent’s role and scope",
+      "actor": "ag-000002",
+      "expected": "Portal catalogue excludes AML_SCREENING; GET /portal/reports/AML_SCREENING → 403; an allowed report runs with only the agent’s own records",
+      "executedAt": "2026-10-02T22:13:51.186Z",
+      "request": "GET /api/v1/portal/reports; GET /api/v1/portal/reports/AML_SCREENING; GET /api/v1/portal/reports/{first}",
+      "response": "codes=POLICY_REGISTER,PRODUCTION_SUMMARY,COLLECTIONS,OUTSTANDING_AGEING,CLAIMS_REGISTER,RENEWALS_DUE,COMMISSION_STATEMENT | 403 | 200 rows=12",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-104",
+      "title": "Scheduled report distribution is configurable",
+      "actor": "manager",
+      "expected": "Invalid recipient → 400; valid schedule → 201 with nextRunAt; deactivate → 200 active=false",
+      "executedAt": "2026-10-02T22:13:51.206Z",
+      "request": "POST /api/v1/backoffice/reports/schedules; PUT …/active",
+      "response": "400 | 201 nextRunAt=set | 200 active=false",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-105",
+      "title": "Management and portal dashboards",
+      "actor": "manager, ag-000001",
+      "expected": "Back-office dashboard has KPIs and a 12-month trend; portal dashboard has the profile, pending actions and production figures",
+      "executedAt": "2026-10-02T22:13:51.227Z",
+      "request": "GET /api/v1/backoffice/dashboard; GET /api/v1/portal/dashboard",
+      "response": "200 policiesYtd=51 trend=12 | 200 pendingActions=8 keys=profile,counts,pendingActions,monthly,recentActivity",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-106",
+      "title": "Back-office pending-action view: approvals inbox and document queue",
+      "actor": "ops.checker",
+      "expected": "GET approvals/inbox → 200 with items for the checker’s permissions; GET /backoffice/documents?status=UPLOADED → 200",
+      "executedAt": "2026-10-02T22:13:51.254Z",
+      "request": "GET /api/v1/backoffice/approvals/inbox; GET /api/v1/backoffice/documents?status=UPLOADED",
+      "response": "200 total=7 | 200 total=139",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-110",
+      "title": "Create a back-office user with a temporary password; role audience is enforced",
+      "actor": "manager",
+      "expected": "HTTP 201 with a 17-character temporary password; assigning a portal role → 422 INVALID_ROLE; no role → 422 ROLE_REQUIRED",
+      "executedAt": "2026-10-02T22:13:51.273Z",
+      "request": "POST /api/v1/backoffice/users; PATCH users/{id} (portal role; no role)",
+      "response": "201 temp password length=17 | 422 INVALID_ROLE – Only backoffice roles can be assigned to this user | 422 ROLE_REQUIRED – Assign at least one role",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-111",
+      "title": "Administrators cannot disable their own account, reset their own password or change their own roles",
+      "actor": "manager",
+      "expected": "HTTP 422 SELF_STATUS_CHANGE; 422 SELF_RESET; 422 SELF_ROLE_CHANGE",
+      "executedAt": "2026-10-02T22:13:51.323Z",
+      "request": "PUT users/d169f8bf-c5a9-4fb6-9e97-d6227e5873cd/status; POST users/d169f8bf-c5a9-4fb6-9e97-d6227e5873cd/reset-password; PATCH users/d169f8bf-c5a9-4fb6-9e97-d6227e5873cd",
+      "response": "422 SELF_STATUS_CHANGE – You cannot change the status of your own account | 422 SELF_RESET – Use \"Change password\" for your own account | 422 SELF_ROLE_CHANGE – You cannot change your own roles",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-112",
+      "title": "Role management: permissions must match the audience; system roles cannot be deleted",
+      "actor": "manager",
+      "expected": "Role with a portal permission for a back-office audience → 422 INVALID_PERMISSION; valid role → 201; DELETE system role → 422 SYSTEM_ROLE; DELETE the new role → 200/204",
+      "executedAt": "2026-10-02T22:13:51.337Z",
+      "request": "POST /api/v1/backoffice/roles ×2; DELETE roles/{system}; DELETE roles/{new}",
+      "response": "422 INVALID_PERMISSION – Permissions not valid for a backoffice role [portal.dashboard] | 201 | 422 SYSTEM_ROLE – System roles cannot be deleted | 204",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-113",
+      "title": "Business parameters are range-checked and every change is audited",
+      "actor": "manager",
+      "expected": "billing.payment_grace_days = 0 → 422 INVALID_PARAMETER; = 10 → 200; restored to 7; audit trail shows PARAMETER_UPDATED by manager with before/after values",
+      "executedAt": "2026-10-02T22:13:51.367Z",
+      "request": "PUT /api/v1/backoffice/config/parameters/billing.payment_grace_days (0; 10; 7); GET /api/v1/backoffice/audit?entityType=ConfigParameter",
+      "response": "422 INVALID_PARAMETER – Value must be at least 1 | 200 | 200 | audit PARAMETER_UPDATED by manager before={\"value\":\"10\"} after={\"value\":\"7\"}",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-114",
+      "title": "Master data: a new code is created, deactivated and then refused in business transactions",
+      "actor": "manager, ag-000001",
+      "expected": "POST codes → 201; PATCH active=false → 200; endorsement with the inactive type → 422 INVALID_CODE",
+      "executedAt": "2026-10-02T22:13:51.395Z",
+      "request": "POST /api/v1/backoffice/config/codes; PATCH codes/{id}; POST /api/v1/portal/policies/{id}/endorsements",
+      "response": "201 | 200 active=false | 422 INVALID_CODE – \"TEST_RIR5X2\" is not a valid endorsement type",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-115",
+      "title": "Workflow configuration: eight workflows; steps must use approval permissions",
+      "actor": "manager",
+      "expected": "GET /backoffice/workflows → 8; PUT with a non-approval permission → 422; valid change → 200",
+      "executedAt": "2026-10-02T22:13:51.416Z",
+      "request": "GET /api/v1/backoffice/workflows; PUT /api/v1/backoffice/workflows/PARTICIPANT_UPDATE",
+      "response": "8 workflows | 422 INVALID_STEP_PERMISSION – \"bo.users.manage\" is not an approval permission | 200",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-116",
+      "title": "Audit trail search by actor, action and entity; facets",
+      "actor": "manager, compliance",
+      "expected": "GET /backoffice/audit?actor=manager → 200 only manager entries; ?action=LOGIN_FAILED → entries with IP; GET facets → 200; ops.maker → 403",
+      "executedAt": "2026-10-02T22:13:51.433Z",
+      "request": "GET /api/v1/backoffice/audit?actor=manager; ?action=LOGIN_FAILED; GET audit/facets; audit as ops.maker",
+      "response": "200 onlyManager=true | LOGIN_FAILED items=5 withIp=true | facets 200 | 403",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-117",
+      "title": "Product configuration is maintainable without code changes",
+      "actor": "manager",
+      "expected": "GET /backoffice/products → 7; PUT with an invalid rate table → 422 INVALID_PRODUCT_CONFIG; PUT with the unchanged configuration → 200",
+      "executedAt": "2026-10-02T22:13:51.457Z",
+      "request": "GET /api/v1/backoffice/products; PUT products/cad06114-b5a9-48c7-ba8c-0d25df5c15a4 (plans=[]; unchanged)",
+      "response": "7 products | 422 INVALID_PRODUCT_CONFIG – config.plans must be a non-empty array | 200",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-118",
+      "title": "Document review: segregation of duties and mandatory rejection remarks",
+      "actor": "ops.checker, ag-000001",
+      "expected": "Reject without remarks → 422 REMARKS_REQUIRED; verify the agent’s IC copy → 200/201 status VERIFIED; the uploader sees the status",
+      "executedAt": "2026-10-02T22:13:51.475Z",
+      "request": "POST /api/v1/backoffice/documents/f42ac035-eb19-4864-9631-ac744b94fc21/review (REJECTED no remarks; VERIFIED)",
+      "response": "422 REMARKS_REQUIRED – Please give a reason for rejecting the document | 201 VERIFIED | uploader sees VERIFIED",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-119",
+      "title": "Documents of another agency cannot be downloaded",
+      "actor": "ag-000003",
+      "expected": "GET /common/documents/{id}/content → 403 (or 404)",
+      "executedAt": "2026-10-02T22:13:51.491Z",
+      "request": "GET /api/v1/common/documents/f42ac035-eb19-4864-9631-ac744b94fc21/content (ag-000003)",
+      "response": "403 FORBIDDEN – You do not have access to this document",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-120",
+      "title": "End-of-day cannot run for a future date and is restricted to Finance",
+      "actor": "finance, ops.maker",
+      "expected": "POST /backoffice/eod tomorrow → 422 FUTURE_DATE; ops.maker → 403",
+      "executedAt": "2026-10-02T22:13:51.496Z",
+      "request": "POST /api/v1/backoffice/eod (tomorrow; as ops.maker)",
+      "response": "422 FUTURE_DATE – End-of-day cannot run for a future date | 403",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-121",
+      "title": "End-of-day runs for today and produces the EOD report and FIN file; a re-run replaces the revision",
+      "actor": "finance",
+      "expected": "HTTP 201 COMPLETED with reportDocumentId and finFileDocumentId; second run returns the same run id; the FIN file contains record_type lines",
+      "executedAt": "2026-10-02T22:13:51.503Z",
+      "request": "POST /api/v1/backoffice/eod ×2; GET /api/v1/common/documents/{finFile}/content; GET /api/v1/backoffice/eod",
+      "response": "201 COMPLETED policies=19 | same id=true | FIN file 200 has record_type=true | runs 200",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-122",
+      "title": "EOD postings carry revision-based idempotency keys",
+      "actor": "finance",
+      "expected": "Outbox shows EOD_POSTING messages for today with idempotencyKey EOD-<date>-R<n> and increasing revisions",
+      "executedAt": "2026-10-02T22:13:51.614Z",
+      "request": "GET /api/v1/backoffice/integration/outbox?system=FINANCE",
+      "response": "keys=EOD-2026-10-03-R11,EOD-2026-10-03-R10,EOD-2026-10-03-R9,EOD-2026-10-03-R8,EOD-2026-10-03-R7,EOD-2026-10-03-R6,EOD-2026-10-03-R5,EOD-2026-10-03-R4,EOD-2026-10-03-R3,EOD-2026-10-03-R2,EOD-2026-10-03-R1",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-123",
+      "title": "Integration monitor: summary per system, outbox and logs",
+      "actor": "finance",
+      "expected": "GET summary → 200 with FINANCE successCount > 0; GET outbox?status=SENT → 200; GET logs?system=FINANCE → 200 with request summaries",
+      "executedAt": "2026-10-02T22:13:51.625Z",
+      "request": "GET /api/v1/backoffice/integration/summary; outbox?status=SENT; logs?system=FINANCE",
+      "response": "200 FINANCE success=122 failed=0 | sent 200 282 | logs 200 122",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-124",
+      "title": "Daily reconciliation with FIN",
+      "actor": "finance",
+      "expected": "POST reconciliations for today → 201 with status MATCHED; GET reconciliations lists it",
+      "executedAt": "2026-10-02T22:14:12.687Z",
+      "request": "POST /api/v1/backoffice/integration/reconciliations; GET …/reconciliations",
+      "response": "201 MATCHED | list 200 17",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-125",
+      "title": "Only failed or dead-lettered messages can be retried",
+      "actor": "finance",
+      "expected": "POST outbox/{sent message}/retry → 422 (or 409)",
+      "executedAt": "2026-10-02T22:14:12.706Z",
+      "request": "POST /api/v1/backoffice/integration/outbox/b8dd644f-6402-423a-bfab-4a1db8670b4d/retry",
+      "response": "422 ALREADY_SENT – This message has already been delivered",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-126",
+      "title": "Inbound system-to-system API requires a valid key",
+      "actor": "anonymous / Core system",
+      "expected": "No key → 401; wrong key → 401; valid key → 200 with the policies issued on a date",
+      "executedAt": "2026-10-02T22:14:12.718Z",
+      "request": "GET /api/v1/integration/policies?issuedOn (no key; wrong key; valid key)",
+      "response": "401 | 401 | 200 items=19",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-127",
+      "title": "Inbound data is validated: unknown agent code and malformed commission payload are refused",
+      "actor": "Core / FIN system",
+      "expected": "PUT integration/agents/{unknown}/status → 404; POST integration/commissions/paid with a bad body → 400",
+      "executedAt": "2026-10-02T22:14:12.743Z",
+      "request": "PUT /api/v1/integration/agents/AG-999999/status; POST /api/v1/integration/commissions/paid (items: \"nope\")",
+      "response": "404 NOT_FOUND – Agent not found | 400 BAD_REQUEST – Some fields are invalid [items must contain no more than 1000 elements; items must be an array; each value in nested property items must be either object or array]",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-128",
+      "title": "In-app notifications: list, unread count, mark one and mark all read",
+      "actor": "ag-000001",
+      "expected": "GET notifications → 200 items with policy/approval events; unread-count → 200; POST {id}/read → 200/204; read-all → 204 and unread-count 0",
+      "executedAt": "2026-10-02T22:14:12.753Z",
+      "request": "GET /api/v1/common/notifications; GET unread-count; POST {id}/read; POST read-all",
+      "response": "200 items=20 | before {\"count\":12} | 204 | 204 | after {\"count\":0}",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-129",
+      "title": "Policy issuance produced the Core and FIN messages",
+      "actor": "finance",
+      "expected": "Outbox contains a POLICY_ISSUED message for the policy and a RECEIPT_POSTED message for its receipt (EX-043)",
+      "executedAt": "2026-10-02T22:14:12.780Z",
+      "request": "GET /api/v1/backoffice/integration/outbox?system=CORE|FINANCE (all pages)",
+      "response": "messages for PRO/26/000058/QT/26/000076: CORE:CLAIM_NOTIFIED:SENT, CORE:POLICY_ENDORSED:SENT, CORE:POLICY_ISSUED:SENT, FINANCE:EOD_POSTING:SENT, FINANCE:COMMISSION_ACCRUED:SENT, FINANCE:RECEIPT_POSTED:SENT",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-130",
+      "title": "Unknown routes and malformed JSON return generic errors with a correlation id",
+      "actor": "anonymous",
+      "expected": "GET /api/v1/nothing → 404 JSON with code and no framework detail; malformed JSON → 400 without a stack trace; X-Request-Id on every response",
+      "executedAt": "2026-10-02T22:14:12.814Z",
+      "request": "GET /api/v1/nothing-here; POST /api/v1/auth/login with broken JSON",
+      "response": "404 NOT_FOUND – Cannot GET /api/v1/nothing-here req-id=yes | 400 BAD_REQUEST – Unexpected end of JSON input",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-131",
+      "title": "Security headers and health endpoints",
+      "actor": "anonymous",
+      "expected": "GET /health/live and /health/ready → 200; nosniff, HSTS and CSP present; X-Powered-By absent",
+      "executedAt": "2026-10-02T22:14:12.819Z",
+      "request": "GET /health/live; GET /health/ready",
+      "response": "200 200 db=up; nosniff=nosniff hsts=true csp=true powered-by=absent",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-132",
+      "title": "API documentation is served in the test environment only when enabled",
+      "actor": "anonymous",
+      "expected": "GET /api/docs → 200 (API_DOCS_ENABLED=true in test) or 404 when disabled",
+      "executedAt": "2026-10-02T22:14:12.825Z",
+      "request": "GET /api/docs",
+      "response": "200",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-133",
+      "title": "Account lockout after the configured failed attempts; administrator unlock",
+      "actor": "qa user, manager",
+      "expected": "5 wrong passwords → 401; the correct password then → 401 ACCOUNT_LOCKED; unlock → 200; sign-in → 200 and back-office access refused with 403 PASSWORD_CHANGE_REQUIRED until the temporary password is changed",
+      "executedAt": "2026-10-02T22:14:12.826Z",
+      "request": "POST /api/v1/auth/login ×6; POST /api/v1/backoffice/users/{id}/unlock; sign-in; GET /api/v1/backoffice/users; disable the test user",
+      "response": "401,401,401,401,401 | 401 ACCOUNT_LOCKED – Your account is temporarily locked after repeated failed sign-in attempts. Try again later or contact the administrator. | unlock 200 | sign-in 200 mustChangePassword=true | 403 PASSWORD_CHANGE_REQUIRED – You must change your password before continuing | disabled 200",
+      "result": "Passed"
+    },
+    {
+      "id": "EX-134",
+      "title": "Administrator password reset issues a new temporary password; disabled accounts cannot sign in",
+      "actor": "manager, qa user",
+      "expected": "POST users/{id}/reset-password → 200 with a 17-character temporary password; sign-in of the disabled account → 401",
+      "executedAt": "2026-10-02T22:15:14.088Z",
+      "request": "POST /api/v1/backoffice/users/443b7199-eeb0-45dd-be3f-463ae22d8631/reset-password; POST /api/v1/auth/login (disabled user)",
+      "response": "200 temporary password length=17 | 200",
+      "result": "Failed"
+    }
+  ]
+}

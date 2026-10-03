@@ -90,6 +90,8 @@ PACK = [
     ("IIFT-SV2-PSH", "Production Support Handover", "DEL-26, DEL-27, MNT-28"),
     ("IIFT-SV2-CSQ", "Code Standards & Quality Report", "DEL-11, NFR-14"),
     ("IIFT-SV2-SAR", "Security Assessment Report", "DEL-17, NFR-13"),
+    ("IIFT-SV2-TST", "Test Strategy", "DEL-12"),
+    ("IIFT-SV2-TCS", "Test Cases", "DEL-13, DEL-14 (precursor)"),
 ]
 
 

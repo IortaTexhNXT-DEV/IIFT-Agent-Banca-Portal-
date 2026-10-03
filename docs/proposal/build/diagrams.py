@@ -556,3 +556,381 @@ def swimlane(out_dir, name, lanes, steps):
             mid_x = xa[1] + gap / 2
             elbow(draw, [(xa[1], start_y), (mid_x, start_y), (mid_x, end_y), (xb[0], end_y)], width=3, head=14)
     return save(image, out_dir, f"fig-journey-{name}.png")
+
+
+
+# =============================================================================
+# Personas, navigation and journey figures
+# =============================================================================
+# All three renderers draw on an 1800 px canvas that is placed at 16.5 cm, so
+# 35 px is about 9 pt on paper. Nothing below 30 px is used for text, and 30 px
+# only for secondary labels (keyboard hint, lane notes).
+FIG_W = 1800
+TXT = 34            # body text
+TXT_B = 36          # emphasised text
+LINE_H = 40
+PALE_GREEN = (226, 243, 232)
+PALE_BLUE = (230, 238, 250)
+BLUE = (70, 110, 170)
+
+
+def _lines(draw, text, fnt, max_width):
+    return wrap(draw, text, fnt, max_width)
+
+
+def pill(draw, xy, text, fill=WHITE, outline=MAGENTA, text_fill=DARK, size=TXT, bold=False, width=3):
+    x0, y0, x1, y1 = xy
+    radius = (y1 - y0) // 2
+    draw.rounded_rectangle(xy, radius=radius, fill=fill, outline=outline, width=width)
+    if text:
+        text_block(draw, xy, text, size=size, bold=bold, fill=text_fill)
+
+
+def diamond(draw, cx, cy, half_w, half_h, text, fill=LIGHT_ORANGE, outline=ORANGE, size=TXT):
+    draw.polygon([(cx, cy - half_h), (cx + half_w, cy), (cx, cy + half_h), (cx - half_w, cy)],
+                 fill=fill, outline=outline, width=3)
+    text_block(draw, (cx - half_w * 0.72, cy - half_h * 0.7, cx + half_w * 0.72, cy + half_h * 0.7),
+               text, size=size, bold=True)
+
+
+def _header_mock(draw, y0, module, search, actions, user, width=FIG_W, searchable=True):
+    """Application header: brand, global search, header actions, bell and user menu.
+    Returns the bottom y and the x centre of each element for callouts."""
+    h = 96
+    draw.rectangle([0, y0, width, y0 + h], fill=WHITE, outline=MID_GREY, width=2)
+    draw.line([(0, y0 + h), (width, y0 + h)], fill=ORANGE, width=5)
+    draw.rounded_rectangle([24, y0 + 18, 84, y0 + 78], radius=10, fill=LIGHT_MAGENTA, outline=MAGENTA, width=2)
+    text_block(draw, (24, y0 + 18, 84, y0 + 78), "IIFT", size=22, bold=True, fill=MAGENTA)
+    draw.text((100, y0 + 14), brand.PRODUCT, font=font(TXT_B, True), fill=MAGENTA)
+    draw.text((100, y0 + 54), module.upper(), font=font(26), fill=MUTED)
+    centres = {"brand": 250}
+    # right-hand group, laid out from the right edge
+    x = width - 30
+    user_w = int(draw.textlength(user, font=font(30))) + 70
+    x -= user_w
+    draw.ellipse([x, y0 + 26, x + 44, y0 + 70], fill=MAGENTA)
+    text_block(draw, (x, y0 + 26, x + 44, y0 + 70), user[:1], size=24, bold=True, fill=WHITE)
+    draw.text((x + 58, y0 + 30), user, font=font(30), fill=DARK)
+    centres["user"] = x + user_w / 2
+    x -= 90
+    draw.ellipse([x, y0 + 24, x + 48, y0 + 72], fill=WHITE, outline=MAGENTA, width=3)
+    text_block(draw, (x, y0 + 24, x + 48, y0 + 72), "!", size=28, bold=True, fill=MAGENTA)
+    draw.ellipse([x + 32, y0 + 14, x + 60, y0 + 42], fill=ORANGE)
+    text_block(draw, (x + 32, y0 + 14, x + 60, y0 + 42), "3", size=20, bold=True, fill=WHITE)
+    centres["bell"] = x + 24
+    x -= 40
+    for label in reversed(actions):
+        w = int(draw.textlength(label, font=font(30, True))) + 56
+        x -= w
+        pill(draw, (x, y0 + 22, x + w, y0 + 74), label, fill=MAGENTA, outline=MAGENTA, text_fill=WHITE,
+             size=30, bold=True)
+        centres["action"] = x + w / 2
+        x -= 24
+    # search pill fills the space between the brand and the right-hand group
+    sx0, sx1 = 540, min(x - 30, 1140)
+    pill(draw, (sx0, y0 + 22, sx1, y0 + 74), "", fill=WHITE if searchable else LIGHT_GREY,
+         outline=MAGENTA if searchable else MID_GREY, width=2)
+    fnt = font(30)
+    hint_w = 120 if searchable else 0
+    label = search
+    while draw.textlength(label, font=fnt) > sx1 - sx0 - 50 - hint_w and len(label) > 4:
+        label = label[:-2].rstrip() + "…" if not label.endswith("…") else label[:-3].rstrip() + "…"
+    draw.text((sx0 + 26, y0 + 31), label, font=fnt, fill=MUTED)
+    if searchable:
+        draw.rounded_rectangle([sx1 - 118, y0 + 32, sx1 - 18, y0 + 66], radius=6, fill=LIGHT_GREY, outline=MID_GREY)
+        text_block(draw, (sx1 - 118, y0 + 32, sx1 - 18, y0 + 66), "Ctrl K", size=24, fill=MUTED)
+    centres["search"] = (sx0 + sx1) / 2
+    return y0 + h, centres
+
+
+def nav_tree(out_dir, name, module, groups, header_actions, user, search_hint, notes=None,
+             scope_note=None, searchable=True):
+    """Navigation map for one persona.
+
+    groups: [(group_label or None, [(item_label, leads_to_text, highlighted)])] – only the
+    items the persona's role can see. The right column says where each item leads.
+    """
+    fnt = font(TXT)
+    probe = ImageDraw.Draw(Image.new("RGB", (10, 10)))
+    nav_x0, nav_x1 = 30, 640
+    right_x0, right_x1 = 700, FIG_W - 30
+    rows = []
+    for label, items in groups:
+        if label:
+            rows.append(("group", label, []))
+        for item, leads, highlighted in items:
+            rows.append(("item", (item, highlighted), _lines(probe, leads, fnt, right_x1 - right_x0 - 48)))
+    y = 96 + 36
+    heights = [56 if kind == "group" else max(68, 22 + LINE_H * len(lines)) for kind, _, lines in rows]
+    note_lines = _lines(probe, notes, font(30), right_x1 - right_x0) if notes else []
+    scope_lines = _lines(probe, scope_note, font(30), nav_x1 - nav_x0 - 10) if scope_note else []
+    body_bottom = y + sum(heights)
+    nav_bottom = body_bottom + (len(scope_lines) * 38 + 30 if scope_lines else 0)
+    right_bottom = body_bottom + (len(note_lines) * 38 + 30 if note_lines else 0)
+    height = max(nav_bottom, right_bottom) + 24
+    image, draw = new_canvas(FIG_W, height)
+    _header_mock(draw, 0, module, search_hint, header_actions, user, searchable=searchable)
+    draw.rectangle([0, 96, nav_x1 + 20, height], fill=(250, 250, 250))
+    draw.line([(nav_x1 + 20, 96), (nav_x1 + 20, height)], fill=MID_GREY, width=2)
+    draw.text((right_x0, 106), "Where it leads", font=font(30, True), fill=MUTED)
+    for (kind, label, lines), h in zip(rows, heights):
+        if kind == "group":
+            draw.text((nav_x0 + 10, y + 16), label.upper(), font=font(26, True), fill=MUTED)
+        else:
+            item, highlighted = label
+            draw.rounded_rectangle([nav_x0, y + 6, nav_x1, y + 62], radius=10,
+                                   fill=LIGHT_MAGENTA if highlighted else WHITE,
+                                   outline=MAGENTA if highlighted else MID_GREY, width=2)
+            draw.rounded_rectangle([nav_x0 + 16, y + 22, nav_x0 + 40, y + 46], radius=5, fill=MAGENTA)
+            draw.text((nav_x0 + 56, y + 15), item, font=font(TXT, highlighted), fill=DARK)
+            draw.text((right_x0, y + 15), "→", font=font(TXT, True), fill=ORANGE)
+            ty = y + 15
+            for line in lines:
+                draw.text((right_x0 + 44, ty), line, font=fnt, fill=DARK)
+                ty += LINE_H
+            draw.line([(right_x0, y + h - 2), (right_x1, y + h - 2)], fill=(232, 232, 232), width=1)
+        y += h
+    sy = body_bottom + 16
+    for line in scope_lines:
+        draw.text((nav_x0, sy), line, font=font(30), fill=MUTED)
+        sy += 38
+    ny = body_bottom + 16
+    for line in note_lines:
+        draw.text((right_x0, ny), line, font=font(30), fill=MUTED)
+        ny += 38
+    return save(image, out_dir, f"fig-nav-{name}.png")
+
+
+def journey_flow(out_dir, name, lanes, steps, start=1):
+    """Vertical swim-lane: lanes are columns (actors), steps flow downwards.
+
+    lanes: [(label, "user" | "system")]
+    steps: [{"lane": i, "screen": "...", "action": "...", "kind": "action"|"system"|"decision"|"end",
+             "yes": "label", "no": "label", "no_to": index into `steps`}]
+    `start` is the number of the first step (for a journey drawn in parts).
+    Consecutive steps are joined by arrows; a change between two user lanes is drawn as
+    an orange hand-off. A decision's "yes" path goes to the next step, its "no" path to
+    `no_to`.
+    """
+    probe = ImageDraw.Draw(Image.new("RGB", (10, 10)))
+    margin, header_h, legend_h, gap = 30, 92, 90, 44
+    n = len(lanes)
+    lane_w = (FIG_W - 2 * margin) / n
+    box_w = lane_w - 44
+    text_w = box_w - 28
+    f_screen, f_action = font(TXT, True), font(TXT)
+    rows = []
+    for s in steps:
+        if s.get("kind") == "decision":
+            rows.append((["?"], [], 150 + gap))
+            continue
+        s_lines = _lines(probe, s["screen"], f_screen, text_w)
+        a_lines = _lines(probe, s.get("action", ""), f_action, text_w) if s.get("action") else []
+        rows.append((s_lines, a_lines, 24 + LINE_H * (len(s_lines) + len(a_lines)) + gap))
+    height = header_h + 26 + sum(h for _, _, h in rows) + legend_h
+    image, draw = new_canvas(FIG_W, height)
+    for i, (label, kind) in enumerate(lanes):
+        x0 = margin + i * lane_w
+        draw.rectangle([x0, header_h, x0 + lane_w, height - legend_h - 10],
+                       fill=(250, 250, 250) if i % 2 else WHITE, outline=MID_GREY, width=2)
+        draw.rectangle([x0, 10, x0 + lane_w, header_h], fill=ORANGE if kind == "system" else MAGENTA)
+        text_block(draw, (x0, 10, x0 + lane_w, header_h), label, size=TXT, bold=True, fill=WHITE)
+    centres = []
+    y = header_h + 26
+    for index, (s, (s_lines, a_lines, h)) in enumerate(zip(steps, rows)):
+        lane = s["lane"]
+        cx = margin + lane * lane_w + lane_w / 2
+        top, bottom = y, y + h - gap
+        kind = s.get("kind", "action")
+        if kind == "decision":
+            diamond(draw, cx, (top + bottom) / 2, box_w / 2, (bottom - top) / 2, s["screen"])
+        else:
+            system = kind == "system" or lanes[lane][1] == "system"
+            fill = LIGHT_ORANGE if system else (PALE_GREEN if kind == "end" else LIGHT_MAGENTA)
+            outline = ORANGE if system else (GREEN if kind == "end" else MAGENTA)
+            draw.rounded_rectangle([cx - box_w / 2, top, cx + box_w / 2, bottom], radius=14,
+                                   fill=fill, outline=outline, width=3)
+            ty = top + 12
+            for line in s_lines:
+                draw.text((cx - text_w / 2, ty), line, font=f_screen, fill=DARK)
+                ty += LINE_H
+            for line in a_lines:
+                draw.text((cx - text_w / 2, ty), line, font=f_action, fill=DARK)
+                ty += LINE_H
+        bx = cx - box_w / 2
+        draw.ellipse([bx - 22, top - 20, bx + 22, top + 24], fill=ORANGE)
+        text_block(draw, (bx - 22, top - 20, bx + 22, top + 24), str(start + index), size=26, bold=True, fill=WHITE)
+        centres.append((cx, top, bottom, lane, kind))
+        y += h
+    for i in range(len(centres) - 1):
+        cx, top, bottom, lane, kind = centres[i]
+        nx, ntop, nbottom, nlane, nkind = centres[i + 1]
+        if kind == "decision" and steps[i].get("no_to") is not None:
+            tx, ttop, tbottom, tlane, _ = centres[steps[i]["no_to"]]
+            gx = margin + (lane + 1) * lane_w - 10
+            mid_y = (top + bottom) / 2
+            ty_mid = (ttop + tbottom) / 2
+            entry_x = tx - box_w / 2 if tlane > lane else tx + box_w / 2
+            elbow(draw, [(cx + box_w / 2, mid_y), (gx, mid_y), (gx, ty_mid), (entry_x, ty_mid)],
+                  colour=MUTED, width=3, head=14)
+            lbl = steps[i].get("no", "no")
+            lw = draw.textlength(lbl, font=font(30))
+            draw.rectangle([cx + box_w / 2 + 6, mid_y - 46, cx + box_w / 2 + 14 + lw, mid_y - 8], fill=WHITE)
+            draw.text((cx + box_w / 2 + 10, mid_y - 44), lbl, font=font(30), fill=MUTED)
+        handoff = lanes[lane][1] == "user" and lanes[nlane][1] == "user" and lane != nlane
+        colour = ORANGE if handoff else DARK
+        if lane == nlane:
+            arrow(draw, (cx, bottom), (nx, ntop), colour=colour, width=3, head=14)
+        else:
+            my = bottom + gap / 2
+            elbow(draw, [(cx, bottom), (cx, my), (nx, my), (nx, ntop)], colour=colour, width=3, head=14)
+        label = steps[i].get("yes") if kind == "decision" else ("hand-off" if handoff else None)
+        if label:
+            lw = draw.textlength(label, font=font(30))
+            if lane == nlane:
+                lx, ly = cx + 14, bottom + 2
+            else:
+                lx, ly = (cx + nx) / 2 - lw / 2, bottom + gap / 2 - 40
+            draw.rectangle([lx - 4, ly - 2, lx + lw + 4, ly + 36], fill=WHITE)
+            draw.text((lx, ly), label, font=font(30), fill=colour)
+    ly = height - legend_h + 26
+    lx = margin
+    for fill, outline, text in ((LIGHT_MAGENTA, MAGENTA, "Persona acts on a screen"),
+                                (LIGHT_ORANGE, ORANGE, "System action (automatic)"),
+                                (PALE_GREEN, GREEN, "End state"), (None, ORANGE, "Hand-off to another persona")):
+        if fill:
+            draw.rounded_rectangle([lx, ly, lx + 54, ly + 36], radius=8, fill=fill, outline=outline, width=3)
+        else:
+            arrow(draw, (lx, ly + 18), (lx + 54, ly + 18), colour=outline, width=4, head=14)
+        draw.text((lx + 68, ly - 2), text, font=font(30), fill=DARK)
+        lx += 90 + draw.textlength(text, font=font(30)) + 60
+    suffix = "" if start == 1 else f"-from-{start}"
+    return save(image, out_dir, f"fig-journey-{name}{suffix}.png")
+
+
+def navigation_model(out_dir, portal_groups, backoffice_groups):
+    """One-page model of the product's navigation: header, side navigation of both
+    modules, a record page with breadcrumb, tabs and actions, and the conventions."""
+    width = FIG_W
+    probe = ImageDraw.Draw(Image.new("RGB", (10, 10)))
+    item_h, group_h, col_w, col_gap = 46, 40, 420, 16
+    nav_top = 96 + 50
+
+    def column_height(groups):
+        return 54 + sum((group_h if label else 0) + item_h * len(items) for label, items in groups) + 12
+
+    nav_bottom = nav_top + max(column_height(portal_groups), column_height(backoffice_groups))
+    legend_top = nav_bottom + 40
+    height = legend_top + 7 * 54 + 10
+    image, draw = new_canvas(width, height)
+    header_bottom, centres = _header_mock(draw, 0, "Agent & Banca Portal",
+                                          "Search policy, quotation, participant or agent",
+                                          ["+ New quotation"], "Hajah Siti Aminah")
+
+    def callout(number, x, y):
+        draw.ellipse([x - 22, y - 22, x + 22, y + 22], fill=DARK)
+        text_block(draw, (x - 22, y - 22, x + 22, y + 22), str(number), size=26, bold=True, fill=WHITE)
+
+    for number, key in ((1, "brand"), (2, "search"), (3, "action"), (4, "bell"), (5, "user")):
+        callout(number, centres[key], header_bottom + 24)
+    for col, (title, groups) in enumerate((("Agent & Banca Portal", portal_groups), ("Back-office", backoffice_groups))):
+        x0 = 20 + col * (col_w + col_gap)
+        y = nav_top
+        draw.rectangle([x0, y, x0 + col_w, nav_bottom], fill=(250, 250, 250), outline=MID_GREY, width=2)
+        draw.text((x0 + 16, y + 10), title, font=font(32, True), fill=MAGENTA)
+        y += 54
+        for label, items in groups:
+            if label:
+                draw.text((x0 + 16, y + 6), label.upper(), font=font(26, True), fill=MUTED)
+                y += group_h
+            for item in items:
+                draw.rounded_rectangle([x0 + 12, y, x0 + col_w - 12, y + item_h - 6], radius=8,
+                                       fill=LIGHT_MAGENTA if item == "Dashboard" else WHITE, outline=MID_GREY, width=1)
+                draw.text((x0 + 26, y + 3), item, font=font(32), fill=DARK)
+                y += item_h
+    callout(6, 20 + col_w - 30, nav_top + 26)
+    # record page
+    px0, px1 = 20 + 2 * (col_w + col_gap), width - 20
+    y = nav_top
+    draw.rectangle([px0, y, px1, nav_bottom], fill=WHITE, outline=MID_GREY, width=2)
+    ix = px0 + 64
+    draw.text((ix, y + 16), "Home  ›  Quotations & policies  ›  PRO/26/000047", font=font(30), fill=MUTED)
+    callout(7, px0 + 28, y + 32)
+    draw.text((ix, y + 62), "PRO/26/000047", font=font(44, True), fill=DARK)
+    pill(draw, (ix + 336, y + 68, ix + 466, y + 112), "Active", fill=PALE_GREEN, outline=GREEN, size=28, bold=True, width=2)
+    pill(draw, (ix + 482, y + 68, ix + 592, y + 112), "Paid", fill=PALE_BLUE, outline=BLUE, size=28, bold=True, width=2)
+    callout(8, ix + 630, y + 90)
+    draw.text((ix, y + 126), "Product  Professional Takaful Plan   ·   Participant  Nurul Ain binti Haji Yahya",
+              font=font(26), fill=MUTED)
+    ax = ix
+    for label in ("Renew", "Request endorsement", "Request cancellation"):
+        w = int(draw.textlength(label, font=font(28, True))) + 44
+        pill(draw, (ax, y + 170, ax + w, y + 218), label, fill=WHITE, outline=MAGENTA, size=28, bold=True, width=2)
+        ax += w + 14
+    callout(9, ax + 18, y + 194)
+    tx = ix
+    for i, tab in enumerate(("Overview", "Documents (4)", "Payments & receipts (1)", "History")):
+        w = int(draw.textlength(tab, font=font(28, i == 0))) + 8
+        draw.text((tx, y + 248), tab, font=font(28, i == 0), fill=MAGENTA if i == 0 else DARK)
+        if i == 0:
+            draw.line([(tx, y + 288), (tx + w, y + 288)], fill=MAGENTA, width=4)
+        tx += w + 30
+    draw.line([(ix, y + 290), (px1 - 24, y + 290)], fill=MID_GREY, width=1)
+    callout(10, tx + 30, y + 262)
+    cy = y + 330
+    inner_w = px1 - ix - 24
+    bw = (inner_w - 2 * 56) / 3
+    for i, (title, text) in enumerate((("List", "filters, search,\nstatus tags, row click"),
+                                       ("Detail", "page header, tabs,\nhistory and approvals"),
+                                       ("Action", "dialog or drawer,\nmaker-checker request"))):
+        bx = ix + i * (bw + 56)
+        titled_box(draw, (bx, cy, bx + bw, cy + 176), title, text, fill=LIGHT_MAGENTA, outline=MAGENTA,
+                   title_size=32, size=28)
+        if i:
+            arrow(draw, (bx - 56, cy + 88), (bx, cy + 88), width=4, head=16)
+    callout(11, px0 + 28, cy + 88)
+    qy = cy + 216
+    draw.rounded_rectangle([ix, qy, px1 - 24, qy + 276], radius=12, fill=WHITE, outline=MAGENTA, width=3)
+    draw.text((ix + 20, qy + 12), "Dashboard work queues", font=font(30, True), fill=MAGENTA)
+    for i, (label, count) in enumerate((("Draft quotations to complete", "1"), ("Contributions to collect", "2"),
+                                       ("Awaiting my approval", "5"), ("AML cases to review", "1"))):
+        ry = qy + 62 + i * 52
+        draw.text((ix + 20, ry), label, font=font(28), fill=DARK)
+        pill(draw, (px1 - 120, ry - 4, px1 - 48, ry + 34), count, fill=LIGHT_ORANGE, outline=ORANGE, size=24, bold=True, width=2)
+    callout(12, px0 + 28, qy + 138)
+    my0 = qy + 300
+    draw.rounded_rectangle([ix, my0, px1 - 24, my0 + 236], radius=12, fill=WHITE, outline=ORANGE, width=3)
+    draw.text((ix + 20, my0 + 12), "Maker-checker loop", font=font(30, True), fill=ORANGE)
+    bw2 = 290
+    box(draw, (ix + 20, my0 + 64, ix + 20 + bw2, my0 + 150), "My requests\n(portal maker)", fill=LIGHT_MAGENTA, size=26)
+    box(draw, (px1 - 44 - bw2, my0 + 64, px1 - 44, my0 + 150), "Approvals inbox\n(back-office checker)",
+        fill=LIGHT_ORANGE, outline=ORANGE, size=26)
+    arrow(draw, (ix + 20 + bw2, my0 + 92), (px1 - 44 - bw2, my0 + 92), width=3, head=14, label="submit", label_size=24)
+    arrow(draw, (px1 - 44 - bw2, my0 + 124), (ix + 20 + bw2, my0 + 124), width=3, head=14, label="approve / reject",
+          label_size=24)
+    draw.text((ix + 20, my0 + 170), "Notifications (in-app, e-mail, SMS) link back to the record;", font=font(26), fill=MUTED)
+    draw.text((ix + 20, my0 + 202), "rejection remarks are shown to the maker.", font=font(26), fill=MUTED)
+    callout(13, px0 + 28, my0 + 118)
+    legend = [
+        (1, "Brand and module name; click returns to the dashboard"),
+        (2, "Global search over policies, participants and agents (Ctrl+K)"),
+        (3, "Primary action of the module (portal: New quotation)"),
+        (4, "Notifications bell with unread count; opens the latest items"),
+        (5, "User menu: profile, change password, sign out"),
+        (6, "Side navigation: top entries, then groups; permitted items only"),
+        (7, "Breadcrumb: Home › list › record"),
+        (8, "Record reference as title, status tags beside it"),
+        (9, "Page actions on the right; the primary action last"),
+        (10, "Tabs for documents, payments, history, approvals, claims"),
+        (11, "List → detail → action on every record type"),
+        (12, "Dashboard queues link to the filtered list"),
+        (13, "Requests and approvals are the same record in both modules"),
+    ]
+    col_w2 = (width - 40) / 2
+    for i, (num, text) in enumerate(legend):
+        col, row = divmod(i, 7)
+        x = 20 + col * col_w2
+        yy = legend_top + row * 54
+        callout(num, x + 24, yy + 20)
+        draw.text((x + 60, yy + 2), text, font=font(30), fill=DARK)
+    return save(image, out_dir, "fig-navigation-model.png")
