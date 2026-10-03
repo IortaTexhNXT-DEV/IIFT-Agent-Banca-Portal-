@@ -120,7 +120,7 @@ def option_a_sheet(wb):
         "Back-office) for IIFT's internal business; no renewal fee.",
         "Unlimited named and concurrent users; production, DR and non-production environments included.",
         "Use by another IITH group company (e.g. IIGT) needs an additional entity licence, priced separately.",
-        f"Billing of the AMC: {price.AMC_BILLING.lower()}. Warranty: {price.WARRANTY_MONTHS} months from go-live.",
+        f"Billing of the AMC: {price.AMC_BILLING[0].lower() + price.AMC_BILLING[1:]}. Warranty: {price.WARRANTY_MONTHS} months from go-live.",
     ])
     ws.freeze_panes = "C4"
 

@@ -122,23 +122,21 @@ TECH_DOCS = [
 
 def technical_documents(w: ProposalWriter):
     w.h1("Technical Document Pack")
-    w.para(f"The technical documents below accompany this proposal in the folder docs/technical. They describe "
-           f"{PRODUCT} as it stands today and are updated for IIFT during the project. This chapter summarises them; "
-           "it does not repeat their content.")
+    w.para(f"The documents below accompany this proposal in the folder docs/technical. They describe {PRODUCT} as it "
+           "stands today and become the baseline of the corresponding project deliverables, updated for IIFT during "
+           "the project.")
     w.table(["Document", "Content", "RFP references"], TECH_DOCS, widths=[5.6, 7.8, 3.6], font_size=8,
-            bold_first_col=True, caption="Technical document pack")
-    w.para("The security assessment report covers iorta's internal testing. It does not replace the independent "
-           "penetration test, which is performed by a third party on the IIFT environment before go-live (DEL-17).")
+            bold_first_col=True, caption="Technical document pack and the deliverables it seeds")
 
 
 def methodology(w: ProposalWriter, figs: dict):
     w.h1("Implementation Methodology")
     w.h2("Delivery approach: configure and integrate")
     w.paras([
-        f"{PRODUCT} already runs IIFT's products and rules, so the project configures and integrates an existing "
-        "platform instead of building one. Discovery starts with fit-gap workshops on the working system: IIFT users "
-        "walk through each journey with their own products, confirm what fits, and record the gaps. The gaps become "
-        "the configuration backlog.",
+        f"Because {PRODUCT} already runs IIFT's products and rules (Section {sec('fitment')}), the project configures "
+        "and integrates an existing platform rather than building one. Discovery is a series of fit-gap workshops on "
+        "the working system: IIFT users walk through each journey with their own products, confirm what fits and "
+        "record the gaps, and the gaps become the configuration backlog.",
         "Governance follows formal gates, so IIFT signs off scope, design, test exit and go-live at fixed points and "
         "pays against them. Configuration and integration run in two-week sprints, each ending with a demonstration "
         "to IIFT key users. SIT, an independent VAPT, UAT, two migration rehearsals and a rehearsed cut-over follow, "
@@ -151,16 +149,15 @@ def methodology(w: ProposalWriter, figs: dict):
             font_size=8, center_cols=(0, 2), caption="Implementation phases")
     w.h3("Configuration sprints")
     w.table(["Sprint", "Scope"], SPRINTS, widths=[3.4, 13.6], bold_first_col=True)
-    w.para(f"All 30 deliverables in RFP section 7 are provided; Section {sec('scope')} gives the due week and "
-           "acceptance evidence of each.")
+    w.para(f"All 30 deliverables of RFP section 7 are produced; the due week and acceptance evidence of each are in "
+           f"Section {sec('scope')}.")
     w.h2("Project governance")
     w.figure(figs["governance"], "Project governance structure", width_cm=16.0)
     w.table(["Forum", "Members", "Frequency", "Purpose"], GOVERNANCE_FORUMS, widths=[3.4, 6.0, 2.8, 4.8],
             font_size=8, bold_first_col=True)
-    w.para("Progress is reported weekly (status, milestones and the RAID log of risks, assumptions, issues and "
-           "dependencies) and "
-           "monthly to the Steering Committee. Issues that cannot be resolved by the Working Committee within five "
-           "business days are escalated to the Steering Committee.")
+    w.para("Progress is reported weekly to the Working Committee (status, milestones and the RAID log of risks, "
+           "assumptions, issues and dependencies) and monthly to the Steering Committee. Anything the Working "
+           "Committee cannot resolve within five business days goes to the Steering Committee.")
     w.h3("RACI matrix")
     w.para("R = Responsible, A = Accountable, C = Consulted, I = Informed.")
     w.table(["Activity", "IIFT Sponsor", "IIFT PM", "IIFT business", "IITH IT", "iorta PM", "iorta team"], RACI,
@@ -172,7 +169,7 @@ def methodology(w: ProposalWriter, figs: dict):
            "is reviewed internally by someone outside the delivery team before it reaches IIFT.")
     w.h2("Testing strategy")
     w.table(["Level", "Scope", "Responsibility", "Environment", "Tools / exit criteria"], TEST_LEVELS,
-            widths=[2.2, 4.3, 3.3, 2.4, 4.8], font_size=8, bold_first_col=True, caption="Test levels")
+            widths=[2.2, 4.3, 3.3, 2.4, 4.8], font_size=8, bold_first_col=True, caption="Test levels, responsibilities and exit criteria")
     w.table(["Defect severity", "Definition", "Resolution in test phases"], DEFECT_SEVERITY, widths=[3.0, 7.5, 6.5],
             bold_first_col=True)
     w.h2("Data migration approach")
@@ -181,7 +178,7 @@ def methodology(w: ProposalWriter, figs: dict):
     w.table(["Step", "Description"], MIGRATION_STEPS, widths=[3.8, 13.2], bold_first_col=True)
     w.h2("Training plan")
     w.table(["Audience", "Format", "Duration", "Participants", "Materials"], TRAINING,
-            widths=[3.4, 3.4, 2.2, 4.0, 4.0], font_size=8, bold_first_col=True, caption="Training plan")
+            widths=[3.4, 3.4, 2.2, 4.0, 4.0], font_size=8, bold_first_col=True, caption="Training by audience")
     w.h2("Change management")
     w.bullets(CHANGE_MANAGEMENT)
     w.h2("Hypercare")
@@ -192,7 +189,7 @@ def methodology(w: ProposalWriter, figs: dict):
 # 13. Timeline
 # =============================================================================
 def timeline(w: ProposalWriter, figs: dict, phases, milestones):
-    w.h1("Delivery & Implementation Timeline")
+    w.h1("Delivery and Implementation Timeline")
     w.para("Production go-live is in week 24 counted from kick-off, followed by four weeks of hypercare. The "
            "six-month warranty and Year 1 of maintenance (the AMC under Option A, the subscription under Option B) "
            "both start at go-live; defects found under warranty are fixed free of charge.")
@@ -205,8 +202,10 @@ def timeline(w: ProposalWriter, figs: dict, phases, milestones):
         milestone_rows.append([code, label, f"Week {week}", f"{share:.0%}" if share else "–"])
     w.table(["Milestone", "Description", "Target", "Services fee"], milestone_rows, widths=[2.4, 9.0, 2.8, 2.8],
             center_cols=(0, 2, 3), caption="Milestones and linked payments")
-    w.para("Under Option A the licence fee is paid separately: 50% at contract signing, 30% on installation in SIT "
-           f"and 20% at go-live. Amounts are in Section {sec('commercials')}.")
+    licence = {code: share for code, _, share in price.LICENCE_MILESTONES}
+    w.para(f"Under Option A the licence fee is paid separately: {licence['L1']:.0%} at contract signing, "
+           f"{licence['L2']:.0%} on installation in SIT and {licence['L3']:.0%} at go-live. Amounts are in Section "
+           f"{sec('commercials')}.")
     w.h2("Dependencies on the critical path")
     w.bullets([
         "Contract signature and kick-off date (week 1 starts at kick-off).",
@@ -222,7 +221,7 @@ def timeline(w: ProposalWriter, figs: dict, phases, milestones):
 # 15. Maintenance and support
 # =============================================================================
 SLA = [
-    ["P1 Critical", "Production down or critical function unavailable for all users; data integrity or security breach", "30 minutes", "4 hours (restore / workaround)", "24 x 7"],
+    ["P1 Critical", "Production down or critical function unavailable for all users; data integrity or security breach", "30 minutes", "4 hours (restore / workaround)", "24x7"],
     ["P2 High", "Major function impaired for many users; no reasonable workaround", "2 hours", "1 business day", "IIFT business hours"],
     ["P3 Medium", "Function impaired with workaround; limited users affected", "4 business hours", "3 business days", "IIFT business hours"],
     ["P4 Low / Cosmetic", "Cosmetic issue, question or minor defect", "1 business day", "Next scheduled release", "IIFT business hours"],
@@ -239,7 +238,7 @@ SUPPORT_MODEL = [
     ("Channels", "Issue module in the portal/back-office (preferred), dedicated support e-mail and telephone hotline; P1 "
                  "incidents must be reported by telephone in addition to the ticket."),
     ("Support hours", "IIFT business hours as defined in the 'Insurans Islam TAIB Business Hours (Family Takaful)' "
-                      "schedule (COM-14); P1 incidents 24 x 7, including weekends and public holidays."),
+                      "schedule (COM-14); P1 incidents 24x7, including weekends and public holidays."),
     ("Incident management", "Record, classify, prioritise, investigate, resolve and close per ITIL-aligned procedure; "
                             "IIFT confirms closure (MNT-02)."),
     ("Problem management", "Root-cause analysis for every P1 and P2 and for recurring incidents, with report within five "
@@ -278,13 +277,13 @@ EXIT_PLAN = [
 
 
 def maintenance(w: ProposalWriter):
-    w.h1("Five-Year Maintenance & Support")
-    w.para(f"Maintenance and support start at go-live and run for five years. Under Option A they are charged as "
-           f"the AMC, {price.bnd(price.amc(1))} in Year 1 (22% of licence and customisation) rising by 5% a year; "
-           "under Option B they are part of the subscription. The service is the same under both options. In the "
-           "first six months the warranty covers defect fixes; the AMC or subscription pays for the service desk, "
-           f"SLA, monitoring, patches, upgrades, {price.ENHANCEMENT_HOURS_PER_YEAR} enhancement hours a year and the "
-           "services below. Under Option B, iorta's managed services also cover the cloud infrastructure.")
+    w.h1("Five-Year Maintenance and Support")
+    w.para(f"Maintenance and support start at go-live and run for five years. The service is the same under both "
+           f"options; Option A charges it as the AMC (Section {sec('commercials')}), Option B includes it in the "
+           "subscription, and under Option B iorta's managed services also cover the cloud infrastructure. During "
+           "the six-month warranty, defect fixes are free of charge; the AMC or subscription pays for the service "
+           f"desk, SLA, monitoring, patches, upgrades, {price.ENHANCEMENT_HOURS_PER_YEAR} enhancement hours a year "
+           "and the services described below.")
     w.h2("Support model")
     w.table(["Element", "Description"], [list(s) for s in SUPPORT_MODEL], widths=[3.8, 13.2], bold_first_col=True)
     w.h2("Service levels")
@@ -354,11 +353,12 @@ IIFT_ROLES = [
 
 
 def team(w: ProposalWriter):
-    w.h1("Project Team & Organisation")
-    w.para("The team pairs Takaful business analysts with engineers who know the platform. CVs are in Annex B. Key "
-           "personnel are not replaced without IIFT's consent, and any replacement has equivalent experience.")
+    w.h1("Project Team and Organisation")
+    w.para("The team pairs Takaful business analysts with the engineers who built and support the platform. CVs are "
+           "in Annex B. Key personnel are not replaced without IIFT's consent, and any replacement has equivalent "
+           "experience.")
     w.table(["Role", "Name", "Responsibilities"], TEAM, widths=[4.2, 3.0, 9.8], bold_first_col=True,
-            caption="Proposed team")
+            caption="Proposed iorta team and responsibilities")
     w.h2("Involvement by phase")
     w.para("● = lead / high involvement, ○ = supporting / part-time, – = not involved.")
     w.table(["Role", "0 Mob.", "1 Design", "2 Build", "3 Integr.", "4 SIT", "5–6 UAT & go-live", "7 Hypercare"],
@@ -366,10 +366,11 @@ def team(w: ProposalWriter):
             center_cols=(1, 2, 3, 4, 5, 6, 7))
     w.h2("Onsite and remote delivery")
     w.para("The team works from Malaysia and India. Onsite presence in Bandar Seri Begawan is planned for the phases "
-           "where it matters most; everything else is remote, with video conferencing and shared tools.")
+           "where it matters most: requirements, training and UAT, go-live and the first month of support. "
+           "Everything else is remote, with video conferencing and shared tools.")
     rows = [[t.phase, t.role, t.origin, str(t.nights)] for t in price.ONSITE_PLAN]
     w.table(["Phase", "Role", "From", "Nights onsite"], rows, widths=[7.0, 5.0, 2.4, 2.6], font_size=8,
-            center_cols=(3,), caption="Planned onsite presence (OPE in the Commercial Proposal)")
+            center_cols=(3,), caption=f"Planned onsite presence (OPE estimate in Section {sec('commercials')})")
     w.h2("Expected IIFT roles")
     w.table(["IIFT role", "Responsibility"], IIFT_ROLES, widths=[4.6, 12.4], bold_first_col=True)
 
@@ -380,7 +381,7 @@ def team(w: ProposalWriter):
 ASSUMPTIONS = [
     "Scope is as described in the RFP (sections 3–8 and Appendices 1–4) and this proposal; changes follow the change "
     "request process.",
-    "IIFT provides timely access to business owners and decisions; document reviews are completed within five "
+    "IIFT provides timely access to business owners and decisions; document reviews are completed within ten "
     "business days.",
     "Each external system (Core, FIN, AML, AD, SMS gateway, SMTP) offers a usable interface (API, file or protocol) with "
     "test environments; iorta does not modify those systems.",
@@ -423,7 +424,7 @@ EXCLUSIONS = [
 
 
 def assumptions(w: ProposalWriter):
-    w.h1("Assumptions, Dependencies & Exclusions", new_page=False)
+    w.h1("Assumptions, Dependencies and Exclusions", new_page=False)
     w.h2("Assumptions")
     w.bullets(ASSUMPTIONS)
     w.h2("Dependencies")
@@ -456,7 +457,7 @@ RISKS = [
 
 def risks(w: ProposalWriter):
     w.h1("Risk Register")
-    w.para("The initial risk register is below. It is maintained by the project managers, reviewed weekly by the "
-           "Working Committee and monthly by the Steering Committee.")
+    w.para("The register below is the starting point. The two project managers maintain it; the Working Committee "
+           "reviews it weekly and the Steering Committee monthly.")
     w.table(["ID", "Risk", "Impact", "Likelihood", "Mitigation"], RISKS, widths=[1.0, 5.0, 1.6, 1.9, 7.5],
-            font_size=8, center_cols=(0, 2, 3), caption="Risk register")
+            font_size=8, center_cols=(0, 2, 3), caption="Initial risk register with mitigations")

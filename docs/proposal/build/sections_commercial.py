@@ -13,6 +13,9 @@ from numbering import sec
 
 PRODUCT = brand.PRODUCT
 YEARS = range(1, price.CONTRACT_YEARS + 1)
+_WORDS = {3: "three", 6: "six", 9: "nine", 12: "twelve"}
+WARRANTY_WORDS = _WORDS.get(price.WARRANTY_MONTHS, str(price.WARRANTY_MONTHS))
+WARRANTY = f"{WARRANTY_WORDS}-month"
 PRICING_WORKBOOK = brand.XLSX_OUTPUT.name
 BOM_WORKBOOK = brand.BOM_OUTPUT.name
 
@@ -118,14 +121,13 @@ def commercial_summary(w: ProposalWriter):
             bold_first_col=True, caption="Commercial options at a glance (B$)")
     saving = tco_b - tco_a
     w.callout("Recommendation: Option A, with the Option C decision taken after go-live", [
-        "**Data stays in Brunei.** The solution runs in the IITH data centre next to IIFT's core and finance "
-        "systems, under IITH's existing security and DR arrangements; no cloud outsourcing notification to AMBD is "
-        "needed.",
-        f"**Lowest five-year cost.** {b(tco_a)} against {b(tco_b)} for Option B, a difference of {b(saving)} "
+        f"**Lower five-year cost.** {b(tco_a)} against {b(tco_b)} for Option B, a difference of {b(saving)} "
         f"({saving / tco_b:.0%}). Even with IIFT's own infrastructure added (indicative "
-        f"{rng(*price.bom_onprem_totals())}), Option A is the cheaper option from Year 2.",
-        "**IIFT owns a perpetual licence.** After go-live IIFT can take the platform source code (Option C) and "
-        "replace the AMC with the 10% L3 support, or keep the full AMC.",
+        f"{rng(*price.bom_onprem_totals())}), Option A costs less from Year 2 (Section {csec('tco')}).",
+        "**Data stays in Brunei**, in the IITH data centre next to IIFT's core and finance systems, with no cloud "
+        f"outsourcing notification to AMBD (Section {sec('infrastructure')}).",
+        "**IIFT owns a perpetual licence** and can later take the platform source code (Option C) and replace the "
+        "AMC with the 10% L3 support, or keep the full AMC.",
         f"**Option B** suits IIFT if it prefers a lower upfront payment ({b(price.option_b_one_time())} instead of "
         f"{b(price.one_time_total('A'))}) and an operating-expense model with iorta running the infrastructure. It "
         "can be converted to Option A during the term.",
@@ -177,8 +179,8 @@ def _client_rows(option):
 def client_format(w: ProposalWriter):
     w.h2("Fees in IIFT's requested format")
     w.para("The tables follow the format in the RFP (Description, Fee, WHT, OPE, Total). Agent/Banca Portal and "
-           f"Back-office solution are the two modules of {PRODUCT}, and every fee is split between them. Amounts in "
-           "B$ with indicative USD.")
+           f"Back-office solution are the two modules of {PRODUCT}, and every fee is split between them. Amounts are "
+           "in B$ with indicative USD.")
     w.callout("Fee statement", [
         "All fees are **inclusive of WHT**, **exclusive of OPE** (recharged at cost as disbursements; estimates shown) and "
         "**exclusive of third-party charges and infrastructure** (listed in the Bill of Materials).",
@@ -190,16 +192,11 @@ def client_format(w: ProposalWriter):
         rows, highlight = _client_rows(option)
         w.table(headers, rows, widths=widths, font_size=8, align_right_cols=(1, 2, 4, 5, 6), center_cols=(3,),
                 highlight_rows=highlight, caption=caption)
-    w.bullets([
-        "**WHT – inclusive.** The fee is the full amount payable; any withholding tax is deducted from it and borne "
-        "by iorta.",
-        f"**OPE – exclusive.** The OPE line is an estimate for the onsite phases in Section {csec('ope')}; actual "
-        "costs are recharged as disbursements with the travel invoices attached, and the per diem is fixed.",
-        f"**Third-party charges and infrastructure – exclusive.** Under Option B, cloud infrastructure is recharged "
-        f"at cost as a disbursement (or paid by IIFT directly), estimated at {b(price.cloud_monthly())} a month "
-        f"({b(price.cloud_annual())} a year) plus "
-        f"{b(price.CLOUD_IMPLEMENTATION_MONTHLY * price.CLOUD_IMPLEMENTATION_MONTHS)} for the project environments.",
-    ])
+    w.para(f"The basis of each line is explained in the fee basis table in Section {csec('summary')}. The OPE line is "
+           f"the estimate for the onsite phases in Section {csec('ope')}. Under Option B, cloud infrastructure is a "
+           f"further disbursement, estimated at {b(price.cloud_monthly())} a month ({b(price.cloud_annual())} a year) "
+           f"plus {b(price.CLOUD_IMPLEMENTATION_MONTHLY * price.CLOUD_IMPLEMENTATION_MONTHS)} for the project "
+           f"environments (Section {csec('option_b')}).")
 
 
 # RFP section 10 component names and pricing bases, as worded in the RFP
@@ -244,8 +241,8 @@ RFP10_SHORT = {
 
 def rfp_section10(w: ProposalWriter):
     w.h2("Commercial pricing breakdown (RFP section 10)")
-    w.para("All 21 items of RFP section 10, for both options. Amounts in B$; the portal and back-office split of "
-           f"every amount is in the pricing workbook ({PRICING_WORKBOOK}).")
+    w.para("All 21 items of RFP section 10 for both options, in B$. The portal and back-office split of every "
+           f"amount is in the pricing workbook ({PRICING_WORKBOOK}).")
     rows_a = {r["no"]: r for r in price.rfp_section10_rows("A")}
     rows_b = {r["no"]: r for r in price.rfp_section10_rows("B")}
     fmt = {"ms": n(12 * price.managed_monthly(1)), "base": b(price.amc_base()), "setup": n(price.CLOUD_SETUP_FEE),
@@ -303,9 +300,9 @@ def _licence_terms():
 
 def option_a(w: ProposalWriter):
     w.h2(price.OPTION_TITLES["A"])
-    w.para(f"IIFT buys a perpetual licence and a fixed-price implementation, and runs the solution in the IIFT/IITH "
-           f"data centre on infrastructure it procures to iorta's sizing (Section {sec('infrastructure')}). "
-           "Maintenance and support are charged as an AMC from go-live.")
+    w.para(f"IIFT buys a perpetual licence and a fixed-price implementation and runs the solution in the IIFT/IITH "
+           f"data centre on infrastructure it procures to iorta's sizing (Section {sec('infrastructure')}). From "
+           "go-live, maintenance and support are charged as an AMC.")
     w.h3("Licence terms (COM-02)")
     w.key_value_table(_licence_terms(), widths=(3.6, 13.4), caption="Option A licence terms")
 
@@ -336,7 +333,7 @@ def option_a(w: ProposalWriter):
     w.h3("Annual maintenance charge (AMC)")
     w.para(f"The AMC is **22% of the licence and customisation fees** (items 1, 2 and 3): 22% × "
            f"{b(price.amc_base())} = **{b(price.amc(1))} in Year 1**, rising by 5% a year. Year 1 starts at "
-           f"production go-live. The {price.WARRANTY_MONTHS}-month warranty runs inside Year 1: defects are fixed "
+           f"production go-live. The {WARRANTY} warranty runs inside Year 1: defects are fixed "
            "free of charge under the warranty, while the AMC pays for the service desk, SLA, monitoring, patches, "
            f"upgrades and {price.ENHANCEMENT_HOURS_PER_YEAR} enhancement hours a year.")
     rows = []
@@ -350,11 +347,11 @@ def option_a(w: ProposalWriter):
             total_rows=1, bold_first_col=True, caption="AMC by year (COM-12, COM-18)")
     w.para("**AMC inclusions:**", space_after=2, keep_with_next=True)
     w.bullets(price.MAINTENANCE_INCLUSIONS)
-    w.para(f"Billing: {price.AMC_BILLING.lower()}. After Year 5 the AMC is renewable yearly, with the increase "
-           f"capped at 5%. The services are described in Section {sec('maintenance')}.")
+    w.para(f"Billing: {price.AMC_BILLING[0].lower()}{price.AMC_BILLING[1:]}. After Year 5 the AMC is renewable "
+           f"yearly, with the increase capped at 5%. The services are described in Section {sec('maintenance')}.")
 
     w.h3("Warranty (COM-11)")
-    w.para(f"Both options carry a {price.WARRANTY_MONTHS}-month warranty from production go-live: defects against "
+    w.para(f"Both options carry a {WARRANTY} warranty from production go-live: defects against "
            "the approved specifications, including IIFT-specific configuration, adapters, reports and templates, "
            "are corrected at no charge within the SLA. The warranty does not cover changes made by others, misuse, "
            "or infrastructure and third-party products outside iorta's scope.")
@@ -363,10 +360,10 @@ def option_a(w: ProposalWriter):
 # --- Option B -------------------------------------------------------------------------
 def option_b(w: ProposalWriter):
     w.h2(price.OPTION_TITLES["B"])
-    w.para(f"IIFT pays the implementation fee and a monthly subscription that includes the right to use "
-           f"{PRODUCT}, maintenance and support, and application management. iorta hosts the solution on cloud in "
-           f"{price.CLOUD_REGION}. A one-off set-up fee covers building the cloud environments. Cloud infrastructure "
-           "is recharged at cost as a disbursement (or paid by IIFT directly), and iorta's managed services for the "
+    w.para(f"IIFT pays the implementation fee and a monthly subscription that covers the right to use {PRODUCT}, "
+           f"maintenance and support, and application management. iorta hosts the solution on cloud in "
+           f"{price.CLOUD_REGION}. A one-off set-up fee covers building the cloud environments; cloud infrastructure "
+           "is recharged at cost as a disbursement (or paid by IIFT directly); and iorta's managed services for the "
            "infrastructure are a separate fixed fee.")
     w.h3("Implementation fee")
     w.para(f"{b(price.one_time_total('B'))} (Agent/Banca Portal {n(price.one_time_portal('B'))}; Back-office "
@@ -607,18 +604,18 @@ def five_year_cost(w: ProposalWriter):
     w.table(["Period", "A: iorta fees", "A: OPE", "A: total", "B: iorta fees", "B: cloud", "B: OPE", "B: total"],
             rows, widths=[3.3, 2.0, 1.6, 1.9, 2.0, 1.8, 1.6, 2.8], font_size=8, align_right_cols=tuple(range(1, 8)),
             total_rows=1, bold_first_col=True, caption="Cash view by contract year (B$)")
-    w.para(f"Option B needs {b(price.one_time_total('A') - price.option_b_one_time())} less in one-time fees. Option A "
-           f"costs less over five years by {b(tco_b - tco_a)}, and becomes the cheaper option in Year {crossover} "
-           f"even when the mid-point of IIFT's infrastructure estimate ({b(infra_mid)}) is added to it.")
+    w.para(f"Option B needs {b(price.one_time_total('A') - price.option_b_one_time())} less in one-time fees. Over "
+           f"five years Option A costs {b(tco_b - tco_a)} less, and it becomes the cheaper option in Year "
+           f"{crossover} even when the mid-point of IIFT's infrastructure estimate ({b(infra_mid)}) is added to it.")
 
 
 # --- OPE ------------------------------------------------------------------------------
 def ope_schedule(w: ProposalWriter):
     w.h2("Out-of-pocket expenses (OPE)")
-    w.para("The team works from Malaysia and India. Onsite presence in Bandar Seri Begawan is recommended for "
+    w.para(f"Onsite presence in Bandar Seri Begawan is planned for the phases listed in Section {sec('team')}: "
            "requirements gathering, user training and UAT support, go-live with one month of support and, if "
-           "Option C is taken, knowledge transfer and handover. All other work is delivered remotely and carries no "
-           "OPE.")
+           "Option C is taken, knowledge transfer and handover. All other work is delivered remotely from Malaysia "
+           "and India and carries no OPE.")
     my, ind = price.ORIGINS["Malaysia"], price.ORIGINS["India"]
     w.table(["Cost item", "From Malaysia (B$)", "From India (B$)", "Basis"], [
         ["Return airfare (economy)", n(my[0]), n(ind[0]), "Per trip, at actuals"],
@@ -667,7 +664,7 @@ def ope_schedule(w: ProposalWriter):
 def third_party(w: ProposalWriter):
     w.h2("Third-party charges, licences and infrastructure (COM-04, COM-17)")
     w.para(f"Every third-party product, licence, service and infrastructure item is listed in the Bill of Materials "
-           f"workbook ({BOM_WORKBOOK}) and summarised in Annex C. The table gives the totals.")
+           f"workbook ({BOM_WORKBOOK}) and summarised in Annex C; the table below gives the totals by category.")
     infra_low, infra_high = price.bom_onprem_totals()
     tp_a, tp_b = price.third_party_annual("A"), price.third_party_annual("B")
     opt_a, opt_b = price.third_party_annual("A", True), price.third_party_annual("B", True)
@@ -688,8 +685,8 @@ def third_party(w: ProposalWriter):
         ["Independent VAPT and re-test", "Included (item 7)", "Included (item 7)", "Included in iorta fee"],
     ], widths=[5.6, 3.8, 3.4, 4.2], font_size=8, bold_first_col=True,
         caption="Third-party charges and licences (detail in Annex C and the BOM workbook)")
-    w.para("The CI pipeline produces a CycloneDX software bill of materials (SBOM) of the production dependencies on "
-           "every build. It is delivered with each release and lists every open-source package with its licence.")
+    w.para(f"The software bill of materials described in Section {sec('architecture')} is delivered with each "
+           "release and lists every open-source package with its licence.")
 
 
 # --- Rate card ------------------------------------------------------------------------
@@ -722,7 +719,7 @@ def payment_schedules(w: ProposalWriter):
                                                                          price.licence_fee())]
     rows.append(["", "Total licence fee", "100%", n(price.licence_fee())])
     w.table(["Milestone", "Payment trigger", "Share", "Amount (B$)"], rows, widths=[2.2, 9.6, 2.0, 3.2],
-            center_cols=(0, 2), align_right_cols=(3,), total_rows=1, font_size=8, caption="Licence milestones")
+            center_cols=(0, 2), align_right_cols=(3,), total_rows=1, font_size=8, caption="Option A licence fee by milestone")
     w.h3("Services fee (Options A and B)")
     weeks = {"M1": 2, "M2": 6, "M4": 19, "M5": 22, "M6": 24, "M7": 28}
     rows = [[code, trigger, f"Week {weeks.get(code, '–')}", f"{share:.0%}", n(amount)]
@@ -731,7 +728,7 @@ def payment_schedules(w: ProposalWriter):
     rows.append(["", "Total services fee", "", "100%", n(price.services_fee())])
     w.table(["Milestone", "Payment trigger", "Target", "Share", "Amount (B$)"], rows,
             widths=[2.0, 8.6, 1.8, 1.6, 3.0], center_cols=(0, 2, 3), align_right_cols=(4,), total_rows=1,
-            font_size=8, caption="Service milestones (M3, build complete, carries no payment)")
+            font_size=8, caption="Services fee by milestone (M3, build complete, carries no payment)")
     w.h3("Recurring charges, OPE and Option C")
     w.table(["Charge", "Option", "Billing", "Year 1 invoice (B$)"], [
         ["Annual maintenance (AMC)", "A", price.AMC_BILLING, f"{price.amc(1) / 4:,.2f} per quarter"],
@@ -756,10 +753,9 @@ def commercial_terms(w: ProposalWriter):
         ("Payment terms", f"{price.PAYMENT_TERMS_DAYS} days from invoice."),
         ("Currency", f"B$. USD amounts are indicative at USD 1 = B$ {price.FX_BND_PER_USD:.2f}. Cloud charges are "
                      "converted at the rate on the provider's invoice date."),
-        ("Taxes", "Fees inclusive of WHT, borne by iorta. Cloud infrastructure and OPE are recharged at cost as "
-                  "disbursements with the provider and travel invoices attached, outside the fees to which WHT "
-                  "applies. No GST or VAT applies in Brunei Darussalam at present; any indirect tax introduced by "
-                  "law is added at the statutory rate."),
+        ("Taxes", f"As set out in the fee basis (Section {csec('summary')}): fees inclusive of WHT, borne by iorta; "
+                  "cloud infrastructure and OPE recharged at cost as disbursements outside the fees to which WHT "
+                  "applies; any indirect tax introduced by law added at the statutory rate."),
         ("Quotation validity", f"{price.QUOTATION_VALIDITY_DAYS} days from submission (Section {sec('validity')})."),
         ("Price protection", "One-time fees are fixed. AMC, subscription, managed services and the rate card rise "
                              "by 5% a year, capped at 5% (COM-18). Cloud and third-party charges follow actual "
@@ -771,7 +767,7 @@ def commercial_terms(w: ProposalWriter):
         ("Term", "Implementation to hypercare exit; maintenance or subscription for five years from go-live. The "
                  f"subscription's minimum term is {price.SUBSCRIPTION_MINIMUM_MONTHS} months from go-live."),
         ("Changes", f"Through change requests at the rate card (Section {csec('rate_card')})."),
-    ], widths=(3.6, 13.4), caption="Commercial terms")
+    ], widths=(3.6, 13.4), caption="Summary of commercial terms")
 
 
 COMMERCIAL_ASSUMPTIONS = [
@@ -785,9 +781,6 @@ COMMERCIAL_ASSUMPTIONS = [
     "Option B: IIFT approves the cloud region and completes the AMBD notification before production data is "
     "loaded; the project environments run in the cloud from kick-off; the cloud set-up fee is paid at contract "
     "signing.",
-    "Cloud infrastructure and OPE are recharged at cost as disbursements with the provider and travel invoices "
-    "attached, outside the fees to which withholding tax applies. IIFT may instead hold the cloud account in its "
-    "own name and pay the provider directly.",
     "Data migration covers agent, agency, bank, branch, participant and reference data: below 10,000 records from "
     "no more than three source extracts.",
     "Onsite presence follows the OPE schedule; all other work is remote.",
@@ -815,11 +808,11 @@ def commercial_assumptions(w: ProposalWriter):
 
 def commercials(w: ProposalWriter):
     w.h1("Commercial Proposal")
-    w.para(f"This chapter sets out the commercial offer: the options, the fees in IIFT's format and in the RFP "
-           f"section 10 breakdown, the terms of each option, out-of-pocket expenses, third-party charges, the rate "
-           f"card and the payment schedules. The pricing workbook ({PRICING_WORKBOOK}) holds the same figures with "
-           f"live formulas, and the Bill of Materials ({BOM_WORKBOOK}) lists every infrastructure and third-party "
-           "item.")
+    w.para(f"The commercial offer in this chapter runs from the options at a glance, through the fees in IIFT's "
+           "format and the RFP section 10 breakdown, the terms of each option, out-of-pocket expenses, third-party "
+           f"charges and the rate card, to the payment schedules and commercial terms. The pricing workbook "
+           f"({PRICING_WORKBOOK}) holds the same figures with live formulas, and the Bill of Materials ({BOM_WORKBOOK}) "
+           "lists every infrastructure and third-party item.")
     builders = {
         "summary": commercial_summary, "client_format": client_format, "rfp10": rfp_section10,
         "option_a": option_a, "option_b": option_b, "option_c": option_c, "tco": five_year_cost,
@@ -839,10 +832,8 @@ def validity(w: ProposalWriter):
     w.paras([
         f"This proposal and the prices quoted are valid for **{price.QUOTATION_VALIDITY_DAYS} days from the date of "
         "submission** ([submission date] to [expiry date]).",
-        "On award, the one-time fees are fixed for the implementation. The AMC, subscription, managed services and "
-        "rate card follow the yearly schedule in the Commercial Proposal, with increases capped at 5% a year. Cloud "
-        "infrastructure and third-party charges follow the providers' prices at the time they are incurred, and OPE "
-        "is recharged at cost within the stated ceiling.",
+        f"On award, the one-time fees are fixed for the implementation and the recurring fees follow the yearly "
+        f"schedules in Section {sec('commercials')}, with increases capped at 5% a year.",
     ])
 
 
@@ -850,25 +841,28 @@ def validity(w: ProposalWriter):
 # Supporting information
 # =============================================================================
 VALUE_ADDS = [
-    ["Requirements compliance matrix", "All 234 requirement IDs answered line by line, with fitment (Annex A)."],
-    ["Working application before contract", f"IIFT can test {PRODUCT} with its own products before signing."],
-    ["Choice of commercial model", "Perpetual licence on-premise or subscription on iorta-managed cloud, priced on "
-                                   "the same scope, with conversion from subscription to licence."],
-    ["Source code handover option", "Core platform source code with an eight-week knowledge transfer (Option C), "
-                                    "or escrow; IIFT-specific source code under every option."],
+    ["Working application before contract", f"IIFT can test {PRODUCT} with its own products and sample cases before "
+                                            "signing, and the fitment of every requirement ID against it is stated "
+                                            "(Annex A)."],
+    ["Source code handover option", "Core platform source code with a knowledge transfer of "
+                                    f"{price.KNOWLEDGE_TRANSFER_WEEKS} weeks (Option C), or escrow (Section "
+                                    f"{sec('commercials')})."],
     ["Bill of Materials", "Every infrastructure item, licence and third-party service with indicative cost and who "
-                          "pays, in a separate workbook."],
-    ["Multi-factor authentication", "E-mail OTP or authenticator app for back-office users, delivered during implementation."],
-    ["Remote participant e-signature", "Single-use e-mail link, so participants can sign without visiting a branch."],
+                          "pays, in a separate workbook (Annex C)."],
+    ["Multi-factor authentication", "E-mail OTP or authenticator app for back-office users, delivered during "
+                                    "implementation."],
+    ["Remote participant e-signature", "Single-use e-mail link, so a participant can sign without visiting a branch "
+                                       f"or meeting the agent (journey 1, Section {sec('journeys')})."],
     ["Integration monitor", "One screen for outbox messages, retries, dead-letters and reconciliation results."],
-    ["End-of-day run screen", "Run, check and sign off EOD, the FIN file and reconciliation, with run history."],
-    ["Retention and archival policy", "Retention period per data class, with archival of audit records and documents."],
-    ["PDPO 2025 and AMBD alignment", f"Controls mapped to Brunei data protection law and AMBD expectations (Section {sec('security')})."],
-    ["Shariah-appropriate terminology", "Contribution, participant, Takaful operator, wakalah and tabarru' throughout."],
-    ["Accessibility", "WCAG 2.1 AA target."],
+    ["End-of-day run screen", "Run, check and sign off EOD, the FIN file and the reconciliation, with run history."],
+    ["Retention and archival policy", "Retention period per data class, with archival of audit records and "
+                                      "documents."],
+    ["PDPO 2025 and AMBD alignment", "Controls mapped to Brunei data protection law and AMBD expectations "
+                                     f"(Section {sec('security')})."],
+    ["Shariah-appropriate terminology", "Contribution, participant, Takaful operator, wakalah and tabarru' on every "
+                                        "screen and document."],
+    ["Accessibility", "WCAG 2.1 AA target, so the portal is usable by bank staff with assistive technology."],
     ["Exit plan", f"Transition, data extraction and knowledge transfer defined now (Section {sec('maintenance')})."],
-    ["Hardware sizing", f"Sizing for every environment for the on-premise option (Section {sec('infrastructure')})."],
-    ["Unlimited users", "More banks, branches and agents at no extra licence or subscription cost."],
 ]
 
 
@@ -878,8 +872,7 @@ def supporting_information(w: ProposalWriter):
     w.table(["Item", "Benefit to IIFT"], VALUE_ADDS, widths=[5.4, 11.6], font_size=8, bold_first_col=True,
             caption="Value-added items included at no extra cost")
     w.para(f"Further supporting material: the technical document pack (Section {sec('techdocs')}), the screen "
-           f"screen index (Section {sec('screens')}), the pricing workbook and the Bill of "
-           "Materials workbook.")
+           f"index (Section {sec('screens')}), the pricing workbook and the Bill of Materials workbook.")
 
 
 # =============================================================================
@@ -922,7 +915,7 @@ def _terms():
          "obligations. These obligations survive termination for [five] years, and indefinitely for personal data "
          "and source code."),
         ("Warranty", f"iorta TechNXT warrants that the solution will perform materially in accordance with the "
-         f"approved specifications for {price.WARRANTY_MONTHS} months from production go-live and will correct "
+         f"approved specifications for {WARRANTY_WORDS} months from production go-live and will correct "
          "reported defects at no charge within the SLA. The warranty does not cover issues caused by changes made "
          "by others, misuse, infrastructure or third-party products outside iorta's scope."),
         ("Service levels and service credits", f"Service levels are as defined in Section {sec('maintenance')}. "
@@ -936,8 +929,8 @@ def _terms():
         ("Change requests", "Changes to scope follow the change request process: written request, impact assessment "
          "(scope, cost, schedule, risk) within five business days, quotation using the rate card, written approval "
          "before work starts."),
-        ("Price protection", "The AMC, subscription, managed services fee and rate card increase by 5% a year and "
-         "by no more than 5% a year (COM-18). One-time fees are fixed."),
+        ("Price protection", "The AMC, subscription, managed services fee and rate card rise by 5% a year, which is "
+         "also the cap (COM-18). One-time fees are fixed."),
         ("Personnel and subcontracting", "Key personnel are not replaced without IIFT's consent. The independent "
          "VAPT is performed by a qualified third-party tester engaged by iorta with IIFT's approval; iorta remains "
          "responsible for its subcontractors."),
@@ -959,8 +952,9 @@ def _terms():
 
 
 def terms_and_conditions(w: ProposalWriter):
-    w.h1("Terms & Conditions")
-    w.para("We propose the key terms below and are willing to work from IIFT's standard contract in negotiation.")
+    w.h1("Terms and Conditions")
+    w.para("The key terms we propose are set out below. We are willing to work from IIFT's standard contract in "
+           "negotiation, provided these points are reflected.")
     for number, (title, text) in enumerate(_terms(), start=1):
         w.para(f"**{w.chapter}.{number} {title}.** {text}", align="justify")
 
@@ -995,7 +989,6 @@ GLOSSARY = [
     ["Tabarru'", "The portion of the contribution donated to the participants' risk fund to help fellow participants "
                  "who suffer a covered loss."],
     ["Wakalah", "An agency contract under which the Takaful operator manages the fund for a fee (wakalah fee)."],
-    ["Participants' risk fund", "The fund made up of tabarru' contributions from which claims are paid."],
     ["Nominee / beneficiary / executor", "Persons designated to receive Takaful benefits or administer them on the "
                                          "participant's behalf."],
     ["Mortgage Takaful", "Decreasing-term Takaful protecting a financing facility (hire purchase or property)."],
@@ -1004,6 +997,17 @@ GLOSSARY = [
     ["e-Policy / e-Receipt", "Electronic policy document and receipt issued to the participant."],
     ["Grace period", "Period (seven days) within which payment for an issued policy must be submitted before the "
                      "agency's issuance is blocked."],
+    ["Issuance block (agency block)", "State in which every agent of an agency or bank is stopped from issuing new "
+                                      "business until an overdue payment is verified."],
+    ["Authority limit / referral", "The amount up to which an agent or bank officer may complete a case; above it "
+                                   "the case is referred to IIFT for a decision (B$ 150,000 for financing)."],
+    ["Pay first / issue then pay", "Payment mode of a product: the e-Policy is issued after the contribution is "
+                                   "verified (annual plans), or issued at once and paid within the grace period "
+                                   "(financing plans)."],
+    ["Drawdown", "Release of the financed amount by the bank, after which the financing Takaful cover must be in "
+                 "place."],
+    ["Fit-gap workshop", "Discovery session in which IIFT users run their own cases through the working system and "
+                         "record what fits and what must be configured."],
     ["Maker-checker", "Control in which a transaction prepared by one user (maker) must be approved by another "
                       "(checker) before it takes effect."],
     ["Quality check (QC)", "Review of an application by IIFT before contract issuance."],
@@ -1012,6 +1016,10 @@ GLOSSARY = [
                              "transaction as the business change and delivered asynchronously, guaranteeing no loss."],
     ["Dead-letter", "Holding area for messages that could not be delivered after the maximum number of retries."],
     ["Blind index", "Keyed hash of an encrypted value that allows exact-match search without decrypting data."],
+    ["Correlation id", "Identifier carried through a request, its log lines and its audit records so that one "
+                       "transaction can be traced end to end."],
+    ["Landing zone", "The initial cloud account structure, network, identity and security baseline into which the "
+                     "environments are deployed."],
     ["Modular monolith", "Single deployable application internally divided into independent modules with clear "
                          "boundaries."],
     ["Hypercare", "Period of intensified support immediately after go-live."],
@@ -1022,7 +1030,7 @@ GLOSSARY = [
                                         "software, here 22% of the licence and customisation fees."],
     ["At actuals / pass-through", "A cost re-charged at the amount the provider invoices, without mark-up."],
     ["Per diem", "Fixed daily allowance for meals and local transport during onsite work."],
-    ["Source code escrow", "Deposit of source code with an independent agent, released to the customer only on "
+    ["Source code escrow", "Deposit of source code with an independent agent, released to the licensee only on "
                            "agreed events such as the supplier's insolvency."],
 ]
 
@@ -1061,7 +1069,7 @@ def bom_annex(w: ProposalWriter):
             font_size=7.5, padding=20, caption="Third-party services and treatment")
     w.h3("Network flows and storage growth")
     w.table(["From", "To", "Port / protocol", "Purpose"], PORTS, widths=[4.0, 4.4, 4.4, 4.2], font_size=8,
-            caption="Network flows")
+            caption="Network flows and ports")
     w.table(["Data", "Year 1", "Year 5", "Notes"], [
         ["Structured data (PostgreSQL)", "< 1 GB", "< 5 GB", "Policies, participants, payments, audit"],
         ["Documents", "10–20 GB", "50–100 GB", "Uploads and system-produced PDFs"],

@@ -30,7 +30,7 @@ USERS = [["Bank", "Portal", "12"], ["IIFT", "Back-office (Admin)", "5"], ["IIFT"
          ["Agent", "Portal", "4"], ["Total", "", "26"]]
 
 VOLUMES = [
-    ["Mortgage Takaful", "Financing Takaful Plan – Hire Purchaser", "59", "16", "75"],
+    ["Mortgage Takaful", "Financing Takaful Plan – Hire Purchase", "59", "16", "75"],
     ["Mortgage Takaful", "Financing Takaful Plan – Non-Participating", "158", "65", "205"],
     ["Mortgage Takaful", "Property Financing Takaful Plan", "88", "60", "115"],
     ["Annual (Individual)", "Personal Home Assistant Takaful Plan", "102", "41", "132"],
@@ -41,8 +41,8 @@ VOLUMES = [
 ]
 
 KEY_RULES = [
-    "Financing above **B$150,000** is the high-risk limit. The agent or banker cannot complete it; the case is "
-    "referred to IIFT Sales (FFR01, AP-60).",
+    "Financing above **B$ 150,000** is the high-risk limit. The agent or bank officer cannot complete such a case; it "
+    "is referred to IIFT Sales (FFR01, AP-60).",
     "A **seven-day payment grace period** applies to issued policies. If payment is not submitted in time, every agent "
     "in that agency is blocked from issuing until it is settled (AP-42).",
     "**Maker-checker** covers agent registration and profile changes, participant updates, endorsements, "
@@ -59,8 +59,8 @@ def understanding(w: ProposalWriter):
     w.h2("Background")
     w.paras([
         "IIFT sells Mortgage Takaful and Annual (Individual) Family Takaful plans through agents and bank partners. "
-        "Banca work today relies on paper or e-mailed submissions and manual follow-up with the back-office. Status is "
-        "hard to track and management has little real-time visibility.",
+        "Banca business today arrives on paper or by e-mail and is followed up by hand with the back-office, so the "
+        "status of a case is hard to establish and management sees the position late.",
         "The IIGT Agent Portal went live on 17 July 2026 for Motor Takaful. It covers agent onboarding, e-quotation, "
         "e-Cover Notes, AML screening, documents, e-signature, payment proof verification, audit and reporting. IIFT "
         "needs the same kind of capability for Family Takaful products and the Banca channel, plus a back-office in "
@@ -70,9 +70,10 @@ def understanding(w: ProposalWriter):
     w.table(["#", "RFP objective", "How the solution meets it"], [list(o) for o in OBJECTIVES],
             widths=[0.8, 4.7, 11.5], center_cols=(0,), font_size=8)
     w.h2("Users and volumes")
-    w.para("Appendix 1 lists 26 named users and Appendix 2 projects 628 policies a year within five years. These "
-           "volumes are small for a relational database and two application servers, so we size for 100 concurrent "
-           "and 500 named users and ten times the projected volume (NFR-02, NFR-03, NFR-06, NFR-07).")
+    w.para("Appendix 1 lists 26 named users and Appendix 2 projects 628 policies a year within five years. Both are "
+           "small for a relational database on two application servers, so the solution is sized for 100 concurrent "
+           "and 500 named users and ten times the projected volume (NFR-02, NFR-03, NFR-06, NFR-07), which leaves "
+           "room for more bank partners without a change of design.")
     w.table(["Company", "Application", "Expected users"], USERS, widths=[5.0, 7.0, 5.0], center_cols=(2,),
             total_rows=1, caption="Expected users (RFP Appendix 1)")
     w.table(["Line of business", "Product", "2025", "2026 (to July)", "Projected in 5 years"], VOLUMES,
@@ -99,8 +100,8 @@ WORKFLOWS = [
     ["Agent / Banca registration", "Banca/Sales officer", "Banca/Sales manager", "Always two levels"],
     ["Agent profile update", "Banca/Sales officer", "None", "None"],
     ["Participant update", "Underwriting officer", "None", "None"],
-    ["Quotation above B$150,000 financing", "IIFT Sales", "Underwriting manager", "Referral rule"],
-    ["New policy, sum covered from B$300,000", "Underwriting officer", "Underwriting manager", "Amount threshold"],
+    ["Quotation above B$ 150,000 financing", "IIFT Sales", "Underwriting manager", "Referral rule"],
+    ["New policy, sum covered from B$ 300,000", "Underwriting officer", "Underwriting manager", "Amount threshold"],
     ["Quality check (Mortgage Takaful)", "Underwriting / QC", "None", "Product rule"],
     ["Endorsement", "Underwriting officer", "Underwriting manager", "Contribution change threshold"],
     ["Cancellation", "Underwriting officer", "Underwriting manager", "Always two levels"],
@@ -113,7 +114,7 @@ NOTIFICATIONS = [
     ["Policy issued with e-Policy and e-Receipt", "Agent; participant", "E-mail with PDF, portal"],
     ["Payment overdue: reminder on day 5, block on day 8", "Agent; agency principal; Finance", "Portal, e-mail, SMS"],
     ["Agency block lifted", "All agents of the agency", "Portal, e-mail"],
-    ["Renewal due (60, 30 and 7 days) and expiry", "Agent", "Portal, e-mail"],
+    ["Renewal due (45, 30 and 7 days) and expiry", "Agent", "Portal, e-mail"],
     ["Agent document expiring", "Agent; Banca/Sales officer", "Portal, e-mail"],
     ["AML possible match", "Compliance", "Back-office, e-mail"],
     ["Issue assigned, updated or SLA breached", "Assignee; reporter; supervisor", "Portal, e-mail"],
@@ -147,8 +148,8 @@ def functional_solution(w: ProposalWriter, figs: dict):
         "staff, sharing a single database, workflow engine, document store and audit trail. A transaction submitted "
         "in the portal appears in the back-office at once, and every action on it is recorded.",
         f"Functions are listed by RFP area in Section {sec('scope')}, users in Section {sec('personas')}, journeys in "
-        f"Section {sec('journeys')} and screens in Section {sec('screens')}. This chapter covers the rules that tie "
-        "them together.",
+        f"Section {sec('journeys')} and screens in Section {sec('screens')}. This chapter is about the rules that tie "
+        "them together: the policy lifecycle, approvals, the grace period, notifications and reports.",
     ])
     w.h2("Policy lifecycle")
     w.para("Only the server changes a policy's status, after validation and any required approval. Validation "
@@ -160,7 +161,7 @@ def functional_solution(w: ProposalWriter, figs: dict):
     w.h2("Workflow engine and maker-checker")
     w.para("Approvals are data, not code. A workflow definition sets the transaction type, the number of levels, the "
            "permission needed at each level and amount thresholds that add a level, for example a second approval "
-           "from B$300,000 sum covered. On final approval a handler applies the change in the same database "
+           "from B$ 300,000 sum covered. On final approval a handler applies the change in the same database "
            "transaction as the audit record and the notification event. The API rejects any attempt by the maker to "
            f"approve their own request. When Compliance confirms an AML match, the pending requests for that agent or "
            "participant are rejected automatically with the Compliance remarks and the maker is notified. Journey 4 "
@@ -175,9 +176,9 @@ def functional_solution(w: ProposalWriter, figs: dict):
     w.table(["Event", "Recipients", "Channels"], NOTIFICATIONS, widths=[7.0, 5.5, 4.5], font_size=8,
             caption="Notification events (templates and channels configurable)")
     w.h2("Reports")
-    w.para("The platform has 12 standard reports with filters, Excel, CSV and PDF export and scheduled e-mail "
-           "delivery. The go-live catalogue below is confirmed in design; reports not yet built are delivered during "
-           "implementation within the fixed price.")
+    w.para("Twelve standard reports run today, each with filters, Excel, CSV and PDF export and scheduled e-mail "
+           "delivery. The catalogue below is the go-live set, to be confirmed in design; the reports in it that are "
+           "not yet built are delivered within the fixed price.")
     w.table(["Report", "Primary users", "Content"], REPORT_CATALOGUE, widths=[5.5, 3.5, 8.0], font_size=8,
             caption="Report catalogue for go-live")
 
@@ -186,20 +187,20 @@ def functional_solution(w: ProposalWriter, figs: dict):
 # 7. Products and process flows
 # =============================================================================
 PRODUCTS = [
-    ["FTP-HP", "Financing Takaful Plan – Hire Purchaser", "Mortgage", "Financing amount, tenure, profit rate, age next birthday", "Above B$150,000 referred to IIFT Sales; QC before contract; issue-then-pay with 7-day grace"],
+    ["FTP-HP", "Financing Takaful Plan – Hire Purchase", "Mortgage", "Financing amount, tenure, profit rate, age next birthday", "Above B$ 150,000 referred to IIFT Sales; quality check before contract; issue then pay within the seven-day grace period"],
     ["FTP-NP", "Financing Takaful Plan – Non-Participating", "Mortgage", "As FTP-HP", "Same engine and referral rule"],
     ["PFT", "Property Financing Takaful Plan", "Mortgage", "As FTP-HP (decreasing term)", "Same engine; property financing documents"],
     ["PHA", "Personal Home Assistant Takaful Plan", "Annual", "Cover period 1 or 2 years", "Employer IC, employee IC and details, passport, labour licence"],
-    ["PRO", "Professional Takaful Plan", "Annual", "Plan A/B/C B$15k/30k/50k; additional cover B$90/120/140", "Occupational Class I only; nominee, beneficiary or executor IC"],
-    ["KHR", "Khairat Takaful Plan", "Annual", "Plan A/B/C B$5k/10k/15k; Individual or Wider (Child)", "Renewal switched off"],
-    ["OSA", "Overseas Student Assist Takaful Plan", "Annual", "Basic B$20k or Tertiary B$50k", "Brunei citizen, registered student, age 65 or under; student ID"],
+    ["PRO", "Professional Takaful Plan", "Annual", "Plans A, B and C: B$ 15,000, 30,000 and 50,000; additional cover B$ 90, 120 and 140", "Occupational Class I only; nominee, beneficiary or executor IC"],
+    ["KHR", "Khairat Takaful Plan", "Annual", "Plans A, B and C: B$ 5,000, 10,000 and 15,000; Individual or Wider (Child)", "Renewal switched off"],
+    ["OSA", "Overseas Student Assist Takaful Plan", "Annual", "Basic B$ 20,000 or Tertiary B$ 50,000", "Brunei citizen, registered student, age 65 or under; student ID"],
 ]
 
 FLOWS = [
-    ("FFR01: Financing Takaful Plan, Hire Purchaser (FTPHP)", [
+    ("FFR01: Financing Takaful Plan – Hire Purchase (FTPHP)", [
         ["FTPHP01", "Capture participant details", "Full name, IC number, address, phone; duplicate check and AML screening.", "Possible matches go to Compliance."],
         ["FTPHP02", "Attach documents", "Proposal form, product disclosure sheet, IC copy, HP agreement or financier approval; HP statement for existing HP.", "Checklist enforces mandatory documents per case."],
-        ["FTPHP03", "Contribution", "Calculated from financing amount, period, profit rate and age next birthday.", "Above B$150,000: referred to IIFT Sales."],
+        ["FTPHP03", "Contribution", "Calculated from financing amount, period, profit rate and age next birthday.", "Above B$ 150,000: referred to IIFT Sales."],
         ["FTPHP04", "Drawdown letter", "Agent uploads the drawdown letter and remaining documents and enters drawdown details.", "Back-office validates documents."],
         ["FTPHP05", "Issue receipt", "e-Receipt issued for the contribution collected.", "Receipt number assigned; FIN entry queued."],
         ["FTPHP06", "Quality check", "Status shows Pending Approval (QC).", "Underwriting approves or rejects with remarks."],
@@ -217,8 +218,8 @@ FLOWS = [
     ]),
     ("FFR03: Professional Takaful Plan (APPT)", [
         ["APPT01", "Capture participant details", "Full name, IC number, address, phone.", "Duplicate check, AML screening."],
-        ["APPT02", "Quotation, new or renewal", "Plan A B$15,000, Plan B B$30,000, Plan C B$50,000.", "Occupational Class I only."],
-        ["APPT03", "Additional cover", "Optional: Plan A B$90, Plan B B$120, Plan C B$140.", "Configured as rider."],
+        ["APPT02", "Quotation, new or renewal", "Plan A B$ 15,000, Plan B B$ 30,000, Plan C B$ 50,000.", "Occupational Class I only."],
+        ["APPT03", "Additional cover", "Optional: Plan A B$ 90, Plan B B$ 120, Plan C B$ 140.", "Configured as rider."],
         ["APPT04", "Summary and questionnaire", "Summary shown; questionnaires completed.", "Answers can trigger referral rules."],
         ["APPT05", "Documents", "Questionnaire, IC copy, IC of nominee, beneficiary or executor.", "Checklist validation."],
         ["APPT06", "Payment", "Payment with proof.", "Finance verifies."],
@@ -227,7 +228,7 @@ FLOWS = [
     ]),
     ("FFR04: Khairat Takaful Plan (APKT)", [
         ["APKT01", "Capture participant details", "Full name, IC number, address, phone.", "Duplicate check, AML screening."],
-        ["APKT02", "Quotation", "Plan A B$5,000, B B$10,000, C B$15,000; Individual or Wider (Child).", "Renewal switched off."],
+        ["APKT02", "Quotation", "Plan A B$ 5,000, B B$ 10,000, C B$ 15,000; Individual or Wider (Child).", "Renewal switched off."],
         ["APKT03", "Summary and questionnaire", "Summary shown; questionnaires completed.", "Stored with quotation."],
         ["APKT04", "Documents", "Questionnaires, IC copy, nominee's IC copy.", "Checklist validation."],
         ["APKT05", "Payment", "Payment with proof.", "Finance verifies."],
@@ -236,7 +237,7 @@ FLOWS = [
     ]),
     ("FFR05: Overseas Student Assist Takaful Plan (APAOS)", [
         ["APAOS01", "Capture participant details", "Full name, IC number, address, phone.", "Duplicate check, AML screening."],
-        ["APAOS02", "Select cover", "Basic B$20,000 or Tertiary B$50,000.", "Plan rules from configuration."],
+        ["APAOS02", "Select cover", "Basic B$ 20,000 or Tertiary B$ 50,000.", "Plan rules from configuration."],
         ["APAOS03", "Eligibility", "Brunei citizen, registered student, age 65 or under.", "Ineligible cases cannot proceed."],
         ["APAOS04", "Summary and questionnaire", "Summary shown; Appendix IV questionnaire.", "Stored with quotation."],
         ["APAOS05", "Documents", "Questionnaires, IC copy, student ID, IC of nominee, beneficiary or executor.", "Checklist validation."],
@@ -259,12 +260,13 @@ EOD_STEPS = [
 
 def product_flows(w: ProposalWriter):
     w.h1("Products, Rating and Process Flows")
-    w.para("All seven products in RFP section 1.1 and Appendix 3 are configured in the working application. Each "
-           "product definition holds plans, sums covered, eligibility, required documents, questionnaires, renewal "
-           "availability, payment mode (pay first, or issue then pay within the grace period) and its rating engine.")
+    w.para("The seven products in RFP section 1.1 and Appendix 3 are configured in the working application. A "
+           "product definition holds its plans, sums covered, eligibility, required documents, questionnaires, "
+           "whether it renews, its payment mode (pay first, or issue then pay within the grace period) and the "
+           "rating engine it uses.")
     w.h2("Product configuration")
     w.table(["Code", "Product", "Line", "Rating inputs", "Key rules"], PRODUCTS,
-            widths=[1.5, 4.0, 1.6, 4.8, 5.1], font_size=8, caption="Product configuration")
+            widths=[1.5, 4.0, 1.6, 4.8, 5.1], font_size=8, caption="The seven products as configured")
     w.h2("Contribution calculation")
     w.paras([
         "The Mortgage Takaful engine (FTP-HP, FTP-NP, PFT) calculates contribution from financing amount, financing "
@@ -384,10 +386,9 @@ def architecture(w: ProposalWriter, figs: dict):
             caption="Application modules")
     w.h2("Data architecture")
     w.table(["Entity group", "Purpose"], ENTITIES, widths=[7.0, 10.0], font_size=8, caption="Key data entities")
-    w.para("We chose PostgreSQL over MongoDB because IIFT's data is relational and financial. The comparison below "
-           "summarises the reasons.")
+    w.para("PostgreSQL was chosen over MongoDB because IIFT's data is relational and financial:")
     w.table(["Criterion", "PostgreSQL 16 (selected)", "MongoDB"], DB_COMPARISON, widths=[3.6, 7.6, 5.8],
-            font_size=8, bold_first_col=True, caption="Database selection")
+            font_size=8, bold_first_col=True, caption="PostgreSQL compared with MongoDB for IIFT's data")
     w.h2("Integration architecture")
     w.para("Each outbound message is written to an outbox table in the same transaction as the business change. A "
            "policy therefore cannot be issued without its FIN entry being queued, and a failed call loses nothing. A "
@@ -454,24 +455,25 @@ INCIDENT_STEPS = [
 
 
 def security(w: ProposalWriter):
-    w.h1("Security Architecture & Controls")
-    w.para("This chapter is the single description of security controls; other chapters refer to it. Controls are "
-           "aligned with OWASP ASVS Level 2, the OWASP Top 10, Brunei's Personal Data Protection Order 2025 (PDPO) and "
-           "AMBD's technology risk expectations for Takaful operators. We claim alignment, not certification. IIFT's "
-           "policies are mapped in detail in the Solution Architecture (DEL-06).")
+    w.h1("Security Architecture and Controls")
+    w.para("Controls are aligned with OWASP ASVS Level 2, the OWASP Top 10, Brunei's Personal Data Protection Order "
+           "2025 (PDPO) and AMBD's technology risk expectations for Takaful operators. We claim alignment, not "
+           "certification. Other chapters refer to this one rather than repeating it; the mapping to IIFT's own "
+           "policies is made in the Solution Architecture (DEL-06).")
     w.h2("Controls")
     w.table(["Control", "Implementation (defaults configurable)", "RFP reference"], SECURITY_CONTROLS,
-            widths=[3.0, 10.6, 3.4], font_size=8, bold_first_col=True, caption="Security controls")
+            widths=[3.0, 10.6, 3.4], font_size=8, bold_first_col=True, caption="Security controls and the RFP requirements they meet")
     w.para("The audit trigger, field-level encryption, encrypted document storage and the ClamAV upload scan already "
-           "run in the working application; the API will not start in production without the scanner configured. MFA, Active Directory sign-on and the remaining parameters are set up "
-           "during implementation. Personal data is limited to what products and AML/KYC rules need; a data "
-           "inventory with purpose and retention is delivered with the Solution Architecture.")
+           "run in the working application, and the API refuses to start in production without the scanner "
+           "configured. MFA, Active Directory sign-on and the remaining parameter values are set up during "
+           "implementation. Personal data is limited to what the products and AML/KYC rules need; a data inventory "
+           "with purpose and retention per class is delivered with the Solution Architecture.")
     w.h2("Secure development lifecycle")
     w.table(["Stage", "Practice", "Mechanism"], SDLC, widths=[2.8, 10.0, 4.2], font_size=8, bold_first_col=True)
     w.h2("Penetration testing and remediation")
     w.para("An independent tester assesses the portal, back-office, APIs and hosting set-up before production "
-           "(NFR-13, DEL-17). The cost is in the fixed price. Findings are fixed and re-tested, and no Critical or High "
-           "finding may be open at go-live. After go-live, vulnerabilities are fixed within these limits "
+           "(NFR-13, DEL-17); the cost is in the fixed price. Findings are fixed and re-tested, and no Critical or "
+           "High finding may be open at go-live. After go-live, vulnerabilities are fixed within these limits "
            "(NFR-12, MNT-12):")
     w.table(["Severity", "Description", "Timeline"], REMEDIATION, widths=[2.6, 7.4, 7.0], font_size=8,
             bold_first_col=True, caption="Vulnerability remediation timelines")
@@ -535,13 +537,14 @@ CUTOVER = [
 
 
 def deployment(w: ProposalWriter):
-    w.h1("Deployment & Release Management")
+    w.h1("Deployment and Release Management")
     w.h2("Environments")
     w.table(["Environment", "Purpose", "Hosted by", "Data", "Users"], ENVIRONMENTS,
-            widths=[2.2, 3.8, 4.4, 3.4, 3.2], font_size=8, bold_first_col=True, caption="Environments")
+            widths=[2.2, 3.8, 4.4, 3.4, 3.2], font_size=8, bold_first_col=True, caption="Environments and hosting under Options A and B")
     w.h2("CI/CD pipeline")
     w.para("Every environment runs the same versioned container images, so what passes UAT is what runs in "
-           "production. The pipeline can run on IITH's GitLab or on GitHub Actions; the repository is held for IIFT.")
+           "production. The pipeline can run on IITH's GitLab or on GitHub Actions, and the repository is held for "
+           "IIFT.")
     w.table(["Stage", "Activities"], PIPELINE, widths=[4.0, 13.0], font_size=8, bold_first_col=True)
     w.h2("Release management and rollback")
     w.para("Every production change follows the agreed procedure (MNT-21): change request, impact assessment, SIT "
@@ -618,9 +621,9 @@ def infrastructure(w: ProposalWriter, figs: dict):
     w.h1("Infrastructure Options")
     w.para(f"{PRODUCT} ships as standard containers and runs unchanged on-premise or in the cloud. The two "
            "deployment models match the commercial options: on-premise in the IIFT/IITH data centre under Option A, "
-           "with infrastructure procured by IIFT to iorta's sizing, and an iorta-hosted cloud under Option B, with "
-           "cloud infrastructure at cost and managed services by iorta. A hybrid variant of Option A is also "
-           f"possible. Costs are in Section {sec('commercials')} and the Bill of Materials.")
+           "on infrastructure IIFT procures to iorta's sizing, or an iorta-hosted cloud under Option B, with cloud "
+           "infrastructure at cost and managed services by iorta. A hybrid variant of Option A is described at the "
+           f"end of the chapter. Costs are in Section {sec('commercials')} and the Bill of Materials.")
     w.h2("Option A: on-premise in the IIFT/IITH data centre (recommended)")
     w.para("Two application VMs run behind the load balancer. PostgreSQL runs as a primary with a streaming standby, "
            "and an asynchronous streaming replica at the DR site stands ready for promotion. The solution uses IITH's network security, "
@@ -661,9 +664,9 @@ def infrastructure(w: ProposalWriter, figs: dict):
     w.table(["Criterion", "A: On-premise", "B: iorta-hosted cloud", "Hybrid variant"], _comparison(),
             widths=[3.2, 4.6, 5.0, 4.2], font_size=8, bold_first_col=True, caption="Deployment models compared")
     w.callout("Recommendation: Option A, on-premise in the IITH/IIFT data centre", [
-        "Participant and agent data stays in Brunei and no extra regulatory step is needed.",
-        "IITH's existing data-centre services and operating model are reused, as for other group systems, which "
-        "keeps cost and support effort down.",
-        f"Option A has the lowest five-year cost (Section {sec('commercials')}). Option B remains available if IIFT "
+        "Participant and agent data stays in Brunei, and no outsourcing or cloud notification to AMBD is needed.",
+        "IITH's data-centre services and operating model are reused, as for other group systems, which keeps both "
+        "cost and support effort down.",
+        f"The five-year cost comparison is in Section {sec('commercials')}. Option B remains available if IIFT "
         "prefers an operating-expense model with iorta running the infrastructure.",
     ])

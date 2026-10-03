@@ -51,7 +51,7 @@ ONE_TIME_ITEMS = [
      "seven products, workflows, documents and reports."),
     (3, "integration", "Integration (per interface; see integration breakdown)", "Per interface",
      17_500, 13_000, True,
-     "Core system, FIN, AML screening, LDAP/AD, SMS gateway and Email/SMTP."),
+     "Core system, FIN, AML screening, LDAP/AD, SMS gateway and e-mail/SMTP."),
     (4, "migration", "Data migration", "One-off", 3_000, 4_500, False,
      "Extraction support, transformation, cleansing, two dry runs, load and reconciliation of agreed "
      "agent, agency, bank and participant data."),
@@ -76,7 +76,7 @@ INTERFACES = [
     ("LDAP / Active Directory", "Single sign-on for back-office users; optional directory look-up for "
      "portal administration", 2_000, 2_000),
     ("SMS gateway", "OTP and alert delivery through IIFT-approved SMS provider", 2_500, 0),
-    ("Email / SMTP relay", "Notification and document e-mail delivery through IIFT mail relay", 2_000, 0),
+    ("E-mail / SMTP relay", "Notification and document e-mail delivery through IIFT mail relay", 2_000, 0),
 ]
 
 # ---------------------------------------------------------------------------
@@ -98,7 +98,7 @@ MAINTENANCE_PLAN = [
     (15, 4, "Technology Refresh",
      "Platform compatibility review, security hardening, version upgrades and capacity assessment."),
     (16, 5, "Sustainability & Transition",
-     "Comprehensive health assessment, documentation refresh, knowledge transfer, technology roadmap "
+     "Full health assessment, documentation refresh, knowledge transfer, technology roadmap "
      "and exit/renewal preparation."),
 ]
 
@@ -691,7 +691,7 @@ CLOUD_SIZING = [
     "NAT gateway, site-to-site VPN to the IITH data centre, outbound data",
     "Shared file storage up to 100 GB; about 200 GB object storage; cross-region copy",
     "Log retention 90 days, metrics, alarms, threat detection",
-    "Secrets store and customer-managed encryption keys",
+    "Secrets store and encryption keys held in IIFT's account",
     "1 task and a single-AZ db.t4g.medium; stopped outside test periods",
     "Cross-region database replica or snapshots and standby images",
 ]

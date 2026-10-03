@@ -180,7 +180,7 @@ PERSONAS = {
     ),
     "bank_officer": dict(
         name="Bank officer (banca)", role="BANCA_OFFICER", module="portal",
-        demo="Nurul Huda binti Hassan, Mutiara Islamic Bank, Gadong branch, authority limit B$250,000",
+        demo="Nurul Huda binti Hassan, Mutiara Islamic Bank, Gadong branch, authority limit B$ 250,000",
         who="Branch officer who attaches financing takaful (hire purchase, personal and property financing) to the "
             "bank's financing approvals.",
         goals="Issue the e-Policy as soon as the financing is approved, so the drawdown is not held up; keep the "
@@ -236,7 +236,7 @@ PERSONAS = {
     "underwriter": dict(
         name="Underwriter / quality check", role="UNDERWRITER", module="backoffice",
         demo="Dr. Liyana binti Ahmad (underwriter)",
-        who="Decides referred quotations: health declarations answered Yes, financing above B$150,000, cases above "
+        who="Decides referred quotations: health declarations answered Yes, financing above B$ 150,000, cases above "
             "an officer's authority limit, and the quality check before a financing contract is issued.",
         goals="Accept good risk quickly; see the declarations and documents without leaving the request.",
         frequency="Daily.",
@@ -390,7 +390,7 @@ BACKOFFICE_SCREEN_ROWS = {
     "underwriter": [
         ["Dashboard", "Referred quotations awaiting decision", "Opens the queue", "BO-21"],
         ["Approvals, Approval detail", "Referral reasons, sum covered, contribution, policy documents",
-         "Approves (level 1, and level 2 from B$300,000 sum covered by a second underwriter) or rejects with "
+         "Approves (level 1, and level 2 from B$ 300,000 sum covered by a second underwriter) or rejects with "
          "remarks that the agent sees", "AP-33, AP-60, AP-61, BO-16–BO-19"],
         ["Policies, Policy record", "Cover, declarations, risk details, nominees, documents, history",
          "Reads the full application from the request", "AP-24, AP-31"],
@@ -531,33 +531,33 @@ JOURNEYS = [
         ],
     ),
     dict(
-        key="banca", title="Banca financing policy above B$150,000 with bulk payment by the bank", split=7,
+        key="banca", title="Banca financing policy above B$ 150,000 with bulk payment by the bank", split=7,
         starts="Bank officer", ends="Policy ACTIVE; contribution settled by one bank transfer; receipts posted to FIN",
         demo="about 15 minutes across three users",
         rfp="FFR01 (FTPHP01–07), AP-32, AP-33, AP-38–AP-42, AP-60, AP-61, BO-16–BO-19",
         intro="Financing takaful is issued first and paid within the grace period. Every hire purchase case "
-              "passes a quality check, and financing above B$150,000 is a referral; both are decided on the same "
+              "passes a quality check, and financing above B$ 150,000 is a referral; both are decided on the same "
               "request. The supervisor settles several policies with one transfer.",
         lanes=[("Bank officer", "user"), ("Underwriter", "user"), ("System", "system"),
                ("Bank supervisor", "user"), ("Finance officer", "user")],
         steps=[
             step(0, "New quotation", "Financing Takaful Plan – Hire Purchase; participant; financing details",
                  "Product tagged Pay after issue. Participant found by IC lookup or registered (AML screening). "
-                 "Coverage: financing amount B$180,000, period 96 months, profit rate, financier, approval "
+                 "Coverage: financing amount B$ 180,000, period 96 months, profit rate, financier, approval "
                  "reference, vehicle registration. The indicative contribution shows the referral reason."),
             step(0, "Policy detail: checklist", "Declarations, documents, signatures; Submit application",
                  "Mandatory documents for FTP-HP: proposal form, product disclosure sheet, IC copy, hire purchase "
                  "approval letter, drawdown letter; the HP statement is optional. Participant signature on screen "
                  "or by link."),
             step(2, "Referral", "PENDING APPROVAL; RQ to Underwriting",
-                 "Two referral reasons are recorded: financing above the B$150,000 high-risk limit and the "
+                 "Two referral reasons are recorded: financing above the B$ 150,000 high-risk limit and the "
                  "quality check before contract issuance. Request RQ/26/nnnnnn is created with the sum covered "
                  "as its amount; approvers are notified; the officer sees Awaiting IIFT underwriting decision."),
             step(1, "Approvals: Approval detail", "Review reasons and documents; Approve",
                  "The request shows the referral reasons, sum covered, contribution and the policy documents; "
                  "Open policy shows the full record. Approve with remarks."),
-            decision(2, "Sum covered ≥ B$300,000?", "yes: second approver", "no", 6,
-                     "The Referred quotation workflow has a second step from B$300,000 sum covered. The same "
+            decision(2, "Sum covered ≥ B$ 300,000?", "yes: second approver", "no", 6,
+                     "The Referred quotation workflow has a second step from B$ 300,000 sum covered. The same "
                      "person cannot approve both levels."),
             step(1, "Approvals: level 2", "Second underwriter approves",
                  "A second underwriter decides; the request header shows Level 2 of 2."),
@@ -747,8 +747,10 @@ JOURNEYS = [
         starts="Sub-agent (any user)", ends="Issue CLOSED by the reporter, or reopened",
         demo="about 5 minutes",
         rfp="AP-55–AP-57, BO-29–BO-31, COM-05",
-        intro="Response and resolution targets per priority are parameters (Critical 1 h / 4 h, High 2 h / 24 h, "
-              "Medium 8 h / 72 h, Low 24 h / 168 h). A job checks them every five minutes.",
+        intro="Response and resolution targets per priority are parameters of the issue module (Critical 1 h / 4 h, "
+              "High 2 h / 24 h, Medium 8 h / 72 h, Low 24 h / 168 h), set by IIFT for the issues its users raise; "
+              "they are distinct from the support SLA iorta commits to in Section {maintenance}. A job checks them "
+              "every five minutes.",
         lanes=[("Reporter", "user"), ("System", "system"), ("Support officer", "user")],
         steps=[
             step(0, "Support: Report an issue", "Title, category, priority, description; Submit",
@@ -831,6 +833,11 @@ JOURNEYS = [
         ],
     ),
 ]
+
+def journey_no(key: str) -> int:
+    """Number of a journey as printed in the chapter, so other chapters never hard-code it."""
+    return next(index for index, journey in enumerate(JOURNEYS, start=1) if journey["key"] == key)
+
 
 CONVENTIONS = [
     ["Ctrl+K", "Focuses the global search in the header; results are grouped and a result opens the record."],
@@ -970,7 +977,7 @@ def _journey_section(w, figs, index, journey):
         ("Time in the demonstration", journey["demo"]),
         ("RFP requirements", journey["rfp"]),
     ], widths=(4.0, 13.0))
-    w.para(journey["intro"], keep_with_next=True)
+    w.para(journey["intro"].format(maintenance=numbering.sec("maintenance")), keep_with_next=True)
     for part_no, (start, steps) in enumerate(_parts(journey), start=1):
         figure = diagrams.journey_flow(figs["out_dir"], journey["key"], journey["lanes"], steps, start=start)
         aspect = _aspect(figure)
@@ -991,14 +998,14 @@ def people_chapter(w: ProposalWriter, figs: dict):
     w.para(f"This chapter shows the {brand.SOLUTION_NAME} as each kind of user meets it: who they are, what their "
            "menu contains, which screens they work in and how the end-to-end journeys run across the portal, the "
            "back-office and the system's own steps (numbering, notifications, outbox messages, audit). Menus are "
-           "taken from the role definitions shipped with the product; journeys are described as the services "
-           "execute them today.")
+           "taken from the role definitions shipped with the product, and journeys are described as the services "
+           "execute them today, not as a design intent.")
 
     # 7.1 Overview
     w.h2("Who uses what")
-    w.para("Eleven personas cover the RFP's users. Four work in the Agent/Banca Portal, seven in the Back-office. "
-           "Each persona is a seeded role; IIFT can change the permissions of a role or add roles in the "
-           "Back-office without a release.")
+    w.para("Eleven personas cover the RFP's users: four work in the Agent/Banca Portal (labelled Agent & Banca "
+           "Portal on screen) and seven in the Back-office. Each persona is a seeded role; IIFT can change the "
+           "permissions of a role or add roles in the Back-office without a release.")
     rows = []
     for key in PERSONA_ORDER:
         p = PERSONAS[key]
@@ -1044,15 +1051,15 @@ def people_chapter(w: ProposalWriter, figs: dict):
            "renewal, claims, support, end of day and administration. In each figure the columns are the people "
            "and the system, the boxes are numbered in order, orange boxes are automatic system steps, diamonds are "
            "the points where the system branches and orange arrows are hand-offs from one person to another. The "
-           "table under each figure gives the detail of every step, including the numbers assigned, the messages "
-           "sent and the audit records written. The times are what the steps take in a demonstration with the "
-           "seeded data.")
+           "table under each figure gives the detail of every step, including the reference numbers assigned, the "
+           "messages sent and the audit records written. The times quoted are what the steps take in a "
+           "demonstration with the seeded data.")
     for index, journey in enumerate(JOURNEYS, start=1):
         _journey_section(w, figs, index, journey)
     participant = entries_for("participant")
     if participant:
-        w.para("The participant's only screen, reached from the e-mailed link in journeys 1 and 6:",
-               keep_with_next=True)
+        w.para("The participant's only screen, reached from the e-mailed link in journeys "
+               f"{journey_no('annual')}, {journey_no('banca')} and {journey_no('renewal')}:", keep_with_next=True)
         _render_entries(w, figs, participant)
 
     # 7.15 screen index

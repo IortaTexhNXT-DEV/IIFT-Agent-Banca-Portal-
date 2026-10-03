@@ -85,8 +85,9 @@ All placeholders appear in square brackets with yellow highlight in the DOCX. Se
 
 **Cover, cover letter and document control**
 - `[Proposal reference no.]`, `[IIFT RFP / tender reference no.]`
-- `[Day]` of the letter date, `[Street address]`, `[Postcode]` of IIFT
-- `[Name of contact person]`, `[Designation]`, `[e-mail address]`, `[telephone number]`
+- `[Day]` of the letter date, `[RFP date]`, `[Street address]`, `[Postcode]` of IIFT
+- Addressee: `[Name of IIFT procurement contact]`, `[Designation]`, `[Salutation and surname]`
+- iorta contact: `[Name of contact person]`, `[Designation]`, `[e-mail address]`, `[telephone number]`
 - `[Name of authorised signatory]`, `[Designation]`, `[Company stamp]`
 - Version history `[Date]`; review and approval `[Name]` / `[Name, designation]`
 

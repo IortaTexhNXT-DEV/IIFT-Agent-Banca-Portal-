@@ -5,19 +5,22 @@ import brand
 import compliance_matrix as cm
 from docx_kit import ProposalWriter
 from numbering import sec
+from sections_people import journey_no
 
 PRODUCT = brand.PRODUCT
 
+# Placeholders in the tables below: {security} is the security chapter number and
+# {j_<key>} the number of a journey in the personas chapter (resolved in _format).
 # (no, component, what we deliver, how, acceptance evidence) – RFP 3.1 items 1–29
 COMPONENTS = [
     ("1", "Agent/Banca Portal", "Web portal (/portal) for agents, main/sub-agents and bank officers", "Configure the SalesVerse 2.0 portal for IIFT roles, products and branding", "UAT sign-off of portal scenarios"),
     ("2", "Back-office (Admin)", "Internal application (/backoffice) for IIFT and IITH staff", "Configure back-office roles, queues and dashboards; publish only on the internal network", "UAT sign-off; network test showing no internet exposure"),
     ("3", "Agent/Banca management", "Registration, profile, status, agent code, hierarchy", "Load agent master data; set numbering pattern and status rules", "SIT cases; migrated agent reconciliation"),
     ("4", "Agency/Banca management", "Agencies, banks, branches and their relationships", "Load agency and bank structure; map hierarchy to data scopes", "Hierarchy review signed by Banca/Sales"),
-    ("5", "Agent/Banca onboarding", "Online application, KYC data, documents, AML, approval", "Configure document checklist and approval levels", "Journey 1 executed in UAT"),
+    ("5", "Agent/Banca onboarding", "Online application, KYC data, documents, AML, approval", "Configure document checklist and approval levels", "Journey {j_onboarding} executed in UAT"),
     ("6", "Participant management", "Shared participant record, search, updates with approval, AML", "Set search criteria, duplicate rules and update workflow", "SIT and UAT cases for AP-11 to AP-16"),
     ("7", "Policy management", "Seven products, quotation, drafts, issuance, statuses, servicing", "Load IIFT rates, questionnaires and templates for all seven products", "Rate verification sheet signed by IIFT actuarial; UAT"),
-    ("8", "Billing management", "Payment dashboard, single and bulk payment, verification, e-Receipt, 7-day block", "Configure payment rules, thresholds and receipt numbering", "Journey 4 in UAT; grace-period test evidence"),
+    ("8", "Billing management", "Payment dashboard, single and bulk payment, verification, e-Receipt, 7-day block", "Configure payment rules, thresholds and receipt numbering", "Journey {j_banca} in UAT; grace-period test evidence"),
     ("9", "Claims management", "Claim notification with policy validation and documents", "Configure claim types and document lists", "UAT cases for AP-43"),
     ("10", "AML/KYC", "Watch-list screening with fuzzy matching, Compliance review", "Connect to IIFT's AML provider or lists; set match threshold", "Screening test pack agreed with Compliance"),
     ("11", "Workflow management", "Configurable workflows for all approval transactions", "Load IIFT approval matrix as workflow definitions", "Approval matrix sign-off; SIT cases"),
@@ -25,7 +28,7 @@ COMPONENTS = [
     ("13", "Document management", "Encrypted document store; e-Policy, schedule and e-Receipt PDFs", "Load IIFT templates and wording; deploy ClamAV in each environment", "Template sign-off; upload security tests"),
     ("14", "Dashboard", "Agent, bank, back-office and management dashboards", "Agree KPI definitions and targets", "Dashboard review in UAT"),
     ("15", "Reporting", "Report catalogue with filters, schedules, Excel/CSV/PDF export", "Configure the 12 existing reports; build the remaining catalogue items", "Report sign-off against sample data"),
-    ("16", "Issue management", "Issue reporting, assignment, priorities, SLA timers", "Set categories, assignment rules and SLA targets", "Journey 7 in UAT"),
+    ("16", "Issue management", "Issue reporting, assignment, priorities, SLA timers", "Set categories, assignment rules and SLA targets", "Journey {j_issue} in UAT"),
     ("17", "Notification", "E-mail, SMS and in-portal notifications", "Connect SMTP and SMS gateway; agree templates", "Notification test log"),
     ("18", "Audit trail", "Append-only audit with search and export", "Set retention; optional SIEM export", "Audit tamper test (UPDATE/DELETE rejected)"),
     ("19", "Administration", "Users, roles, permissions, master data, parameters", "Load IIFT roles and parameter values", "Role matrix sign-off"),
@@ -45,19 +48,19 @@ COMPONENTS = [
 PORTAL_AREAS = [
     ("Authentication (AP-01–04)", "Secure login, password change and reset, session control, lockout", "Server-side sessions; policy values set to IITH standards", "Security test cases; VAPT"),
     ("Agent/Banca profile (AP-05–06)", "Profile view and change requests with approval", "Profile change workflow with before and after values", "UAT case; audit record of approved change"),
-    ("Agent/Banca management (AP-07–12)", "Online registration, agent code, hierarchy, agency information, shared participants", "Registration journey; data scoping by agency and bank", "Journey 1 in UAT"),
+    ("Agent/Banca management (AP-07–12)", "Online registration, agent code, hierarchy, agency information, shared participants", "Registration journey; data scoping by agency and bank", "Journey {j_onboarding} in UAT"),
     ("Participant management (AP-13–16)", "Individual and corporate registration, search, approved updates, AML screening", "Duplicate checks on encrypted IC numbers via blind index", "SIT cases; AML test pack"),
     ("Quotation (AP-17–20)", "Authorised product list, product wizards, automatic contribution, drafts", "Seven configured products with IIFT rate tables", "Rate verification sheet; UAT"),
-    ("Issuance and status (AP-21–25, AP-32–36)", "Policy list, search, details, issuance, validation, routing, restrictions, notifications, audit", "Server-side validation and workflow routing", "Journeys 2 and 3 in UAT"),
-    ("Policy servicing (AP-26–31)", "Renewal, endorsement, cancellation, documents, payment status, history", "Servicing requests through maker-checker", "Journey 5 in UAT"),
-    ("Billing (AP-37–42)", "Payment dashboard, bulk payment per policy, proof upload, verification, e-Receipt, 7-day block", "Billing module and nightly grace-period job", "Journey 4; grace-period test evidence"),
-    ("Claims (AP-43)", "Claim notification with policy validation and documents", "Claims module", "Journey 6 in UAT"),
+    ("Issuance and status (AP-21–25, AP-32–36)", "Policy list, search, details, issuance, validation, routing, restrictions, notifications, audit", "Server-side validation and workflow routing", "Journeys {j_annual} and {j_banca} in UAT"),
+    ("Policy servicing (AP-26–31)", "Renewal, endorsement, cancellation, documents, payment status, history", "Servicing requests through maker-checker", "Journey {j_servicing} in UAT"),
+    ("Billing (AP-37–42)", "Payment dashboard, bulk payment per policy, proof upload, verification, e-Receipt, 7-day block", "Billing module and nightly grace-period job", "Journey {j_banca}; grace-period test evidence"),
+    ("Claims (AP-43)", "Claim notification with policy validation and documents", "Claims module", "Journey {j_claim} in UAT"),
     ("Documents (AP-44–47)", "Policy schedule, e-Policy and e-Receipt PDFs; download, e-mail, upload, status and expiry", "IIFT templates; encrypted store; ClamAV scan", "Template sign-off; upload tests"),
     ("AML information (AP-48)", "AML/KYC data captured at onboarding", "Configurable KYC fields", "Compliance review of form"),
-    ("Workflow (AP-49–51)", "Save, submit, track; status list; rejection remarks and resubmission", "My requests screen over the workflow engine", "Journey 9 in UAT"),
+    ("Workflow (AP-49–51)", "Save, submit, track; status list; rejection remarks and resubmission", "My requests screen over the workflow engine", "Journey {j_servicing} in UAT"),
     ("Dashboard (AP-52–53)", "Agent dashboard and pending actions", "Role-based dashboard widgets", "UAT review"),
     ("Notifications (AP-54)", "Alerts on status changes, approvals, rejections, actions", "Notification templates per event", "Notification test log"),
-    ("Issue management (AP-55–57)", "Report issues with reference number, tracking and attachments", "Issues module with SLA timers", "Journey 7 in UAT"),
+    ("Issue management (AP-55–57)", "Report issues with reference number, tracking and attachments", "Issues module with SLA timers", "Journey {j_issue} in UAT"),
     ("Reporting (AP-58)", "Role-scoped reports for agency, agent and bank", "Report catalogue with data scoping", "Report sign-off"),
     ("Security and approvals (AP-59–61)", "Role-based access, authority limits, approval history", "Permissions and data scopes; amount thresholds", "Role matrix sign-off; negative tests"),
     ("Digital signature (AP-62)", "On-screen signature, single-use e-mail link, upload of signed documents", "e-Signature module with evidence record", "UAT case; evidence sample reviewed by IIFT Legal"),
@@ -66,21 +69,21 @@ PORTAL_AREAS = [
 BACKOFFICE_AREAS = [
     ("Authentication and access (BO-01–02)", "Internal login, MFA, Active Directory sign-on, role-based access", "MFA and AD adapter built during implementation", "Security tests; VAPT"),
     ("User management (BO-03–04)", "User administration, roles and permissions", "Role builder; IIFT role matrix loaded", "Role matrix sign-off"),
-    ("Agent management (BO-05–08, BO-10)", "Agent records, search, status lifecycle, hierarchy, approval of registrations and changes", "Agents module with maker-checker", "SIT cases; Journey 1"),
+    ("Agent management (BO-05–08, BO-10)", "Agent records, search, status lifecycle, hierarchy, approval of registrations and changes", "Agents module with maker-checker", "SIT cases; Journey {j_onboarding}"),
     ("Agency management (BO-09)", "Agency and bank records with linked agents", "Agencies and banks screens", "Hierarchy review"),
     ("Documents (BO-11–12)", "Validate, approve, reject documents; completeness and expiry", "Document checks queue", "UAT case"),
     ("AML/KYC (BO-13–15)", "Screening, results with dates, Compliance review", "AML cases and watch-list screens", "AML test pack"),
-    ("Workflow (BO-16–19)", "Configurable approvals, maker-checker, status tracking, rejection remarks", "Workflow definitions for the IIFT matrix", "Journey 9; negative tests"),
+    ("Workflow (BO-16–19)", "Configurable approvals, maker-checker, status tracking, rejection remarks", "Workflow definitions for the IIFT matrix", "Journey {j_servicing}; negative tests"),
     ("Dashboards (BO-20–21)", "Management KPIs and pending actions", "Back-office dashboard", "UAT review"),
     ("Reporting (BO-22–25)", "Standard reports, filters, Excel/CSV/PDF export, schedules", "12 existing reports plus the agreed catalogue", "Report sign-off"),
     ("Audit (BO-26–28)", "Audit of activity and changes with before and after values; search", "Append-only audit table protected by trigger", "Tamper test; audit search demo"),
-    ("Issue management (BO-29–31)", "Assignment, priorities, SLA monitoring", "Issue rules and SLA targets", "Journey 7"),
+    ("Issue management (BO-29–31)", "Assignment, priorities, SLA monitoring", "Issue rules and SLA targets", "Journey {j_issue}"),
     ("Administration (BO-32–33)", "Master data and configurable rules, statuses, levels, parameters", "Parameters and master data screens", "Configuration workbook signed"),
 ]
 
 INTEGRATION_AREAS = [
     ("Core system (INT-01–03)", "Agent, agency and bank master synchronisation; agent information exchange", "Adapter over the outbox; API or file per IITH capability", "End-to-end test with core owner"),
-    ("Financial system (INT-04–05)", "EOD FIN interface file, receipts, commission and referral fee data", "FIN file format agreed; SFTP or API delivery", "Journey 8; FIN reconciliation sign-off"),
+    ("Financial system (INT-04–05)", "EOD FIN interface file, receipts, commission and referral fee data", "FIN file format agreed; SFTP or API delivery", "Journey {j_eod}; FIN reconciliation sign-off"),
     ("Identity (INT-06)", "Active Directory single sign-on for back-office", "LDAPS adapter", "Login test with IITH accounts"),
     ("Notifications (INT-07–08)", "E-mail through IIFT SMTP; SMS through IIFT gateway", "SMTP and SMS adapters", "Delivery test log"),
     ("APIs (INT-09–11)", "Secure REST APIs, authentication, monitoring", "OpenAPI 3; mTLS or OAuth2; integration monitor", "API security tests; monitor demo"),
@@ -185,15 +188,20 @@ AREA_WIDTHS = [3.6, 5.6, 4.6, 3.2]
 
 
 def _format(rows):
-    return [[cell.format(security=sec("security")) for cell in row] for row in rows]
+    values = {"security": sec("security")}
+    values.update({f"j_{key}": journey_no(key) for key in
+                   ("annual", "banca", "onboarding", "aml", "servicing", "renewal", "claim", "issue", "eod", "admin")})
+    return [[cell.format(**values) for cell in row] for row in rows]
 
 
 def scope_of_work(w: ProposalWriter):
     w.h1("Scope of Work")
-    w.para(f"We will configure, integrate, test, deploy and support {PRODUCT} as the {brand.SOLUTION_NAME}, with "
-           "training, documentation, a six-month warranty and five years of maintenance. This chapter follows the "
-           "RFP structure. For each item it states what we deliver, how, and the evidence IIFT uses to accept it. "
-           f"Fitment against the working platform is in Section {sec('fitment')}; the per-ID matrix is in Annex A.")
+    w.para(f"The scope is to configure, integrate, test, deploy and support {PRODUCT} as the {brand.SOLUTION_NAME}, "
+           "with training, documentation, a six-month warranty and five years of maintenance. The tables follow the "
+           "RFP's own structure and give, for each item, what is delivered, how, and the evidence on which IIFT "
+           f"accepts it. Where a row cites a journey, the number refers to Section {sec('journeys')}. How much of "
+           f"this already runs in the platform is shown in Section {sec('fitment')}; the answer to every requirement "
+           "ID is in Annex A.")
     w.h2("In-scope components (RFP 3.1)")
     w.table(["#", "Component", "What we deliver", "How", "Acceptance evidence"], _format(COMPONENTS),
             widths=[0.7, 2.9, 5.0, 5.0, 3.4], font_size=7.5, padding=30, center_cols=(0,),
@@ -211,8 +219,8 @@ def scope_of_work(w: ProposalWriter):
     w.h2("Non-functional requirements (RFP 5)")
     w.table(AREA_COLUMNS, _format(NFR_AREAS), widths=AREA_WIDTHS, font_size=7.5, padding=30, bold_first_col=True)
     w.h2("Deliverables (RFP 7)")
-    w.para("Documents are delivered in Word or Excel and PDF. IIFT reviews within five business days and we issue "
-           "the final version within three business days of comments.")
+    w.para("Documents are delivered in Word or Excel and as PDF. IIFT reviews within ten business days and the "
+           "final version follows within three business days of IIFT's comments.")
     w.table(["ID", "Deliverable", "Content and approach", "Due", "Acceptance evidence"], DELIVERABLES,
             widths=[1.5, 3.6, 6.0, 2.4, 3.5], font_size=7.5, padding=30, bold_first_col=True,
             caption="Deliverables DEL-01 to DEL-30")
@@ -227,9 +235,9 @@ def scope_of_work(w: ProposalWriter):
 # =============================================================================
 CAPABILITY_STATUS = [
     ["Products and rating", "Seven Appendix 3 products (FTP-HP, FTP-NP, PFT, PHA, PRO, KHR, OSA) with configurable rating", "IIFT actuarial rate tables replace the indicative rates; questionnaires and templates loaded"],
-    ["Underwriting referral", "Financing above B$150,000 referred to IIFT Sales", "Further referral rules agreed in design"],
+    ["Underwriting referral", "Financing above B$ 150,000 referred to IIFT Sales", "Further referral rules agreed in design"],
     ["Payment control", "Seven-day grace-period block on all agents of an agency", "Bank-specific settlement rules, if any"],
-    ["Approvals", "Maker-checker with configurable levels and amount thresholds, e.g. second approval from B$300,000 sum covered", "IIFT approval matrix and approver roles"],
+    ["Approvals", "Maker-checker with configurable levels and amount thresholds, for example a second approval from B$ 300,000 sum covered", "IIFT approval matrix and approver roles"],
     ["AML/KYC", "Watch-list screening with fuzzy name matching; Compliance review queue; a confirmed match rejects the subject's pending requests", "Adapter to IIFT's AML provider or lists"],
     ["e-Signature", "On-screen signature and single-use e-mail link", "Evidence format agreed with IIFT Legal"],
     ["Documents", "e-Policy and e-Receipt PDFs; encrypted document storage; ClamAV scan of uploads, mandatory in production", "IIFT templates, wording and branding"],
@@ -258,8 +266,8 @@ FITMENT_AREAS = ["Agent/Banca Portal (RFP 4.1)", "Back-office (RFP 4.2)", "Integ
 
 def fitment_chapter(w: ProposalWriter):
     w.h1("Solution Fitment")
-    w.para(f"Each functional and non-functional requirement is classified against {PRODUCT} as it runs today. The "
-           "four categories are:")
+    w.para(f"Every functional and non-functional requirement is placed in one of four categories against "
+           f"{PRODUCT} as it runs today:")
     w.table(["Category", "Meaning"], [
         [cm.FITMENT_HEADINGS["A"], "Works in the current platform; IIFT can see it in the demonstration."],
         [cm.FITMENT_HEADINGS["C"], "Supported by the platform; needs IIFT values, rates, templates or rules."],
@@ -277,14 +285,16 @@ def fitment_chapter(w: ProposalWriter):
             totals[code] += counts[code]
         grand += total
     rows.append(["Total", *[str(totals[code]) for code in cm.FITMENT_LABELS], str(grand)])
-    w.table(["RFP area", "Available today", "Configuration", "Integration", "During implementation", "Total"], rows,
-            widths=[6.0, 2.2, 2.2, 2.2, 2.4, 2.0], font_size=8, center_cols=(1, 2, 3, 4, 5), total_rows=1,
+    w.table(["RFP area", "Available\ntoday", "Configuration", "Integration", "During\nimplementation", "Total"], rows,
+            widths=[5.2, 2.2, 2.6, 2.2, 3.0, 1.8], font_size=8, center_cols=(1, 2, 3, 4, 5), total_rows=1,
             caption="Fitment by RFP area (number of requirement IDs)")
     w.para(f"The 24 commercial requirements (RFP section 6) are contractual commitments rather than functions; they "
            f"are answered in Section {sec('commercials')} and listed in Annex A without a fitment category.")
-    w.h2("What runs today and what is completed in the project")
+    w.h2("Capability by capability")
     w.table(["Capability", "Available in SalesVerse 2.0 today", "Completed during implementation"],
             CAPABILITY_STATUS, widths=[3.2, 7.4, 6.4], font_size=8, bold_first_col=True,
-            caption="Capability status")
-    w.h2("Work that depends on IIFT")
+            caption="What runs today and what the project completes")
+    w.h2("Remaining work and what it needs from IIFT")
+    w.para("The first two items depend on inputs from IIFT and are the main dates on the critical path "
+           f"(Section {sec('timeline')}).", keep_with_next=True)
     w.bullets(DELIVERED_IN_IMPLEMENTATION)
