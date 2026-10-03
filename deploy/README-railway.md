@@ -15,8 +15,11 @@ services on the private network; only `web` has a public domain.
 Pre-deploy command (runs from the production image before each release):
 
 ```
-npx prisma migrate deploy && node dist-seed/prisma/seed.js
+node /app/node_modules/prisma/build/index.js migrate deploy && node dist-seed/prisma/seed.js
 ```
+
+The Prisma CLI is called through `node` because `npx` is not available in the
+runtime image.
 
 Add `&& node dist-seed/prisma/seed-demo.js` with `ALLOW_DEMO_DATA=true` and
 `DEMO_PASSWORD` for a demonstration environment only.

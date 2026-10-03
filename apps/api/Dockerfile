@@ -20,14 +20,16 @@ CMD ["sh", "-c", "npx prisma migrate deploy && node --import @swc-node/register/
 FROM node:22-bookworm-slim AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends tini && rm -rf /var/lib/apt/lists/* \
+RUN apt-get update && apt-get install -y --no-install-recommends tini openssl ca-certificates \
+  && rm -rf /var/lib/apt/lists/* \
   && groupadd --system salesverse && useradd --system --gid salesverse --home /app salesverse
 COPY --from=deps /app/package.json /app/package-lock.json ./
 COPY apps/api/package.json apps/api/package.json
 RUN npm install -g npm@11.21.0 && npm ci --workspace apps/api --include-workspace-root=false --omit=dev && npm cache clean --force
 COPY --from=build /app/apps/api/dist apps/api/dist
-# Compiled seeds, schema and migrations so a release can run
-# `npx prisma migrate deploy && node dist-seed/prisma/seed.js` from this image.
+# Compiled seeds, schema and migrations so a release can migrate and seed from this
+# image: `node ../../node_modules/prisma/build/index.js migrate deploy && node dist-seed/prisma/seed.js`
+# (the Prisma CLI is called through node because npx is not part of the runtime image).
 COPY --from=build /app/apps/api/dist-seed apps/api/dist-seed
 COPY apps/api/prisma/schema.prisma apps/api/prisma/schema.prisma
 COPY apps/api/prisma/migrations apps/api/prisma/migrations

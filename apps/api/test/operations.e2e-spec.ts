@@ -5,7 +5,9 @@ import { NotificationDispatcher } from '../src/modules/notifications/notificatio
 import { createApp, type Session, signIn } from './app.js';
 
 const PDF = Buffer.from('%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF\n');
-const today = () => new Date().toISOString().slice(0, 10);
+/** Business date in Brunei, which can differ from the UTC date in the evening. */
+const today = () =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Brunei' }).format(new Date());
 
 function write(
   session: Session,
@@ -372,6 +374,13 @@ describe('Back-office operations', () => {
     await write(manager, 'put', `/backoffice/users/${created.body.user.id}/status`, {
       status: 'DISABLED',
     }).expect(200);
+    // A reset must not bring a disabled account back to life.
+    const disabledReset = await write(
+      manager,
+      'post',
+      `/backoffice/users/${created.body.user.id}/reset-password`,
+    ).expect(422);
+    expect(disabledReset.body.code).toBe('USER_DISABLED');
     await write(manager, 'put', `/backoffice/users/${manager.userId}/status`, {
       status: 'DISABLED',
     }).expect(422);

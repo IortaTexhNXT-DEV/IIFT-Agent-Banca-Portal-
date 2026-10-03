@@ -251,6 +251,13 @@ export class UsersService {
         'Directory accounts are reset in the corporate directory',
       );
     }
+    // A reset clears a lock-out but never re-activates an account that was disabled.
+    if (user.status === 'DISABLED') {
+      throw new BusinessRuleError(
+        'USER_DISABLED',
+        'Activate the account before resetting its password',
+      );
+    }
     const temporaryPassword = this.passwords.generateTemporary();
     const passwordHash = await this.passwords.hash(temporaryPassword);
     await this.prisma.$transaction(async (tx) => {
