@@ -7,7 +7,6 @@ import {
   Form,
   Modal,
   Select,
-  Tag,
   Tooltip,
   Typography,
   Upload,
@@ -56,11 +55,7 @@ export function ExpiryCell({ document }: { document: DocumentView }) {
     <Flex gap={6} align="center">
       {formatDate(document.expiryDate)}
       {document.expired && <StatusTag status="EXPIRED" />}
-      {soon && (
-        <Tag color="orange" variant="filled" className="status-tag">
-          Expires soon
-        </Tag>
-      )}
+      {soon && <StatusTag tone="pending" label="Expires soon" />}
     </Flex>
   );
 }
@@ -165,7 +160,7 @@ export function AgentDocuments({
         pagination={false}
         scroll={{}}
         columns={columns}
-        locale={{ emptyText: <EmptyState label="No documents" /> }}
+        locale={{ emptyText: <EmptyState label="No documents yet" /> }}
       />
       {uploading && (
         <UploadDialog

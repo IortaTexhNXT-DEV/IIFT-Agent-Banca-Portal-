@@ -78,7 +78,7 @@ export function ParticipantList({
         pagination={participants.pagination}
         scroll={{}}
         onRowClick={(participant) => navigate(links.participant(participant.id))}
-        locale={{ emptyText: <EmptyState label="No participants" /> }}
+        locale={{ emptyText: <EmptyState label="No participants yet" /> }}
         columns={[
           {
             title: 'Participant no.',

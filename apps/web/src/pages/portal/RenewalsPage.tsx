@@ -1,5 +1,5 @@
 import { ClockCircleOutlined, StopOutlined, SyncOutlined } from '@ant-design/icons';
-import { Button, Tag } from 'antd';
+import { Button } from 'antd';
 import dayjs from 'dayjs';
 import { useNavigate } from 'react-router';
 import { api } from '../../api/client';
@@ -13,6 +13,7 @@ import { KpiGrid, KpiTile } from '../../components/KpiTile';
 import { PageHeader } from '../../components/PageHeader';
 import { PolicyLink } from '../../components/sales/PolicyTable';
 import { useSalesLinks } from '../../components/sales/useSalesLinks';
+import { StatusTag } from '../../components/StatusTag';
 import { TableCard } from '../../components/TableCard';
 import { P } from '../../utils/permissions';
 import '../../styles/sales.css';
@@ -24,16 +25,17 @@ function daysLeft(endDate: string | null): number | null {
 function ExpiryTag({ endDate }: { endDate: string | null }) {
   const days = daysLeft(endDate);
   if (days === null) return null;
-  if (days < 0)
+  if (days < 0) {
     return (
-      <Tag variant="filled" className="status-tag">
-        Expired {-days} day{days === -1 ? '' : 's'} ago
-      </Tag>
+      <StatusTag tone="negative" label={`Expired ${-days} day${days === -1 ? '' : 's'} ago`} wide />
     );
+  }
   return (
-    <Tag variant="filled" color={days <= 7 ? 'orange' : 'gold'} className="status-tag">
-      {days === 0 ? 'Expires today' : `${days} day${days === 1 ? '' : 's'} left`}
-    </Tag>
+    <StatusTag
+      tone={days <= 7 ? 'negative' : 'pending'}
+      label={days === 0 ? 'Expires today' : `${days} day${days === 1 ? '' : 's'} left`}
+      wide
+    />
   );
 }
 

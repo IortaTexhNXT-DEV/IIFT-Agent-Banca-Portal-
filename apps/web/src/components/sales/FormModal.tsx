@@ -10,6 +10,8 @@ interface Props<T> {
   onClose(): void;
   pending: boolean;
   error: unknown;
+  /** Outcome shown as the error title, e.g. "Nominees not saved". */
+  errorTitle?: string;
   children: ReactNode;
   initialValues?: Partial<T>;
   width?: number;
@@ -25,6 +27,7 @@ export function FormModal<T>({
   onClose,
   pending,
   error,
+  errorTitle,
   children,
   initialValues,
   width,
@@ -41,7 +44,7 @@ export function FormModal<T>({
       onOk={() => form.validateFields().then(onSubmit, () => undefined)}
       destroyOnHidden
     >
-      <ErrorAlert error={error} className="mb-16" />
+      <ErrorAlert error={error} title={errorTitle} className="mb-16" />
       <Form<T> form={form} layout="vertical" requiredMark="optional" initialValues={initialValues}>
         {children}
       </Form>

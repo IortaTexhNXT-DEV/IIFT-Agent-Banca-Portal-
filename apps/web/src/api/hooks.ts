@@ -5,8 +5,8 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
-import { App } from 'antd';
 import { useState } from 'react';
+import { type NoticeInput, useNotify } from '../components/notify';
 import { api, ApiError } from './client';
 import type { Page } from './types';
 
@@ -53,25 +53,48 @@ export function usePagedQuery<T>(path: string, filters: Params = {}, pageSize = 
   };
 }
 
+type SuccessNotice<TResult, TVariables> =
+  NoticeInput | ((result: TResult, variables: TVariables) => NoticeInput);
+
 /**
- * Mutation that shows a success message, reports errors consistently and refreshes the
- * affected queries. `invalidate` lists path prefixes whose cached data is now stale.
+ * Mutation that announces the outcome, reports errors consistently and refreshes the
+ * affected queries.
+ *
+ * - `success`: a short past-tense title ("Nominees saved") or `{ title, description }`,
+ *   optionally computed from the result ("Request RQ/26/000017 approved"). Shown as a
+ *   top-right notification.
+ * - Errors are left to the caller to show in context with `ErrorAlert`; `errorNotice`
+ *   shows them as a notification instead, for background actions without a form on
+ *   screen (row actions, confirm dialogs).
+ * - `invalidate` lists path prefixes whose cached data is now stale.
  */
 export function useApiMutation<TVariables, TResult = unknown>(
   mutationFn: (variables: TVariables) => Promise<TResult>,
-  options: { success?: string; invalidate?: string[] } & Omit<
-    UseMutationOptions<TResult, ApiError, TVariables>,
-    'mutationFn'
-  > = {},
+  options: {
+    success?: SuccessNotice<TResult, TVariables>;
+    errorNotice?: boolean | string;
+    invalidate?: string[];
+  } & Omit<UseMutationOptions<TResult, ApiError, TVariables>, 'mutationFn'> = {},
 ) {
-  const { message } = App.useApp();
+  const notify = useNotify();
   const queryClient = useQueryClient();
-  const { success, invalidate, onSuccess, ...rest } = options;
+  const { success, errorNotice, invalidate, onSuccess, onError, ...rest } = options;
   return useMutation<TResult, ApiError, TVariables>({
     mutationFn,
     ...rest,
+    onError: (error, variables, result, context) => {
+      if (errorNotice) {
+        notify.error({
+          title: typeof errorNotice === 'string' ? errorNotice : 'Action not completed',
+          description: error.message,
+        });
+      }
+      return onError?.(error, variables, result, context);
+    },
     onSuccess: async (data, variables, result, context) => {
-      if (success) message.success(success);
+      if (success) {
+        notify.success(typeof success === 'function' ? success(data, variables) : success);
+      }
       if (invalidate) {
         await Promise.all(
           invalidate.map((prefix) =>

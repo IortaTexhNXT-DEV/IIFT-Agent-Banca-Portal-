@@ -52,6 +52,7 @@ export function EndorsementModal({ policy, onClose }: { policy: PolicyDetail; on
       onClose={onClose}
       pending={request.isPending}
       error={request.error}
+      errorTitle="Endorsement not requested"
       width={type === NOMINEE_CHANGE ? 1040 : 560}
     >
       <Form.Item

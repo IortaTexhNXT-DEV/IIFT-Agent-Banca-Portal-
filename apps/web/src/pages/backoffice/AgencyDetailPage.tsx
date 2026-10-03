@@ -50,7 +50,7 @@ function AgencyAgents({ agencyId, banca }: { agencyId: string; banca: boolean })
         pagination={agents.pagination}
         columns={columns}
         onRowClick={(agent) => navigate(`/backoffice/agents/${agent.id}`)}
-        locale={{ emptyText: <EmptyState label="No agents registered" /> }}
+        locale={{ emptyText: <EmptyState label="No agents yet" /> }}
       />
     </TableCard>
   );

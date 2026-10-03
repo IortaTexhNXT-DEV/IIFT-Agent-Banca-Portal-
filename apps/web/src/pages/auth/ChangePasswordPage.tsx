@@ -75,7 +75,7 @@ export default function ChangePasswordPage() {
   if (!user) return <Navigate to="/login" replace />;
 
   return (
-    <AuthLayout title="Change password">
+    <AuthLayout title="Change password" lead="Choose a new password for your account.">
       {user.mustChangePassword && (
         <Alert
           className="mb-16"
@@ -84,7 +84,7 @@ export default function ChangePasswordPage() {
           title="Temporary or expired password. Set a new one to continue."
         />
       )}
-      <ErrorAlert error={change.error} className="mb-16" />
+      <ErrorAlert error={change.error} title="Password not changed" className="mb-16" />
       <Form<Values>
         form={form}
         layout="vertical"

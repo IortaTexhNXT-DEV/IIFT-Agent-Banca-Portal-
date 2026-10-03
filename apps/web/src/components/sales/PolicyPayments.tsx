@@ -22,7 +22,7 @@ export function PolicyPayments({ policy }: { policy: PolicyDetail }) {
         dataSource={policy.allocations}
         className="mb-16"
         scroll={{}}
-        locale={{ emptyText: <EmptyState label="No payments" inline /> }}
+        locale={{ emptyText: <EmptyState label="No payments yet" inline /> }}
         columns={[
           {
             title: 'Payment no.',

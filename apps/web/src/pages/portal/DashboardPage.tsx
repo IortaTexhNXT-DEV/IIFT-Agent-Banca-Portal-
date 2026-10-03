@@ -219,6 +219,7 @@ function DashboardView({ dashboard }: { dashboard: PortalDashboard }) {
     <>
       <PageHeader
         title="Dashboard"
+        breadcrumb={[{ title: 'Home' }]}
         meta={[
           { label: 'Code', value: profile.agentCode },
           { label: 'Type', value: AGENT_TYPE_LABELS[profile.agentType] },

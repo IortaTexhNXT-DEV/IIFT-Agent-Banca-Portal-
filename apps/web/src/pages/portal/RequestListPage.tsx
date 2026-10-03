@@ -51,7 +51,7 @@ export default function RequestListPage() {
           pagination={requests.pagination}
           scroll={{}}
           onRowClick={(request) => navigate(`/portal/requests/${request.id}`)}
-          locale={{ emptyText: <EmptyState label="No requests" /> }}
+          locale={{ emptyText: <EmptyState label="No requests yet" /> }}
           columns={[
             {
               title: 'Request no.',

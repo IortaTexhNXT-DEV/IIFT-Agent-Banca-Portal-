@@ -14,7 +14,7 @@ export function NomineesTable({ nominees }: { nominees: Nominee[] }) {
       pagination={false}
       dataSource={nominees}
       scroll={{}}
-      locale={{ emptyText: <EmptyState label="No nominees" inline /> }}
+      locale={{ emptyText: <EmptyState label="No nominees yet" inline /> }}
       columns={[
         textColumn('Name', 'fullName'),
         {

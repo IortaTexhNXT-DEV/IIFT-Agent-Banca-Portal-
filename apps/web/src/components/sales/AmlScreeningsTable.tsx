@@ -19,7 +19,7 @@ export function AmlScreeningsTable({ screenings }: { screenings: AmlScreening[] 
                 .join('; '),
       }))}
       scroll={{}}
-      locale={{ emptyText: <EmptyState label="No screenings" /> }}
+      locale={{ emptyText: <EmptyState label="No screenings yet" /> }}
       columns={[
         dateTimeColumn('Screened', 'createdAt', 160),
         { title: 'Provider', dataIndex: 'provider', width: 130 },

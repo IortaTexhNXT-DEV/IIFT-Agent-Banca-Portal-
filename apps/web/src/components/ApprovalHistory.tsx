@@ -1,19 +1,46 @@
-import { Timeline, Typography } from 'antd';
 import type { ApprovalRequest } from '../api/types';
 import { formatDateTime, humanise } from '../utils/format';
+import type { StatusTone } from '../utils/status';
 import { EmptyState } from './EmptyState';
 import { StatusTag } from './StatusTag';
 
-const ACTION_COLOURS: Record<string, string> = {
-  SUBMIT: 'blue',
-  APPROVE: 'green',
-  REJECT: 'red',
-  WITHDRAW: 'gray',
+const ACTIONS: Record<string, { tone: StatusTone; label: string }> = {
+  SUBMIT: { tone: 'info', label: 'Submitted' },
+  APPROVE: { tone: 'positive', label: 'Approved' },
+  REJECT: { tone: 'negative', label: 'Rejected' },
+  WITHDRAW: { tone: 'default', label: 'Withdrawn' },
 };
+
+type Action = NonNullable<ApprovalRequest['actions']>[number];
+
+/** Left-anchored log of the maker-checker actions of one request: when, what, who, remarks. */
+export function ApprovalActionLog({ actions }: { actions: Action[] }) {
+  if (actions.length === 0) return <EmptyState label="No actions yet" inline />;
+  return (
+    <ol className="event-log">
+      {actions.map((action) => (
+        <li key={action.id} className="event-log__row">
+          <span className="event-log__when">{formatDateTime(action.createdAt)}</span>
+          <span className="event-log__title">
+            <StatusTag
+              tone={ACTIONS[action.action]?.tone ?? 'default'}
+              label={ACTIONS[action.action]?.label ?? humanise(action.action)}
+            />
+            <span className="event-log__by">
+              {action.level > 0 ? `Level ${action.level} · ` : ''}
+              {action.actorName}
+            </span>
+          </span>
+          {action.remarks && <span className="event-log__detail">{action.remarks}</span>}
+        </li>
+      ))}
+    </ol>
+  );
+}
 
 /**
  * Maker-checker history (AP-61): every request with each level's decision and remarks.
- * `compact` shows only the timeline, for a page that already shows the request itself.
+ * `compact` shows only the action log, for a page that already shows the request itself.
  */
 export function ApprovalHistory({
   approvals,
@@ -23,7 +50,7 @@ export function ApprovalHistory({
   compact?: boolean;
 }) {
   if (approvals.length === 0) {
-    return <EmptyState label="No approval requests" />;
+    return <EmptyState label="No approval requests yet" />;
   }
   return (
     <div className="approval-history">
@@ -31,30 +58,15 @@ export function ApprovalHistory({
         <div key={request.id} className="approval-history__request">
           {!compact && (
             <>
-              <Typography.Text strong>
-                {request.requestNo} · {humanise(request.type)}
-              </Typography.Text>{' '}
-              <StatusTag status={request.status} />
-              <Typography.Paragraph type="secondary" className="approval-history__summary">
-                {request.summary}
-              </Typography.Paragraph>
+              <div className="approval-history__head">
+                <strong>{request.requestNo}</strong>
+                <span className="muted">{humanise(request.type)}</span>
+                <StatusTag status={request.status} />
+              </div>
+              <p className="approval-history__summary">{request.summary}</p>
             </>
           )}
-          <Timeline
-            items={(request.actions ?? []).map((action) => ({
-              color: ACTION_COLOURS[action.action],
-              content: (
-                <>
-                  <Typography.Text>
-                    {humanise(action.action)}
-                    {action.level > 0 ? ` (level ${action.level})` : ''} by {action.actorName}
-                  </Typography.Text>
-                  <div className="timeline-time">{formatDateTime(action.createdAt)}</div>
-                  {action.remarks && <div className="muted">“{action.remarks}”</div>}
-                </>
-              ),
-            }))}
-          />
+          <ApprovalActionLog actions={request.actions ?? []} />
         </div>
       ))}
     </div>

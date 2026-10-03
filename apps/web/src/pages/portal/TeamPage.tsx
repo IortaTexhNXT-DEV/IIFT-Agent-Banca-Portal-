@@ -62,7 +62,7 @@ function TeamTable() {
         pagination={team.pagination}
         scroll={{}}
         onRowClick={(agent) => navigate(memberPath(agent.id))}
-        locale={{ emptyText: <EmptyState label="No agents" /> }}
+        locale={{ emptyText: <EmptyState label="No agents yet" /> }}
         columns={[
           {
             title: 'Agent code',

@@ -392,7 +392,7 @@ export default function DashboardPage() {
   const dashboard = useApiQuery<BackofficeDashboard>('/backoffice/dashboard');
   return (
     <>
-      <PageHeader title="Dashboard" />
+      <PageHeader title="Dashboard" breadcrumb={[{ title: 'Home' }]} />
       <QueryState query={dashboard}>{(data) => <DashboardView data={data} />}</QueryState>
     </>
   );

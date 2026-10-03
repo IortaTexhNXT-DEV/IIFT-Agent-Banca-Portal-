@@ -74,7 +74,11 @@ function WorkflowDrawer({ workflow, onClose }: { workflow: WorkflowDefinition; o
   const save = useApiMutation(
     (values: WorkflowValues) =>
       api.put<WorkflowDefinition>(`${PATH}/${workflow.type}`, toBody(values)),
-    { success: `${workflow.name} saved`, invalidate: [PATH], onSuccess: onClose },
+    {
+      success: { title: 'Workflow saved', description: workflow.name },
+      invalidate: [PATH],
+      onSuccess: onClose,
+    },
   );
 
   return (

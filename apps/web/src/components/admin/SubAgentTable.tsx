@@ -23,7 +23,7 @@ export function SubAgentTable({
       dataSource={agents}
       scroll={{}}
       onRowClick={(agent) => navigate(memberPath(agent.id))}
-      locale={{ emptyText: <EmptyState label="No reporting agents" /> }}
+      locale={{ emptyText: <EmptyState label="No reporting agents yet" /> }}
       columns={[
         {
           title: 'Agent code',

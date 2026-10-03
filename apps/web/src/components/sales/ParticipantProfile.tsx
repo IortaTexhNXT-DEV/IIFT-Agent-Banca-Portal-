@@ -61,8 +61,8 @@ export function ParticipantProfile({ participant, compact = false }: Props) {
         ]
       : []),
     { key: 'mobile', label: 'Mobile', value: participant.mobile },
-    { key: 'email', label: 'E-mail', value: participant.email, span: compact ? 2 : 1 },
     { key: 'aml', label: 'AML screening', value: <StatusTag status={participant.amlStatus} /> },
+    { key: 'email', label: 'E-mail', value: participant.email, span: compact ? 2 : 1 },
   ];
 
   if (!compact) {

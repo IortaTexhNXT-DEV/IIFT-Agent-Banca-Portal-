@@ -251,7 +251,7 @@ export function ReportSchedules({ reports }: { reports: ReportDefinition[] }) {
             emptyText: schedules.error ? (
               <ErrorAlert error={schedules.error} />
             ) : (
-              <EmptyState label="No scheduled reports" />
+              <EmptyState label="No scheduled reports yet" />
             ),
           }}
         />

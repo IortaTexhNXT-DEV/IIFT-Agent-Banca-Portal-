@@ -1,4 +1,4 @@
-import { Alert, App, Button, Popconfirm } from 'antd';
+import { Alert, Button, Popconfirm } from 'antd';
 import { type ReactNode, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { api } from '../../api/client';
@@ -6,6 +6,7 @@ import { useApiMutation, useApiQuery } from '../../api/hooks';
 import type { PolicyDetail, PolicySummary, RequiredDocument } from '../../api/types';
 import { useAuth } from '../../auth/AuthContext';
 import { ErrorAlert } from '../../components/ErrorAlert';
+import type { Notice } from '../../components/notify';
 import { QueryState } from '../../components/QueryState';
 import { CancellationModal } from '../../components/sales/CancellationModal';
 import { CompletionChecklist, type DraftAction } from '../../components/sales/CompletionChecklist';
@@ -34,10 +35,16 @@ const SIGNATURE_UPLOADS: RequiredDocument[] = [
   { docType: 'SIGNATURE_AGENT', label: 'Agent signature', mandatory: false },
 ];
 
-const SUBMIT_OUTCOMES: Partial<Record<PolicySummary['status'], string>> = {
-  PENDING_APPROVAL: 'Submitted and referred to IIFT for approval',
-  PENDING_PAYMENT: 'Accepted – the e-Policy is issued once the contribution is paid',
-  ACTIVE: 'Policy issued',
+const SUBMIT_OUTCOMES: Partial<Record<PolicySummary['status'], Notice>> = {
+  PENDING_APPROVAL: {
+    title: 'Application submitted',
+    description: 'Referred to IIFT for underwriting approval',
+  },
+  PENDING_PAYMENT: {
+    title: 'Application accepted',
+    description: 'The e-Policy is issued once the contribution is paid',
+  },
+  ACTIVE: { title: 'Policy issued' },
 };
 
 function DialogFor({
@@ -75,7 +82,6 @@ function DialogFor({
 
 function PolicyView({ policy }: { policy: PolicyDetail }) {
   const { can } = useAuth();
-  const { message } = App.useApp();
   const navigate = useNavigate();
   const [tab, setTab] = useState<PolicyTabKey>('overview');
   const [dialog, setDialog] = useState<Dialog | null>(null);
@@ -83,9 +89,8 @@ function PolicyView({ policy }: { policy: PolicyDetail }) {
   const invalidate = ['/portal/policies', '/portal/dashboard'];
 
   const submit = useApiMutation(() => api.post<PolicySummary>(`${path}/submit`), {
+    success: (result) => SUBMIT_OUTCOMES[result.status] ?? 'Application submitted',
     invalidate,
-    onSuccess: (result) =>
-      message.success(SUBMIT_OUTCOMES[result.status] ?? 'Application submitted'),
   });
   const discard = useApiMutation(() => api.post(`${path}/discard`), {
     success: 'Quotation discarded',
@@ -139,7 +144,7 @@ function PolicyView({ policy }: { policy: PolicyDetail }) {
     actions.push(
       <Popconfirm
         key="renew"
-        title="Create a renewal quotation?"
+        title={`Renew ${policy.policyNo}?`}
         description="The cover, nominees and risk details are copied to a new quotation."
         okText="Create"
         onConfirm={() => renew.mutate(undefined)}
@@ -169,7 +174,7 @@ function PolicyView({ policy }: { policy: PolicyDetail }) {
     actions.push(
       <Popconfirm
         key="discard"
-        title="Discard this quotation?"
+        title={`Discard ${policy.quotationNo}?`}
         description="It is cancelled and cannot be submitted again."
         okText="Discard"
         okButtonProps={{ danger: true }}

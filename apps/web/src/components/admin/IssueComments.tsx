@@ -1,4 +1,4 @@
-import { Button, Checkbox, Form, Input, Tag } from 'antd';
+import { Button, Checkbox, Form, Input } from 'antd';
 import { api } from '../../api/client';
 import { useApiMutation } from '../../api/hooks';
 import type { Issue } from '../../api/types';
@@ -6,6 +6,7 @@ import { formatDateTime } from '../../utils/format';
 import { ActionBar } from '../ActionBar';
 import { EmptyState } from '../EmptyState';
 import { ErrorAlert } from '../ErrorAlert';
+import { StatusTag } from '../StatusTag';
 import '../../styles/admin.css';
 
 type Comment = NonNullable<Issue['comments']>[number];
@@ -41,7 +42,7 @@ export function IssueComments({
   return (
     <>
       {comments.length === 0 ? (
-        <EmptyState label="No comments" inline />
+        <EmptyState label="No comments yet" inline />
       ) : (
         <ol className="comment-thread">
           {comments.map((comment) => (
@@ -49,14 +50,10 @@ export function IssueComments({
               key={comment.id}
               className={`comment${comment.internal ? ' comment--internal' : ''}`}
             >
-              <div className="comment__meta tag-row">
-                <strong>{comment.authorName}</strong>
-                {comment.internal && (
-                  <Tag color="orange" variant="filled" className="status-tag">
-                    Internal
-                  </Tag>
-                )}
-                <span className="muted">{formatDateTime(comment.createdAt)}</span>
+              <div className="comment__meta">
+                <span className="comment__author">{comment.authorName}</span>
+                <span className="comment__time">{formatDateTime(comment.createdAt)}</span>
+                {comment.internal && <StatusTag tone="info" label="Internal" />}
               </div>
               <div className="comment__body">{comment.body}</div>
             </li>
@@ -91,8 +88,8 @@ export function IssueComments({
               )
             }
           >
-            <Button type="primary" htmlType="submit" loading={add.isPending}>
-              Send
+            <Button htmlType="submit" loading={add.isPending}>
+              Send comment
             </Button>
           </ActionBar>
         </Form>

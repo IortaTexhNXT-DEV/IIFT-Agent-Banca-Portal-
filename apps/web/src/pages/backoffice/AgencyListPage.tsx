@@ -72,7 +72,7 @@ export default function AgencyListPage() {
       width: 120,
       render: (blocked: boolean) => <IssuanceTag blocked={blocked} />,
     },
-    textColumn('Email', 'email', 200),
+    textColumn('E-mail', 'email', 200),
     textColumn('Phone', 'phone', 120),
   ];
 

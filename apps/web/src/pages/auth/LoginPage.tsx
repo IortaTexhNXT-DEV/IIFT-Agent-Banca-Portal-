@@ -40,7 +40,7 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthLayout title="Sign in">
+    <AuthLayout title="Sign in" lead="Use the username issued by IIFT.">
       {sessionEnded && (
         <Alert
           className="mb-16"
@@ -49,7 +49,7 @@ export default function LoginPage() {
           title="Your session ended. Please sign in again."
         />
       )}
-      <ErrorAlert error={error} className="mb-16" />
+      <ErrorAlert error={error} title="Sign-in failed" className="mb-16" />
       <Form<Credentials> layout="vertical" onFinish={submit} requiredMark={false}>
         <Form.Item
           name="username"
@@ -72,7 +72,7 @@ export default function LoginPage() {
           Sign in
         </Button>
       </Form>
-      <p className="auth-card__notice">Authorised users only. Activity is recorded.</p>
+      <p className="auth-card__notice">Forgotten your password? Contact the IIFT administrator.</p>
     </AuthLayout>
   );
 }

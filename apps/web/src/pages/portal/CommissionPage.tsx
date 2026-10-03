@@ -82,7 +82,7 @@ export default function CommissionPage() {
           dataSource={commissions.items}
           pagination={commissions.pagination}
           scroll={{}}
-          locale={{ emptyText: <EmptyState label="No commission" /> }}
+          locale={{ emptyText: <EmptyState label="No commission yet" /> }}
           columns={[
             {
               title: 'Period',

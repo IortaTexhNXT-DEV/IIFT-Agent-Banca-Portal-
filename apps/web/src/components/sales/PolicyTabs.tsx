@@ -27,7 +27,7 @@ function PolicyClaims({ claims }: { claims: PolicyClaim[] }) {
       pagination={false}
       dataSource={claims}
       scroll={{}}
-      locale={{ emptyText: <EmptyState label="No claims" inline /> }}
+      locale={{ emptyText: <EmptyState label="No claims yet" inline /> }}
       columns={[
         {
           title: 'Claim no.',
@@ -98,9 +98,9 @@ export function PolicyTabs({ policy, activeKey, onChange, uploadTypes, claimsAct
           key: 'history',
           label: 'History',
           children: (
-            <TabCard>
+            <Card className="content-card content-card--flush">
               <PolicyEventsTimeline events={policy.events} />
-            </TabCard>
+            </Card>
           ),
         },
         {

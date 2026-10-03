@@ -64,7 +64,7 @@ function ClaimForm({ policy }: { policy: ClaimablePolicy }) {
         claimedAmount: values.claimedAmount ?? undefined,
       }),
     {
-      success: 'Claim notified – attach the supporting documents',
+      success: { title: 'Claim notified', description: 'Attach the supporting documents' },
       invalidate: ['/portal/claims', '/portal/policies'],
       onSuccess: (claim) => navigate(`/portal/claims/${claim.id}`),
     },

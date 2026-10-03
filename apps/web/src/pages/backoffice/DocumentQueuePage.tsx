@@ -68,7 +68,7 @@ export default function DocumentQueuePage() {
     {
       title: 'Status',
       dataIndex: 'status',
-      width: 110,
+      width: 130,
       render: (_: unknown, doc) => <DocumentStatusCell document={doc} />,
     },
     ...(reviewable ? [] : [textColumn<DocumentView>('Remarks', 'remarks', 150)]),

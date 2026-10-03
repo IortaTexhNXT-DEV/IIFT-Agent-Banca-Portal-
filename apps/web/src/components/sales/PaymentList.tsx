@@ -5,7 +5,7 @@ import { useApiQuery, usePagedQuery } from '../../api/hooks';
 import type { AgencyOption } from '../../api/sales-types';
 import type { Payment, PaymentStatus } from '../../api/types';
 import { humanise } from '../../utils/format';
-import { DataTable, dateColumn, moneyColumn, statusColumn, textColumn } from '../DataTable';
+import { DataTable, dateColumn, moneyColumn, paymentStatusColumn, textColumn } from '../DataTable';
 import { EmptyState } from '../EmptyState';
 import { TableCard } from '../TableCard';
 import { PAYMENT_STATUS_OPTIONS } from './options';
@@ -90,7 +90,7 @@ export function PaymentList({ path, showAgency = false }: Props) {
         pagination={payments.pagination}
         scroll={{}}
         onRowClick={(payment) => navigate(links.payment(payment.id))}
-        locale={{ emptyText: <EmptyState label="No payments" /> }}
+        locale={{ emptyText: <EmptyState label="No payments yet" /> }}
         columns={[
           {
             title: 'Payment no.',
@@ -106,7 +106,7 @@ export function PaymentList({ path, showAgency = false }: Props) {
           textColumn('Bank', 'bankName'),
           textColumn('Reference', 'referenceNo', 130),
           moneyColumn('Amount', 'totalAmount', 120),
-          statusColumn('Status', 'status', 145),
+          paymentStatusColumn('Status', 'status'),
           dateColumn('Submitted', 'createdAt', 120),
         ]}
       />

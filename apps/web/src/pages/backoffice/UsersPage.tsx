@@ -67,7 +67,8 @@ function useAccountActions(onPassword: (user: UserSummary, password: string) => 
         status: user.status === 'DISABLED' ? 'ACTIVE' : 'DISABLED',
       }),
     {
-      success: 'Account status changed',
+      success: (result) =>
+        result.status === 'DISABLED' ? 'Account disabled' : 'Account activated',
       invalidate: INVALIDATE,
     },
   );
@@ -220,7 +221,7 @@ export default function UsersPage() {
               ),
             },
             textColumn('Name', 'fullName', 220),
-            textColumn('Email', 'email'),
+            textColumn('E-mail', 'email'),
             {
               title: 'Type',
               dataIndex: 'userType',

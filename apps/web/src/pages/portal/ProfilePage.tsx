@@ -75,8 +75,8 @@ function UpdateRequestModal({ profile, onClose }: { profile: AgentDetail; onClos
       <FormSection title="Contact details" columns={2}>
         <Form.Item
           name="email"
-          label="Email"
-          rules={[{ type: 'email', message: 'Enter a valid email address' }, { max: 254 }]}
+          label="E-mail"
+          rules={[{ type: 'email', message: 'Enter a valid e-mail address' }, { max: 254 }]}
         >
           <Input type="email" />
         </Form.Item>

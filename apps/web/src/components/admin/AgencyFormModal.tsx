@@ -61,7 +61,7 @@ export function AgencyFormModal({ agency, onClose, onSaved }: Props) {
       destroyOnHidden
       width={680}
     >
-      <ErrorAlert error={save.error} className="mb-16" />
+      <ErrorAlert error={save.error} title="Agency not saved" className="mb-16" />
       <Form
         form={form}
         onFinish={(values) => save.mutate(values)}
@@ -128,8 +128,8 @@ export function AgencyFormModal({ agency, onClose, onSaved }: Props) {
         <FormSection title="Contact">
           <Form.Item
             name="email"
-            label="Email"
-            rules={[{ type: 'email', message: 'Enter a valid email address' }]}
+            label="E-mail"
+            rules={[{ type: 'email', message: 'Enter a valid e-mail address' }]}
           >
             <Input type="email" />
           </Form.Item>

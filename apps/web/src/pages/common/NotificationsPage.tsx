@@ -28,7 +28,7 @@ export default function NotificationsPage() {
     invalidate: INVALIDATE,
   });
   const markAllRead = useApiMutation(() => api.post('/common/notifications/read-all'), {
-    success: 'All notifications marked as read',
+    success: 'Notifications marked as read',
     invalidate: INVALIDATE,
   });
 

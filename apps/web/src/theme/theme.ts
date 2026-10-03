@@ -119,13 +119,6 @@ export const theme: ThemeConfig = {
       defaultBg: brand.fill,
       defaultColor: brand.text,
     },
-    Descriptions: {
-      labelColor: brand.subtle,
-      titleColor: brand.ink,
-      itemPaddingBottom: 12,
-      colonMarginRight: 0,
-      colonMarginLeft: 0,
-    },
     Tabs: {
       horizontalItemPadding: '12px 0',
       horizontalItemGutter: 28,

@@ -1,4 +1,4 @@
-import { App, Button, Form, Input, Modal, Popconfirm, Select } from 'antd';
+import { Button, Form, Input, Modal, Popconfirm, Select } from 'antd';
 import { useState } from 'react';
 import { api } from '../../api/client';
 import { useApiMutation, useApiQuery } from '../../api/hooks';
@@ -21,7 +21,7 @@ interface StatusChange {
 
 function useStatusChange(
   issueId: string,
-  options: { onSuccess?: () => void; onError?: (error: Error) => void } = {},
+  options: { onSuccess?: () => void; errorNotice?: string } = {},
 ) {
   return useApiMutation(
     (body: StatusChange) => api.put<Issue>(`/common/issues/${issueId}/status`, body),
@@ -35,21 +35,20 @@ function useStatusChange(
 
 /** Reporters confirm a resolution (close) or reopen the issue (AP-56). */
 export function ReporterActions({ issue }: { issue: Issue }) {
-  const { message } = App.useApp();
-  const change = useStatusChange(issue.id, { onError: (error) => message.error(error.message) });
+  const change = useStatusChange(issue.id, { errorNotice: 'Issue not updated' });
   const pending = (status: IssueStatus) => change.isPending && change.variables?.status === status;
   if (issue.status !== 'RESOLVED') return null;
   return (
     <ActionBar>
       <Popconfirm
-        title="Reopen this issue?"
+        title={`Reopen ${issue.issueNo}?`}
         okText="Reopen"
         onConfirm={() => change.mutate({ status: 'IN_PROGRESS' })}
       >
         <Button loading={pending('IN_PROGRESS')}>Reopen</Button>
       </Popconfirm>
       <Popconfirm
-        title="Close this issue?"
+        title={`Close ${issue.issueNo}?`}
         okText="Close issue"
         onConfirm={() => change.mutate({ status: 'CLOSED' })}
       >
@@ -247,9 +246,8 @@ function ResolveModal({ issue, onClose }: { issue: Issue; onClose(): void }) {
 
 /** BO-29..31: support actions on an issue – assign, prioritise, note, start, resolve, close. */
 export function IssueActions({ issue }: { issue: Issue }) {
-  const { message } = App.useApp();
   const [dialog, setDialog] = useState<Dialog>();
-  const change = useStatusChange(issue.id, { onError: (error) => message.error(error.message) });
+  const change = useStatusChange(issue.id, { errorNotice: 'Issue not updated' });
   const pending = (status: IssueStatus) => change.isPending && change.variables?.status === status;
   const closed = issue.status === 'CLOSED';
   if (closed) return null;
@@ -284,7 +282,7 @@ export function IssueActions({ issue }: { issue: Issue }) {
         )}
         {resolved && (
           <Popconfirm
-            title="Close this issue?"
+            title={`Close ${issue.issueNo}?`}
             okText="Close issue"
             onConfirm={() => change.mutate({ status: 'CLOSED' })}
           >

@@ -230,7 +230,7 @@ export function Watchlist() {
         dataSource={entries.items}
         pagination={entries.pagination}
         columns={columns}
-        locale={{ emptyText: <EmptyState label="No watch-list entries" /> }}
+        locale={{ emptyText: <EmptyState label="No watch-list entries yet" /> }}
       />
       {dialog === 'add' && <AddEntryModal onClose={() => setDialog(undefined)} />}
       {dialog === 'import' && <ImportModal onClose={() => setDialog(undefined)} />}

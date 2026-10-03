@@ -58,7 +58,7 @@ function ProductDrawer({ product, onClose }: { product: Product; onClose(): void
         questionnaire: JSON.parse(values.questionnaire) as unknown,
       }),
     {
-      success: `${product.name} saved`,
+      success: { title: 'Product saved', description: product.name },
       invalidate: [PATH, '/common/products'],
       onSuccess: onClose,
     },

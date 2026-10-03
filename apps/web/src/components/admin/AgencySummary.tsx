@@ -56,7 +56,7 @@ function detailItems(agency: Agency): FieldItem[] {
       label: 'New business',
       value: <IssuanceTag blocked={agency.issuanceBlocked} />,
     },
-    { key: 'email', label: 'Email', value: agency.email },
+    { key: 'email', label: 'E-mail', value: agency.email },
     { key: 'phone', label: 'Phone', value: agency.phone },
     { key: 'address', label: 'Address', value: agency.address, span: 'full' },
   ];

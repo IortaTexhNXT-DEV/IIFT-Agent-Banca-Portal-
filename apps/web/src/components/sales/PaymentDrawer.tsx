@@ -103,7 +103,7 @@ export function PaymentDrawer({ policies, onClose, onSubmitted }: Props) {
         </Flex>
       }
     >
-      <ErrorAlert error={submit.error} className="mb-16" />
+      <ErrorAlert error={submit.error} title="Payment not submitted" className="mb-16" />
       <Form<Values>
         form={form}
         layout="vertical"

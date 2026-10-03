@@ -81,7 +81,7 @@ export function NomineesEditor({ required = false }: { required?: boolean }) {
                   <Form.Item
                     name={[field.name, 'relationship']}
                     label="Relationship"
-                    rules={[{ required: true, message: 'Choose' }]}
+                    rules={[{ required: true, message: 'Choose the relationship' }]}
                   >
                     <Select options={relationships.options} loading={relationships.loading} />
                   </Form.Item>
@@ -90,7 +90,7 @@ export function NomineesEditor({ required = false }: { required?: boolean }) {
                   <Form.Item
                     name={[field.name, 'role']}
                     label="Role"
-                    rules={[{ required: true, message: 'Choose' }]}
+                    rules={[{ required: true, message: 'Choose the role' }]}
                   >
                     <Select options={NOMINEE_ROLE_OPTIONS} />
                   </Form.Item>
@@ -99,7 +99,7 @@ export function NomineesEditor({ required = false }: { required?: boolean }) {
                   <Form.Item
                     name={[field.name, 'sharePercent']}
                     label="Share %"
-                    rules={[{ required: true, message: 'Enter' }]}
+                    rules={[{ required: true, message: 'Enter the share' }]}
                   >
                     <InputNumber
                       className="full-width"

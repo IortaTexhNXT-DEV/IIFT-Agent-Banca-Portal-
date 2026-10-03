@@ -53,7 +53,7 @@ export function CoverageDrawer({ policy, onClose }: { policy: PolicyDetail; onCl
         </Flex>
       }
     >
-      <ErrorAlert error={save.error} className="mb-16" />
+      <ErrorAlert error={save.error} title="Coverage not updated" className="mb-16" />
       <CoverageForm
         product={policy.product}
         form={form}

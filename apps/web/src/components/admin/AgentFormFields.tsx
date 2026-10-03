@@ -77,10 +77,10 @@ export function AgentFormFields() {
       <FormSection title="Contact">
         <Form.Item
           name="email"
-          label="Email"
+          label="E-mail"
           rules={[
-            { required: true, message: 'Enter the email address' },
-            { type: 'email', message: 'Enter a valid email address' },
+            { required: true, message: 'Enter the e-mail address' },
+            { type: 'email', message: 'Enter a valid e-mail address' },
           ]}
         >
           <Input type="email" autoComplete="off" />

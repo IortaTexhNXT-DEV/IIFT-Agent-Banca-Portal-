@@ -1,4 +1,4 @@
-import { App, Form, Input } from 'antd';
+import { Form, Input } from 'antd';
 import { api } from '../../api/client';
 import { useApiMutation } from '../../api/hooks';
 import type { SentTo } from '../../api/sales-types';
@@ -12,16 +12,16 @@ interface Values {
 
 /** AP-62: e-mail the participant a one-time link to review and sign remotely. */
 export function SignatureLinkModal({ policy, onClose }: { policy: PolicyDetail; onClose(): void }) {
-  const { message } = App.useApp();
   const [form] = Form.useForm<Values>();
   const send = useApiMutation(
     (body: Values) => api.post<SentTo>(`/portal/policies/${policy.id}/signatures/link`, body),
     {
+      success: (result) => ({
+        title: 'Signature link sent',
+        description: `Sent to ${result.sentTo}`,
+      }),
       invalidate: ['/portal/policies'],
-      onSuccess: (result) => {
-        message.success(`Link sent to ${result.sentTo}`);
-        onClose();
-      },
+      onSuccess: onClose,
     },
   );
 
@@ -35,6 +35,7 @@ export function SignatureLinkModal({ policy, onClose }: { policy: PolicyDetail; 
       onClose={onClose}
       pending={send.isPending}
       error={send.error}
+      errorTitle="Link not sent"
     >
       <FieldGrid
         columns={2}

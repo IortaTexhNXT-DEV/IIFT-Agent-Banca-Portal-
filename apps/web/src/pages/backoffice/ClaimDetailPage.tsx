@@ -34,7 +34,7 @@ function ClaimStatusModal({ claim, onClose }: { claim: Claim; onClose(): void })
         remarks: values.remarks.trim(),
       }),
     {
-      success: 'Claim status updated; the agent has been notified',
+      success: { title: 'Claim status updated', description: 'The agent has been notified' },
       invalidate: ['/backoffice/claims', '/backoffice/dashboard'],
       onSuccess: onClose,
     },

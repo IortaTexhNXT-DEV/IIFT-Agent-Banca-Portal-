@@ -47,6 +47,7 @@ export function QuestionnaireModal({ policy, onClose }: { policy: PolicyDetail; 
       onClose={onClose}
       pending={save.isPending}
       error={save.error}
+      errorTitle="Declarations not saved"
       width={720}
     >
       {questions.map((question, index) => (

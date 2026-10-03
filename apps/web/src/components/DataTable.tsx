@@ -15,7 +15,7 @@
  *     ]}
  *   />
  */
-import { Table, type TableProps, Tooltip } from 'antd';
+import { Skeleton, Table, type TableProps, Tooltip } from 'antd';
 import type { ColumnType } from 'antd/es/table';
 import type { Money as MoneyValue } from '../api/types';
 import { formatDate, formatDateTime } from '../utils/format';
@@ -45,6 +45,15 @@ export function DataTable<T extends object>({
   // The table scrolls once its container is narrower than the columns need; wider
   // containers share the extra space. An empty scroll object ("fit the card") allows less
   // room for flexible columns so the table fits a desktop card and still scrolls on phones.
+  // The first load shows skeleton rows; later loads (paging, filters) keep the rows and
+  // show the table's own spinner.
+  if (props.loading === true && (props.dataSource?.length ?? 0) === 0) {
+    return (
+      <div className="table-skeleton" aria-busy="true" aria-label="Loading">
+        <Skeleton active title={false} paragraph={{ rows: 5, width: '100%' }} />
+      </div>
+    );
+  }
   const fit = scroll !== undefined && Object.keys(scroll).length === 0;
   const flexWidth = fit ? FIT_FLEX_COLUMN_WIDTH : FLEX_COLUMN_WIDTH;
   const minWidth = columns.reduce(
@@ -106,13 +115,29 @@ export function dateTimeColumn<T>(title: string, dataIndex: DataIndex, width = 1
   };
 }
 
-export function statusColumn<T>(title: string, dataIndex: DataIndex, width = 150): ColumnType<T> {
+/** Fixed-width status column; the chips line up because every StatusTag has the same size. */
+export function statusColumn<T>(title: string, dataIndex: DataIndex, width = 130): ColumnType<T> {
   return {
     title,
     dataIndex,
-    width,
+    width: Math.max(width, 130),
     className: 'cell-nowrap',
     render: (status: string | null) => <StatusTag status={status} />,
+  };
+}
+
+/** Payment statuses are longer ("Pending verification"), so the chip and column are wider. */
+export function paymentStatusColumn<T>(
+  title: string,
+  dataIndex: DataIndex,
+  width = 156,
+): ColumnType<T> {
+  return {
+    title,
+    dataIndex,
+    width: Math.max(width, 156),
+    className: 'cell-nowrap',
+    render: (status: string | null) => <StatusTag status={status} wide />,
   };
 }
 

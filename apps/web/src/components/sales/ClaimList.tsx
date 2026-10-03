@@ -57,7 +57,7 @@ export function ClaimList({ path }: { path: '/portal/claims' | '/backoffice/clai
         pagination={claims.pagination}
         scroll={{}}
         onRowClick={(claim) => navigate(links.claim(claim.id))}
-        locale={{ emptyText: <EmptyState label="No claims" /> }}
+        locale={{ emptyText: <EmptyState label="No claims yet" /> }}
         columns={[
           {
             title: 'Claim no.',

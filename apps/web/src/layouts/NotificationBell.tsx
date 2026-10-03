@@ -52,7 +52,7 @@ function NoticeList({ basePath, onDone }: { basePath: string; onDone(): void }) 
       {latest.isLoading ? (
         <Spin size="small" className="page-loading" />
       ) : items.length === 0 ? (
-        <EmptyState label="No notifications" inline />
+        <EmptyState label="No notifications yet" inline />
       ) : (
         <ul className="notice-panel__list">
           {items.map((item) => (

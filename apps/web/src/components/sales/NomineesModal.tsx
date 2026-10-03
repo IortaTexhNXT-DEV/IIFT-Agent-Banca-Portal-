@@ -33,6 +33,7 @@ export function NomineesModal({ policy, onClose }: { policy: PolicyDetail; onClo
       onClose={onClose}
       pending={save.isPending}
       error={save.error}
+      errorTitle="Nominees not saved"
       width={1040}
     >
       {policy.nominees.some((nominee) => nominee.idNumberMasked) && (

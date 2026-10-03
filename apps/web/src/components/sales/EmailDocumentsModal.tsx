@@ -1,4 +1,4 @@
-import { App, Form, Input } from 'antd';
+import { Form, Input } from 'antd';
 import { api } from '../../api/client';
 import { useApiMutation } from '../../api/hooks';
 import type { SentTo } from '../../api/sales-types';
@@ -35,18 +35,15 @@ export function EmailDocumentsModal({
   policy: PolicyDetail;
   onClose(): void;
 }) {
-  const { message } = App.useApp();
   const links = useSalesLinks();
   const [form] = Form.useForm<Values>();
   // The API path matches the module route: /portal/policies/:id or /backoffice/policies/:id.
   const send = useApiMutation(
     (body: Values) => api.post<SentTo>(`${links.policy(policy.id)}/email-documents`, body),
     {
+      success: (result) => ({ title: 'Documents sent', description: `Sent to ${result.sentTo}` }),
       invalidate: [links.policy(policy.id)],
-      onSuccess: (result) => {
-        message.success(`Policy documents sent to ${result.sentTo}`);
-        onClose();
-      },
+      onSuccess: onClose,
     },
   );
 
@@ -60,6 +57,7 @@ export function EmailDocumentsModal({
       onClose={onClose}
       pending={send.isPending}
       error={send.error}
+      errorTitle="Documents not sent"
     >
       <FieldGrid
         columns={2}

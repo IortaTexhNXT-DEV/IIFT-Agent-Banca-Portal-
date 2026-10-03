@@ -49,6 +49,7 @@ export function ApprovalTable({
       title: 'Level',
       key: 'level',
       width: 80,
+      align: 'right',
       render: (_: unknown, row) =>
         row.status === 'PENDING' ? `${row.currentLevel} of ${row.totalLevels}` : row.totalLevels,
     });

@@ -3,7 +3,13 @@ import { type ReactNode, useState } from 'react';
 import type { ParticipantDetail, ParticipantPolicy } from '../../api/sales-types';
 import { formatDate, humanise } from '../../utils/format';
 import { ApprovalHistory } from '../ApprovalHistory';
-import { DataTable, moneyColumn, statusColumn, textColumn } from '../DataTable';
+import {
+  DataTable,
+  moneyColumn,
+  paymentStatusColumn,
+  statusColumn,
+  textColumn,
+} from '../DataTable';
 import { DocumentPanel } from '../DocumentPanel';
 import { EmptyState } from '../EmptyState';
 import { FieldGrid } from '../FieldGrid';
@@ -24,7 +30,7 @@ function ParticipantPolicies({ policies }: { policies: ParticipantPolicy[] }) {
       pagination={false}
       dataSource={policies}
       scroll={{}}
-      locale={{ emptyText: <EmptyState label="No quotations or policies" /> }}
+      locale={{ emptyText: <EmptyState label="No quotations or policies yet" /> }}
       columns={[
         {
           title: 'Policy / quotation',
@@ -34,7 +40,7 @@ function ParticipantPolicies({ policies }: { policies: ParticipantPolicy[] }) {
         },
         textColumn('Product', ['product', 'name']),
         statusColumn('Status', 'status', 135),
-        statusColumn('Payment', 'paymentStatus', 145),
+        paymentStatusColumn('Payment', 'paymentStatus'),
         moneyColumn('Contribution', 'contribution', 120),
         {
           title: 'Period of cover',

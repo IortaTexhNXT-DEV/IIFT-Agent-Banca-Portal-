@@ -1,7 +1,8 @@
-import { Tag } from 'antd';
 import dayjs from 'dayjs';
 import type { Issue, IssuePriority, IssueStatus } from '../../api/types';
 import { formatDateTime } from '../../utils/format';
+import type { StatusTone } from '../../utils/status';
+import { StatusTag } from '../StatusTag';
 
 export const ISSUE_STATUSES: IssueStatus[] = [
   'OPEN',
@@ -30,9 +31,9 @@ export function slaState(due: string, metAt: string | null, open: boolean): SlaS
   return open && dayjs().isAfter(due) ? 'breached' : 'due';
 }
 
-const SLA_TAG: Record<SlaState, { colour: string; label: string } | null> = {
-  met: { colour: 'green', label: 'Met' },
-  breached: { colour: 'red', label: 'Breached' },
+const SLA_TAG: Record<SlaState, { tone: StatusTone; label: string } | null> = {
+  met: { tone: 'positive', label: 'Met' },
+  breached: { tone: 'negative', label: 'Breached' },
   due: null,
 };
 
@@ -42,20 +43,12 @@ export function SlaDue({ due, metAt, open }: { due: string; metAt: string | null
   return (
     <span className="tag-row">
       {formatDateTime(due)}
-      {tag && (
-        <Tag color={tag.colour} variant="filled" className="status-tag">
-          {tag.label}
-        </Tag>
-      )}
+      {tag && <StatusTag tone={tag.tone} label={tag.label} />}
     </span>
   );
 }
 
 export function SlaBreachedTag({ issue }: { issue: Pick<Issue, 'slaBreached'> }) {
   if (!issue.slaBreached) return null;
-  return (
-    <Tag color="red" variant="filled" className="status-tag">
-      SLA breached
-    </Tag>
-  );
+  return <StatusTag tone="negative" label="SLA breached" />;
 }

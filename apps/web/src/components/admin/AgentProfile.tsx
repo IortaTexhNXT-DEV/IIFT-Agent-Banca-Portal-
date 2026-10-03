@@ -1,4 +1,4 @@
-import { type DescriptionsProps, Flex } from 'antd';
+import { Flex } from 'antd';
 import dayjs from 'dayjs';
 import type { ReactNode } from 'react';
 import type { AgentView } from '../../api/types';
@@ -31,8 +31,6 @@ interface Props {
   agent: AgentView;
   /** Link to the reporting-line agent, when the viewer can open it. */
   parentLink?: (parent: NonNullable<AgentView['parent']>) => ReactNode;
-  /** Extra fields appended after the standard profile fields. */
-  extra?: DescriptionsProps['items'];
   /** Standard fields to leave out, e.g. when a side card already shows them. */
   omit?: AgentProfileField[];
   columns?: 2 | 3 | 4;
@@ -50,7 +48,7 @@ export function LicenceExpiry({ value }: { value: string | null }) {
 }
 
 /** AP-05/10, BO-05: registered profile, contact, agency and licensing details of an agent. */
-export function AgentProfile({ agent, parentLink, extra = [], omit = [], columns = 3 }: Props) {
+export function AgentProfile({ agent, parentLink, omit = [], columns = 3 }: Props) {
   const fields: (FieldItem & { key: AgentProfileField })[] = [
     { key: 'code', label: 'Agent code', value: agent.agentCode },
     { key: 'type', label: 'Type', value: AGENT_TYPE_LABELS[agent.agentType] },
@@ -79,7 +77,7 @@ export function AgentProfile({ agent, parentLink, extra = [], omit = [], columns
     { key: 'branch', label: 'Branch', value: agent.branchName },
     { key: 'id', label: idTypeLabel(agent.idType), value: agent.idNumberMasked },
     { key: 'dob', label: 'Date of birth', value: formatDate(agent.dateOfBirth) },
-    { key: 'email', label: 'Email', value: agent.email },
+    { key: 'email', label: 'E-mail', value: agent.email },
     { key: 'mobile', label: 'Mobile', value: agent.mobile },
     { key: 'address', label: 'Address', value: agent.address, span: 2 },
     { key: 'licence', label: 'Licence no.', value: agent.licenceNo },
@@ -97,13 +95,6 @@ export function AgentProfile({ agent, parentLink, extra = [], omit = [], columns
     { key: 'registered', label: 'Registered', value: formatDateTime(agent.createdAt) },
     { key: 'activated', label: 'Activated', value: formatDateTime(agent.activatedAt) },
   ];
-  const items: FieldItem[] = [
-    ...fields.filter((field) => !omit.includes(field.key)),
-    ...extra.map((item, index) => ({
-      key: String(item.key ?? `extra-${index}`),
-      label: item.label,
-      value: item.children,
-    })),
-  ];
+  const items: FieldItem[] = fields.filter((field) => !omit.includes(field.key));
   return <FieldGrid columns={columns} items={items} />;
 }

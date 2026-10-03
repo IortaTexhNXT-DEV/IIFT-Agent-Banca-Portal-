@@ -44,6 +44,7 @@ export function CancellationModal({ policy, onClose }: { policy: PolicyDetail; o
       onClose={onClose}
       pending={request.isPending}
       error={request.error}
+      errorTitle="Cancellation not requested"
     >
       <Alert
         className="mb-16"

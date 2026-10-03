@@ -4,16 +4,23 @@ import {
   SafetyCertificateOutlined,
   WalletOutlined,
 } from '@ant-design/icons';
-import { Alert, App, Button, Tabs, Tooltip, Typography } from 'antd';
+import { Alert, Button, Tabs, Tooltip, Typography } from 'antd';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useApiQuery } from '../../api/hooks';
 import type { OutstandingPolicy, OutstandingResponse, Payment } from '../../api/types';
 import { useAuth } from '../../auth/AuthContext';
-import { DataTable, moneyColumn, statusColumn, textColumn } from '../../components/DataTable';
+import {
+  DataTable,
+  moneyColumn,
+  paymentStatusColumn,
+  statusColumn,
+  textColumn,
+} from '../../components/DataTable';
 import { EmptyState } from '../../components/EmptyState';
 import { KpiGrid, KpiTile } from '../../components/KpiTile';
 import { Money } from '../../components/Money';
+import { useNotify } from '../../components/notify';
 import { PageHeader } from '../../components/PageHeader';
 import { QueryState } from '../../components/QueryState';
 import { PaymentDrawer } from '../../components/sales/PaymentDrawer';
@@ -146,7 +153,7 @@ function OutstandingTable({ policies, canSubmit, selected, onSelect, onPay }: Ta
             ? [textColumn<OutstandingPolicy>('Agent', ['agent', 'fullName'], 130)]
             : []),
           statusColumn('Status', 'status', 135),
-          statusColumn('Payment', 'paymentStatus', 145),
+          paymentStatusColumn('Payment', 'paymentStatus'),
           {
             title: 'Due date',
             key: 'due',
@@ -163,7 +170,7 @@ function OutstandingTable({ policies, canSubmit, selected, onSelect, onPay }: Ta
 /** AP-37..42: outstanding contributions, single or bulk payment with proof, and payment history. */
 export default function BillingPage() {
   const { can } = useAuth();
-  const { message } = App.useApp();
+  const notify = useNotify();
   const navigate = useNavigate();
   const outstanding = useApiQuery<OutstandingResponse>('/portal/billing/outstanding');
   const [tab, setTab] = useState('outstanding');
@@ -172,7 +179,10 @@ export default function BillingPage() {
   const canSubmit = can(P.portalBillingSubmit);
 
   const submitted = (payment: Payment) => {
-    message.success(`Payment ${payment.paymentNo} submitted for verification`);
+    notify.success({
+      title: 'Payment submitted for verification',
+      description: payment.paymentNo,
+    });
     setPaying(false);
     setSelected([]);
     navigate(`/portal/billing/payments/${payment.id}`);

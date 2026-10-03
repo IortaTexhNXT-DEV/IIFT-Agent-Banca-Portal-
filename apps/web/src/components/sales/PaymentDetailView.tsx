@@ -83,7 +83,7 @@ export function PaymentDetailView({ payment, actions }: Props) {
               pagination={false}
               dataSource={payment.allocations}
               scroll={{}}
-              locale={{ emptyText: <EmptyState label="No allocations" /> }}
+              locale={{ emptyText: <EmptyState label="No allocations yet" /> }}
               columns={[
                 {
                   title: 'Policy / quotation',

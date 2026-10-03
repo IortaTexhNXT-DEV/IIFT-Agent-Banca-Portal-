@@ -49,7 +49,7 @@ export function SignatureModal({
       destroyOnHidden
       width={600}
     >
-      <ErrorAlert error={capture.error} className="mb-16" />
+      <ErrorAlert error={capture.error} title="Signature not recorded" className="mb-16" />
       <FieldGrid
         columns={2}
         className="mb-16"

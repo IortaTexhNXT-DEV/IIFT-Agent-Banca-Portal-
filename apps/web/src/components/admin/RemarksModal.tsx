@@ -13,6 +13,7 @@ interface Props {
   description?: ReactNode;
   pending: boolean;
   error: unknown;
+  errorTitle?: string;
   onSubmit(remarks: string): void;
   onClose(): void;
 }
@@ -30,6 +31,7 @@ export function RemarksModal({
   description,
   pending,
   error,
+  errorTitle,
   onSubmit,
   onClose,
 }: Props) {
@@ -45,7 +47,7 @@ export function RemarksModal({
       destroyOnHidden
     >
       {description && <div className="mb-16 muted">{description}</div>}
-      <ErrorAlert error={error} className="mb-16" />
+      <ErrorAlert error={error} title={errorTitle} className="mb-16" />
       <Form
         form={form}
         onFinish={(values) => onSubmit(values.remarks?.trim() ?? '')}

@@ -68,11 +68,11 @@ export function DocumentPanel({
             render: (type: string) => labels.get(type) ?? type,
           },
           textColumn('File', 'fileName'),
-          { title: 'Size', dataIndex: 'sizeBytes', width: 80, render: fileSize },
+          { title: 'Size', dataIndex: 'sizeBytes', width: 80, align: 'right', render: fileSize },
           {
             title: 'Status',
             dataIndex: 'status',
-            width: 110,
+            width: 130,
             className: 'cell-nowrap',
             render: (_: unknown, doc) =>
               doc.expired ? (

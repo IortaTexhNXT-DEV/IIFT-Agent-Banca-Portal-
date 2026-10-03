@@ -20,7 +20,7 @@ export function ReceiptsTable({ receipts }: { receipts: ReceiptRow[] }) {
       pagination={false}
       dataSource={receipts}
       scroll={{}}
-      locale={{ emptyText: <EmptyState label="No receipts issued" inline /> }}
+      locale={{ emptyText: <EmptyState label="No receipts yet" inline /> }}
       columns={[
         { title: 'Receipt no.', dataIndex: 'receiptNo' },
         dateTimeColumn('Issued', 'issuedAt', 160),

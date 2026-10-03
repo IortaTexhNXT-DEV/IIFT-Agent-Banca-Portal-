@@ -39,7 +39,8 @@ export function ApprovalDecision({ request }: { request: ApprovalRequest }) {
         remarks: remarks || undefined,
       }),
     {
-      success: decision === 'approve' ? 'Request approved' : 'Request rejected',
+      success: (_, { action }) =>
+        `Request ${request.requestNo} ${action === 'approve' ? 'approved' : 'rejected'}`,
       invalidate: ['/backoffice', '/common/notifications'],
       onSuccess: () => setDecision(undefined),
     },
@@ -76,6 +77,7 @@ export function ApprovalDecision({ request }: { request: ApprovalRequest }) {
           }
           pending={decide.isPending}
           error={decide.error}
+          errorTitle={`Request not ${decision === 'approve' ? 'approved' : 'rejected'}`}
           onSubmit={(remarks) => decide.mutate({ action: decision, remarks })}
           onClose={() => setDecision(undefined)}
         />

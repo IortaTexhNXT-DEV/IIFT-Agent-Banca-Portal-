@@ -2,7 +2,14 @@ import type { TablePaginationConfig } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { Link, useNavigate } from 'react-router';
 import type { PolicySummary } from '../../api/types';
-import { DataTable, dateColumn, moneyColumn, statusColumn, textColumn } from '../DataTable';
+import {
+  DataTable,
+  dateColumn,
+  moneyColumn,
+  paymentStatusColumn,
+  statusColumn,
+  textColumn,
+} from '../DataTable';
 import { EmptyState } from '../EmptyState';
 import { policyReference } from './options';
 import { useSalesLinks } from './useSalesLinks';
@@ -54,7 +61,7 @@ export function PolicyTable({
         ? [textColumn<PolicySummary>('Agent', ['agent', 'fullName'], 150)]
         : []),
     statusColumn('Status', 'status', 135),
-    statusColumn('Payment', 'paymentStatus', 145),
+    paymentStatusColumn('Payment', 'paymentStatus'),
     moneyColumn('Contribution', 'contribution', 120),
     dateColumn('Created', 'createdAt', 120),
   ];
@@ -68,7 +75,7 @@ export function PolicyTable({
       pagination={pagination}
       scroll={{}}
       onRowClick={(policy) => navigate(links.policy(policy.id))}
-      locale={{ emptyText: <EmptyState label="No quotations or policies" /> }}
+      locale={{ emptyText: <EmptyState label="No quotations or policies yet" /> }}
     />
   );
 }

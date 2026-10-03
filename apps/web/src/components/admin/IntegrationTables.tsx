@@ -1,5 +1,5 @@
 import { RedoOutlined } from '@ant-design/icons';
-import { Button, Select, Tag, Tooltip } from 'antd';
+import { Button, Select, Tooltip } from 'antd';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { Link } from 'react-router';
@@ -22,6 +22,7 @@ import {
   textColumn,
 } from '../DataTable';
 import { ErrorAlert } from '../ErrorAlert';
+import { StatusTag } from '../StatusTag';
 import { TableCard } from '../TableCard';
 import { recordPath } from './links';
 import { enumOptions } from './useCodes';
@@ -31,7 +32,7 @@ export const SYSTEM_LABELS: Record<IntegrationSystem, string> = {
   CORE: 'Core system',
   FINANCE: 'Finance (FIN)',
   AML: 'AML screening',
-  EMAIL: 'Email',
+  EMAIL: 'E-mail',
   SMS: 'SMS gateway',
   DIRECTORY: 'Directory',
 };
@@ -209,9 +210,10 @@ export function IntegrationLogTable() {
             dataIndex: 'success',
             width: 100,
             render: (success: boolean) => (
-              <Tag color={success ? 'green' : 'red'} variant="filled" className="status-tag">
-                {success ? 'Successful' : 'Failed'}
-              </Tag>
+              <StatusTag
+                tone={success ? 'positive' : 'negative'}
+                label={success ? 'Successful' : 'Failed'}
+              />
             ),
           },
           {

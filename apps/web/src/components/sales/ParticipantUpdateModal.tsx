@@ -77,6 +77,7 @@ export function ParticipantUpdateModal({
       onClose={onClose}
       pending={request.isPending}
       error={request.error}
+      errorTitle="Update not requested"
       width={760}
     >
       {unchanged && (

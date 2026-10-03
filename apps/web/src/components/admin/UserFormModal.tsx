@@ -73,7 +73,7 @@ export function UserFormModal({ user, onClose, onCreated }: Props) {
       destroyOnHidden
       width={640}
     >
-      <ErrorAlert error={save.error} className="mb-16" />
+      <ErrorAlert error={save.error} title="User not saved" className="mb-16" />
       <Form
         form={form}
         onFinish={(values) => save.mutate(values)}
@@ -96,7 +96,7 @@ export function UserFormModal({ user, onClose, onCreated }: Props) {
               name="username"
               label="User name"
               rules={[
-                { required: true, message: 'Enter a user name' },
+                { required: true, message: 'Enter the username' },
                 {
                   pattern: USERNAME_PATTERN,
                   message: '3 to 64 letters, digits, dots, hyphens or underscores',
@@ -128,10 +128,10 @@ export function UserFormModal({ user, onClose, onCreated }: Props) {
           </Form.Item>
           <Form.Item
             name="email"
-            label="Email"
+            label="E-mail"
             rules={[
-              { required: true, message: 'Enter the email address' },
-              { type: 'email', message: 'Enter a valid email address' },
+              { required: true, message: 'Enter the e-mail address' },
+              { type: 'email', message: 'Enter a valid e-mail address' },
             ]}
           >
             <Input type="email" />

@@ -59,7 +59,7 @@ export default function RequestDetailPage() {
                   )}
                   {data.status === 'PENDING' && data.makerId === user?.id && (
                     <Popconfirm
-                      title="Withdraw this request?"
+                      title={`Withdraw ${data.requestNo}?`}
                       okText="Withdraw"
                       okButtonProps={{ danger: true }}
                       onConfirm={() => withdraw.mutate(undefined)}

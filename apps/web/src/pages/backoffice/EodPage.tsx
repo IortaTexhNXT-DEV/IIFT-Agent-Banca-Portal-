@@ -6,7 +6,7 @@ import {
   PlayCircleOutlined,
   WalletOutlined,
 } from '@ant-design/icons';
-import { App, Button, Tooltip } from 'antd';
+import { Button, Tooltip } from 'antd';
 import { useState } from 'react';
 import { api, download } from '../../api/client';
 import { useApiMutation, usePagedQuery } from '../../api/hooks';
@@ -20,6 +20,7 @@ import {
   textColumn,
 } from '../../components/DataTable';
 import { KpiGrid, KpiTile, type KpiTone } from '../../components/KpiTile';
+import { useNotify } from '../../components/notify';
 import { PageHeader } from '../../components/PageHeader';
 import { StatusTag } from '../../components/StatusTag';
 import { TableCard } from '../../components/TableCard';
@@ -33,7 +34,7 @@ import {
 import '../../styles/admin.css';
 
 function FileLink({ documentId, label }: { documentId: string | null; label: string }) {
-  const { message } = App.useApp();
+  const notify = useNotify();
   if (!documentId) return null;
   return (
     <Button
@@ -42,7 +43,7 @@ function FileLink({ documentId, label }: { documentId: string | null; label: str
       icon={<DownloadOutlined />}
       onClick={() =>
         download(`/common/documents/${documentId}/content`).catch((error: Error) =>
-          message.error(error.message),
+          notify.error({ title: 'Download failed', description: error.message }),
         )
       }
     >
@@ -97,7 +98,7 @@ function LatestRun({ run }: { run: EodRun | undefined }) {
 
 /** End-of-day batch: daily issuance and receipt totals, EOD report and FIN posting file. */
 export default function EodPage() {
-  const { message } = App.useApp();
+  const notify = useNotify();
   const [running, setRunning] = useState(false);
   const runs = usePagedQuery<EodRun>('/backoffice/eod');
   // A failed batch is still recorded as a run, so the outcome is read from the result.
@@ -107,9 +108,17 @@ export default function EodPage() {
       invalidate: ['/backoffice/eod', '/backoffice/integration'],
       onSuccess: (result) => {
         setRunning(false);
-        if (result.status === 'FAILED')
-          message.error(`End of day failed: ${result.errorMessage ?? 'see the run details'}`);
-        else message.success(`End of day completed for ${formatDate(result.businessDate)}`);
+        if (result.status === 'FAILED') {
+          notify.error({
+            title: 'End of day failed',
+            description: result.errorMessage ?? 'See the run details',
+          });
+        } else {
+          notify.success({
+            title: 'End of day completed',
+            description: `Business date ${formatDate(result.businessDate)}`,
+          });
+        }
       },
     },
   );

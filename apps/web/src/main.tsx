@@ -29,7 +29,7 @@ const queryClient = new QueryClient({
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ConfigProvider theme={theme} locale={enGB}>
-      <AntApp>
+      <AntApp notification={{ placement: 'topRight', top: 64, maxCount: 3 }}>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <RouterProvider router={router} />

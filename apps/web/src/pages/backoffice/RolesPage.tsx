@@ -1,5 +1,5 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons';
-import { App, Button, Drawer, Form, Input, Popconfirm, Select, Tag, Tooltip } from 'antd';
+import { Button, Drawer, Form, Input, Popconfirm, Select, Tag, Tooltip } from 'antd';
 import { useState } from 'react';
 import { api } from '../../api/client';
 import { useApiMutation, useApiQuery } from '../../api/hooks';
@@ -149,14 +149,13 @@ function RoleDrawer({
 
 /** BO-04: roles and the permissions they grant; system roles cannot be deleted. */
 export default function RolesPage() {
-  const { message } = App.useApp();
   const roles = useApiQuery<Role[]>(ROLES_PATH);
   const catalogue = useApiQuery<PermissionDefinition[]>(`${ROLES_PATH}/permissions`);
   const [editing, setEditing] = useState<Role | 'new'>();
   const remove = useApiMutation((role: Role) => api.delete(`${ROLES_PATH}/${role.id}`), {
     success: 'Role deleted',
     invalidate: [ROLES_PATH, '/backoffice/role-options'],
-    onError: (error) => message.error(error.message),
+    errorNotice: 'Role not deleted',
   });
 
   return (
