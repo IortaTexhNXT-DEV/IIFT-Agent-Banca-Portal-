@@ -81,16 +81,29 @@ export function moneyColumn<T>(title: string, dataIndex: DataIndex, width = 140)
     dataIndex,
     width,
     align: 'right',
+    className: 'cell-nowrap',
     render: (value: MoneyValue | null) => <Money value={value} />,
   };
 }
 
 export function dateColumn<T>(title: string, dataIndex: DataIndex, width = 120): ColumnType<T> {
-  return { title, dataIndex, width, render: (value: string | null) => formatDate(value) };
+  return {
+    title,
+    dataIndex,
+    width,
+    className: 'cell-nowrap',
+    render: (value: string | null) => formatDate(value),
+  };
 }
 
 export function dateTimeColumn<T>(title: string, dataIndex: DataIndex, width = 170): ColumnType<T> {
-  return { title, dataIndex, width, render: (value: string | null) => formatDateTime(value) };
+  return {
+    title,
+    dataIndex,
+    width,
+    className: 'cell-nowrap',
+    render: (value: string | null) => formatDateTime(value),
+  };
 }
 
 export function statusColumn<T>(title: string, dataIndex: DataIndex, width = 150): ColumnType<T> {
@@ -98,6 +111,7 @@ export function statusColumn<T>(title: string, dataIndex: DataIndex, width = 150
     title,
     dataIndex,
     width,
+    className: 'cell-nowrap',
     render: (status: string | null) => <StatusTag status={status} />,
   };
 }

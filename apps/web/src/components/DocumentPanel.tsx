@@ -1,11 +1,13 @@
 import { DownloadOutlined, UploadOutlined } from '@ant-design/icons';
-import { Button, Flex, Form, Modal, Select, Table, Tooltip, Typography, Upload } from 'antd';
+import { Button, Flex, Form, Modal, Select, Tooltip, Typography, Upload } from 'antd';
 import type { UploadFile } from 'antd';
 import { useState } from 'react';
 import { api, download } from '../api/client';
 import { useApiMutation, useApiQuery } from '../api/hooks';
 import type { CodeItem, DocumentOwnerType, DocumentView, RequiredDocument } from '../api/types';
-import { fileSize, formatDateTime } from '../utils/format';
+import { fileSize } from '../utils/format';
+import { DataTable, dateTimeColumn, textColumn } from './DataTable';
+import { EmptyState } from './EmptyState';
 import { ErrorAlert } from './ErrorAlert';
 import { StatusTag } from './StatusTag';
 
@@ -49,25 +51,29 @@ export function DocumentPanel({
           </Button>
         )}
       </Flex>
-      <Table<DocumentView>
+      <DataTable<DocumentView>
         size="small"
         rowKey="id"
         loading={documents.isLoading}
         dataSource={documents.data ?? []}
         pagination={false}
-        locale={{ emptyText: 'No documents yet' }}
+        scroll={{}}
+        locale={{ emptyText: <EmptyState label="No documents yet" /> }}
         columns={[
           {
             title: 'Type',
             dataIndex: 'docType',
+            width: 150,
+            ellipsis: true,
             render: (type: string) => labels.get(type) ?? type,
           },
-          { title: 'File', dataIndex: 'fileName', ellipsis: true },
-          { title: 'Size', dataIndex: 'sizeBytes', width: 90, render: fileSize },
+          textColumn('File', 'fileName'),
+          { title: 'Size', dataIndex: 'sizeBytes', width: 80, render: fileSize },
           {
             title: 'Status',
             dataIndex: 'status',
-            width: 120,
+            width: 110,
+            className: 'cell-nowrap',
             render: (_: unknown, doc) =>
               doc.expired ? (
                 <StatusTag status="EXPIRED" />
@@ -78,7 +84,7 @@ export function DocumentPanel({
                 />
               ),
           },
-          { title: 'Added', dataIndex: 'createdAt', width: 170, render: formatDateTime },
+          dateTimeColumn('Added', 'createdAt', 150),
           {
             key: 'download',
             width: 56,

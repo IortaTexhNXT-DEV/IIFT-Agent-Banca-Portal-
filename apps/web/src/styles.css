@@ -1217,3 +1217,8 @@ a.work-list__item:hover {
     display: none !important;
   }
 }
+
+/* Date, money and status cells never wrap; the text column absorbs the width. */
+.cell-nowrap {
+  white-space: nowrap;
+}
