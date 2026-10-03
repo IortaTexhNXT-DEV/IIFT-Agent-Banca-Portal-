@@ -1,4 +1,9 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  BeforeApplicationShutdown,
+  Injectable,
+  OnApplicationShutdown,
+  OnModuleInit,
+} from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { AppConfig } from '../../config/app-config.js';
 import { Prisma, PrismaClient } from '../../generated/prisma/client.js';
@@ -9,7 +14,13 @@ export type Db = PrismaService | Prisma.TransactionClient;
 const JOB_LOCK_MAX_DURATION_MS = 30 * 60 * 1000;
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, BeforeApplicationShutdown, OnApplicationShutdown
+{
+  private shuttingDown = false;
+  private readonly runningJobs = new Set<Promise<boolean>>();
+
   constructor(config: AppConfig) {
     super({
       adapter: new PrismaPg({
@@ -23,7 +34,13 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     await this.$connect();
   }
 
-  async onModuleDestroy(): Promise<void> {
+  /** No new job batches once shutdown has begun; in-flight batches run to completion. */
+  beforeApplicationShutdown(): void {
+    this.shuttingDown = true;
+  }
+
+  async onApplicationShutdown(): Promise<void> {
+    await Promise.allSettled(this.runningJobs);
     await this.$disconnect();
   }
 
@@ -35,7 +52,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
    * Returns false when another replica already holds the lock.
    */
   async withJobLock(lockName: string, work: () => Promise<void>): Promise<boolean> {
-    return this.$transaction(
+    if (this.shuttingDown) {
+      return false;
+    }
+    const job = this.$transaction(
       async (tx) => {
         const [{ locked }] = await tx.$queryRaw<{ locked: boolean }[]>`
           SELECT pg_try_advisory_xact_lock(hashtext(${lockName})) AS locked`;
@@ -47,5 +67,11 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
       },
       { timeout: JOB_LOCK_MAX_DURATION_MS, maxWait: 10_000 },
     );
+    this.runningJobs.add(job);
+    try {
+      return await job;
+    } finally {
+      this.runningJobs.delete(job);
+    }
   }
 }
