@@ -134,6 +134,17 @@ describe('api errors', () => {
     unsubscribe();
   });
 
+  it('does not treat the session probe as a session that ended', async () => {
+    const listener = vi.fn();
+    const unsubscribe = onSessionEnded(listener);
+    fetchMock.mockResolvedValue(jsonResponse({ code: 'UNAUTHENTICATED' }, 401));
+
+    await expect(api.get('/auth/me')).rejects.toBeInstanceOf(ApiError);
+
+    expect(listener).not.toHaveBeenCalled();
+    unsubscribe();
+  });
+
   it('does not end the session when the login itself is rejected', async () => {
     const listener = vi.fn();
     const unsubscribe = onSessionEnded(listener);

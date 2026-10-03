@@ -77,7 +77,9 @@ async function request<T>(
       Array.isArray(payload.details) ? (payload.details as string[]) : [],
       typeof payload.correlationId === 'string' ? payload.correlationId : undefined,
     );
-    if (response.status === 401 && path !== '/auth/login') {
+    // Sign-in failures and the session probe answer 401 in the normal course of events;
+    // only a 401 on any other call means an established session has ended.
+    if (response.status === 401 && path !== '/auth/login' && path !== '/auth/me') {
       sessionEndedListeners.forEach((listener) => listener());
     }
     throw error;

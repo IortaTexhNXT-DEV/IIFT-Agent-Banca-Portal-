@@ -1,5 +1,5 @@
 import { CheckCircleFilled, MinusCircleOutlined } from '@ant-design/icons';
-import { Alert, Button, Form, Input } from 'antd';
+import { Alert, Button, Form, Input, Spin } from 'antd';
 import { Navigate, useNavigate } from 'react-router';
 import { api } from '../../api/client';
 import { useApiMutation } from '../../api/hooks';
@@ -50,7 +50,7 @@ function PasswordRules({ value }: { value: string }) {
 
 /** AP-02: change password. Also the forced step after a temporary or expired password. */
 export default function ChangePasswordPage() {
-  const { user, refresh, logout } = useAuth();
+  const { user, loading, refresh, logout } = useAuth();
   const navigate = useNavigate();
   const [form] = Form.useForm<Values>();
   const newPassword = Form.useWatch('newPassword', form) ?? '';
@@ -69,6 +69,9 @@ export default function ChangePasswordPage() {
     },
   );
 
+  // The session is still being read for a moment right after sign-in; only an absent
+  // session sends the user back to the sign-in page.
+  if (loading) return <Spin fullscreen />;
   if (!user) return <Navigate to="/login" replace />;
 
   return (

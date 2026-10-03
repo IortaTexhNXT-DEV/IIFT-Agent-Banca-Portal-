@@ -62,7 +62,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading: isLoading,
       async login(username, password) {
         const response = await api.post<AuthResponse>('/auth/login', { username, password });
-        queryClient.clear();
+        // Drop what was cached for the previous user, but never remove the session query
+        // itself: the provider's subscription would be left on a dead entry.
+        queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== ME_KEY[0] });
         refresh(response);
         return response.user;
       },
