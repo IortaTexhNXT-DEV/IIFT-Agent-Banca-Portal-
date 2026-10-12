@@ -45,21 +45,23 @@ needed and the session cookie stays first-party.
 
 ## Custom domain
 
-The web service carries the public hostnames `salesverse.cloud` and
-`www.salesverse.cloud` in addition to the generated Railway address. Railway
-issues and renews the certificates once these records exist at the registrar:
+The public address is `https://www.salesverse.cloud`; the generated Railway
+address stays as a fallback. The zone is hosted at the registrar (GoDaddy),
+which cannot hold a CNAME at the apex, so the bare domain is forwarded:
 
 | Host | Type | Value |
 | --- | --- | --- |
-| `salesverse.cloud` | CNAME (or ALIAS/ANAME at the apex) | `yljhjyj1.up.railway.app` |
-| `_railway-verify.salesverse.cloud` | TXT | `railway-verify=897aa97a69bfacff73403555edc7e094648c20f7d10869e6faf3db251bffb23d` |
-| `www.salesverse.cloud` | CNAME | `5euymbsw.up.railway.app` |
-| `_railway-verify.www.salesverse.cloud` | TXT | `railway-verify=628140cc3657b81aa6b6568ad8f3d10a60d5e28d1f38385ef4cc0aa71adc3d59` |
+| `www` | CNAME | `5euymbsw.up.railway.app` |
+| `_railway-verify` | TXT | `railway-verify=897aa97a69bfacff73403555edc7e094648c20f7d10869e6faf3db251bffb23d` |
+| `_railway-verify.www` | TXT | `railway-verify=628140cc3657b81aa6b6568ad8f3d10a60d5e28d1f38385ef4cc0aa71adc3d59` |
+| `salesverse.cloud` | Registrar forwarding, 301 | `https://www.salesverse.cloud` |
 
-If the registrar cannot hold a CNAME at the apex, move the zone to a provider
-with CNAME flattening (Cloudflare with the proxy switched off, or any ALIAS/ANAME
-capable DNS). The API's `PUBLIC_BASE_URL` is `https://salesverse.cloud`, so
-e-signature links e-mailed to participants use the custom domain.
+Railway issues and renews the certificate for `www`. To serve the bare domain
+directly instead, move the zone to a DNS provider with CNAME flattening
+(Cloudflare with the proxy switched off) and point the apex at
+`yljhjyj1.up.railway.app`. The API's `PUBLIC_BASE_URL` is
+`https://www.salesverse.cloud`, so e-signature links e-mailed to participants
+use the custom domain.
 
 ## Keys
 
